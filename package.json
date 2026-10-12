@@ -14,19 +14,19 @@
     "android:open": "cap open android",
     "android:build-help": "echo \"Open Android Studio, select Build > Build Bundle(s) / APK(s) > Build APK(s)\""
   },
-  "dependencies": {
-    "@google/genai": "^2.4.0",
-    "@tailwindcss/vite": "^4.3.3",
-    "@vitejs/plugin-react": "^6.1.1",
-    "lucide-react": "^0.546.0",
-    "react": "^19.0.1",
-    "react-dom": "^19.0.1",
-    "vite": "^8.3.0",
-    "express": "^4.21.2",
-    "dotenv": "^17.2.3",
-    "motion": "^12.23.24",
-    "@capacitor/core": "^7.4.3",
-    "@capacitor/android": "^7.4.3"
+  "devDependencies": {
+  "@types/express": "^4.17.21",
+  "@types/node": "^22.14.0",
+  "@types/react": "^19.3.0",
+  "@types/react-dom": "^19.3.0",
+  "autoprefixer": "^10.4.21",
+  "esbuild": "^0.28.2",
+  "tailwindcss": "^4.3.3",
+  "tsx": "^4.21.0",
+  "typescript": "^7.0.2",
+  "vite-plugin-pwa": "^2.0.0",
+  "@capacitor/cli": "^7.4.3"
+}
   },
   "devDependencies": {
     "devDependencies": {
