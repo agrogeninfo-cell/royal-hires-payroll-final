@@ -1,0 +1,6 @@
+{
+  "name": "LankaManpower - Agency Operations & Payroll System",
+  "description": "Comprehensive Sri Lankan Manpower Agency Management System for factory workforce deployment, helper attendance, billing, payroll, and invoice management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

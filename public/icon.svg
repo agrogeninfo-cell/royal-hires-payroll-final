@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E1720"/>
+      <stop offset="100%" stop-color="#090F15"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5C9"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#00E5C9" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- Background Rounded Squircle -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGrad)"/>
+  <!-- Subtle Border -->
+  <rect width="504" height="504" x="4" y="4" rx="116" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+  
+  <!-- Outer Glow Circle -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#cyanGrad)" stroke-width="12" stroke-dasharray="8 6" opacity="0.6"/>
+  
+  <!-- Central Manpower Industrial Helmet / M Crest -->
+  <g filter="url(#glow)">
+    <!-- Safety Hardhat Dome -->
+    <path d="M 176 210 C 176 150, 336 150, 336 210 Z" fill="#10B981"/>
+    <path d="M 160 210 L 352 210 L 340 226 L 172 226 Z" fill="#00E5C9"/>
+    
+    <!-- Stylized Factory Gear / M Workforce Pillars -->
+    <path d="M 160 250 L 200 250 L 200 370 L 160 370 Z" fill="url(#cyanGrad)"/>
+    <path d="M 312 250 L 352 250 L 352 370 L 312 370 Z" fill="url(#cyanGrad)"/>
+    <polygon points="200,250 256,330 312,250 286,250 256,294 226,250" fill="#00E5C9"/>
+  </g>
+</svg>
