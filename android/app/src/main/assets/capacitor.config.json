@@ -1,0 +1,8 @@
+{
+	"appId": "lk.royalhires.payroll",
+	"appName": "Royal Hires Payroll",
+	"webDir": "dist",
+	"android": {
+		"allowMixedContent": false
+	}
+}
