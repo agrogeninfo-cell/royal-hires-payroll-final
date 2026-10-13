@@ -27,6 +27,8 @@ jobs:
         run: npx cap add android
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Apply Royal Hires launcher branding
+        run: bash apply-android-brand-icons.sh
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
