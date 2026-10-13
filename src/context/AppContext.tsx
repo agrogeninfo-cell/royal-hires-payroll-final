@@ -71,7 +71,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('en');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [mobileFrameMode, setMobileFrameMode] = useState<boolean>(false);
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);

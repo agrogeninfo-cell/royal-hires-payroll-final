@@ -18,7 +18,7 @@ import { TestSuiteModal } from './components/TestSuiteModal';
 import { BackupHubModal } from './components/BackupHubModal';
 import { QuickActionModal } from './components/QuickActionModal';
 import { InstallAppModal } from './components/InstallAppModal';
-import { Wifi, Battery, Smartphone, ArrowLeft } from 'lucide-react';
+import { Wifi, Battery } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 
 const MainLayout: React.FC = () => {
@@ -97,9 +97,7 @@ const MainLayout: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen w-full max-w-full overflow-x-hidden transition-colors duration-200 font-sans ${
-        isDark ? 'bg-[#090F15] text-slate-100' : 'bg-slate-50 text-slate-800'
-      } ${mobileFrameMode ? 'p-0 md:p-8 flex items-center justify-center' : ''}`}
+      className={`rh-app-shell ${isDark ? 'rh-theme-dark bg-[#090F15] text-slate-100' : 'rh-theme-light bg-slate-50 text-slate-800'} min-h-screen w-full max-w-full overflow-x-hidden transition-colors duration-200 font-sans ${mobileFrameMode ? 'p-0 md:p-8 flex items-center justify-center' : ''}`}
     >
       {/* Phone Device Frame Wrap (If enabled on desktop, exactly like the user's screenshot mockup!) */}
       <div
@@ -147,36 +145,9 @@ const MainLayout: React.FC = () => {
 
         {/* Main Content Area */}
         <main
-          className={`flex-1 w-full max-w-full mx-auto p-3 sm:p-5 lg:p-6 overflow-y-auto overflow-x-hidden ${
-            mobileFrameMode ? 'md:max-h-[740px] scrollbar-none' : 'max-w-7xl'
-          }`}
+          className={`rh-main-content flex-1 w-full max-w-full mx-auto overflow-y-auto overflow-x-hidden ${mobileFrameMode ? 'md:max-h-[740px] scrollbar-none' : ''}`}
         >
-          {/* Quick "Back to Dashboard" Banner when on any other module */}
-          {activeTab !== 'dashboard' && (
-            <div className="mb-4 flex items-center justify-between">
-              <button
-                onClick={() => handleNavigateTab('dashboard')}
-                className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shadow-2xs group cursor-pointer ${
-                  isDark
-                    ? 'bg-[#111b24] border-white/10 text-[#00E5C9] hover:bg-[#162430] hover:border-[#00E5C9]/40'
-                    : 'bg-white border-slate-200 text-emerald-700 hover:bg-slate-50 hover:border-emerald-300'
-                }`}
-              >
-                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-                <span>Back to Dashboard</span>
-              </button>
-              <span
-                className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
-                  isDark
-                    ? 'bg-white/5 border-white/10 text-slate-400'
-                    : 'bg-slate-100 border-slate-200 text-slate-600'
-                }`}
-              >
-                {activeTab} module
-              </span>
-            </div>
-          )}
-
+          <div className={`rh-screen-content rh-screen-${activeTab}`}>
           {activeTab === 'dashboard' && (
             <DashboardView
               setActiveTab={handleNavigateTab}
@@ -198,6 +169,7 @@ const MainLayout: React.FC = () => {
           {activeTab === 'profile' && (
             <ProfileView onBackToDashboard={() => handleNavigateTab('dashboard')} />
           )}
+          </div>
         </main>
       </div>
 
