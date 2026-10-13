@@ -24,7 +24,7 @@ jobs:
       - name: Build web app
         run: npm run build
       - name: Generate Android project
-        run: if [ -d android ]; then echo "Android project already exists; reusing it."; else npx cap add android; fi
+        run: if [ -f android/gradlew ]; then echo "Android project exists; reusing it."; else echo "Incomplete Android project; regenerating in CI."; rm -rf android; npx cap add android; fi
       - name: Sync Capacitor
         run: npx cap sync android
       - name: Apply Royal Hires launcher branding
@@ -36,7 +36,7 @@ jobs:
           java-version: '21'
       - name: Build debug APK
         working-directory: android
-        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
