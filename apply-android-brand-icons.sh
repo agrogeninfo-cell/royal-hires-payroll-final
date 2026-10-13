@@ -43,3 +43,7 @@ else
   printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#0B4D3B</color>\n</resources>\n' > "$COLORS"
 fi
 echo "Royal Hires launcher branding applied."
+
+# Prevent duplicate launcher background resource.
+SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+rm -f "$SCRIPT_ROOT/android/app/src/main/res/values/ic_launcher_background.xml"
