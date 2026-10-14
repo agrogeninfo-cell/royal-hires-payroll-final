@@ -500,3 +500,212 @@ html, body, #root { min-height: 100%; min-height: 100dvh; }
   .rh-factory-grid { grid-template-columns: 1fr; }
   .rh-main-content { padding-left: 10px; padding-right: 10px; }
 }
+
+
+/* Royal Pay all-module design system — applies consistently beyond Dashboard.
+   Visual-only layer: no component state, business rules, data writes or workflows changed. */
+:root {
+  --rh-radius-sm: 10px;
+  --rh-radius-md: 15px;
+  --rh-radius-lg: 21px;
+  --rh-radius-xl: 27px;
+  --rh-focus: 0 0 0 3px rgba(7, 137, 79, .18);
+}
+.rh-app-shell {
+  background: var(--rh-canvas);
+  color: var(--rh-ink);
+  font-feature-settings: "cv11", "ss01";
+}
+.rh-main-content {
+  background: var(--rh-canvas);
+  padding-left: clamp(12px, 2.8vw, 28px);
+  padding-right: clamp(12px, 2.8vw, 28px);
+}
+.rh-screen-content { width: 100%; margin-inline: auto; }
+.rh-screen-content > *:not(.rh-dashboard) {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+}
+/* Standardize content panels used across attendance, employee, factory, payroll,
+   boarding, invoice, receipt, report, overtime and audit screens. */
+.rh-screen-content .bg-white {
+  background-color: #fff !important;
+}
+.rh-screen-content .rounded-xl,
+.rh-screen-content .rounded-2xl {
+  border-radius: var(--rh-radius-lg);
+}
+.rh-screen-content .border-slate-200,
+.rh-screen-content .border-slate-100 {
+  border-color: var(--rh-border);
+}
+.rh-screen-content .shadow-xs {
+  box-shadow: var(--rh-shadow);
+}
+.rh-screen-content .text-slate-800,
+.rh-screen-content .text-slate-900 {
+  color: var(--rh-ink);
+}
+.rh-screen-content .text-slate-500,
+.rh-screen-content .text-slate-600 {
+  color: var(--rh-muted);
+}
+.rh-screen-content .bg-slate-50,
+.rh-screen-content .bg-slate-100 {
+  background-color: #f4f8f5;
+}
+.rh-screen-content .bg-emerald-600,
+.rh-screen-content .bg-blue-600,
+.rh-screen-content .bg-indigo-600 {
+  background-color: var(--rh-green);
+}
+.rh-screen-content .text-emerald-600,
+.rh-screen-content .text-blue-600,
+.rh-screen-content .text-indigo-600 {
+  color: var(--rh-green);
+}
+.rh-screen-content .bg-emerald-50,
+.rh-screen-content .bg-blue-50,
+.rh-screen-content .bg-indigo-50 {
+  background-color: var(--rh-mint);
+}
+.rh-screen-content .text-emerald-700,
+.rh-screen-content .text-blue-700,
+.rh-screen-content .text-indigo-700 {
+  color: var(--rh-forest);
+}
+.rh-screen-content .border-emerald-200,
+.rh-screen-content .border-blue-200,
+.rh-screen-content .border-indigo-200 {
+  border-color: #c9e8d3;
+}
+/* Touch-friendly controls with consistent focus/hover states across all modules. */
+.rh-screen-content button,
+.rh-app-shell button,
+.rh-menu-sheet button {
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.rh-screen-content button:not(:disabled):active,
+.rh-menu-sheet button:not(:disabled):active {
+  transform: translateY(1px);
+}
+.rh-screen-content button:focus-visible,
+.rh-screen-content input:focus-visible,
+.rh-screen-content select:focus-visible,
+.rh-screen-content textarea:focus-visible,
+.rh-app-shell button:focus-visible,
+.rh-app-shell input:focus-visible,
+.rh-app-shell select:focus-visible,
+.rh-app-shell textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--rh-focus);
+}
+.rh-screen-content input:not([type="checkbox"]):not([type="radio"]),
+.rh-screen-content select,
+.rh-screen-content textarea {
+  min-height: 42px;
+  max-width: 100%;
+  border-radius: 12px;
+  border-color: #dce7de;
+  background-color: #fff;
+  color: var(--rh-ink);
+}
+.rh-screen-content input::placeholder,
+.rh-screen-content textarea::placeholder { color: #8a9890; }
+.rh-screen-content input[type="checkbox"],
+.rh-screen-content input[type="radio"] { accent-color: var(--rh-green); }
+.rh-screen-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+}
+.rh-screen-content thead th {
+  background: #f4f8f5;
+  color: #66766c;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+.rh-screen-content th,
+.rh-screen-content td {
+  padding: 11px 12px;
+  border-color: var(--rh-border);
+}
+.rh-screen-content tbody tr:hover { background: #f7fbf8; }
+.rh-screen-content .bg-emerald-600,
+.rh-screen-content .bg-blue-600,
+.rh-screen-content .bg-indigo-600,
+.rh-screen-content button.bg-emerald-600,
+.rh-screen-content button.bg-blue-600,
+.rh-screen-content button.bg-indigo-600 {
+  color: #fff;
+  border-color: transparent;
+  border-radius: 12px;
+  box-shadow: 0 5px 14px rgba(7, 137, 79, .14);
+}
+.rh-screen-content .bg-emerald-600:hover,
+.rh-screen-content .bg-blue-600:hover,
+.rh-screen-content .bg-indigo-600:hover { background-color: var(--rh-forest-deep); }
+.rh-screen-content .bg-rose-600,
+.rh-screen-content .bg-rose-700 { border-radius: 12px; }
+/* Dialogs, backup/test tools and quick actions use the same premium surface system. */
+.rh-menu-sheet,
+.rh-app-shell [role="dialog"] {
+  border-color: var(--rh-border);
+}
+.rh-menu-sheet { background: #fff; color: var(--rh-ink); }
+.rh-app-shell .bg-black\/75,
+.rh-app-shell .bg-slate-900\/70 { backdrop-filter: blur(5px); }
+.rh-app-shell .bg-white.rounded-2xl,
+.rh-app-shell .bg-white.rounded-3xl {
+  border: 1px solid var(--rh-border);
+  box-shadow: 0 24px 70px rgba(14, 45, 27, .18);
+}
+.rh-app-shell .bg-white.rounded-2xl input,
+.rh-app-shell .bg-white.rounded-3xl input,
+.rh-app-shell .bg-white.rounded-2xl select,
+.rh-app-shell .bg-white.rounded-3xl select,
+.rh-app-shell .bg-white.rounded-2xl textarea,
+.rh-app-shell .bg-white.rounded-3xl textarea {
+  border-radius: 12px;
+}
+.rh-mobile-nav { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+.rh-mobile-nav-item { min-width: 0; }
+.rh-desktop-nav-inner { max-width: 1240px; margin-inline: auto; }
+.rh-topbar-inner { max-width: 1280px; margin-inline: auto; }
+.rh-topbar, .rh-desktop-nav { width: 100%; }
+/* Profile is content-first too; tone down legacy neon accents while retaining actions. */
+.rh-screen-profile .text-\[\#00E5C9\],
+.rh-screen-profile .text-emerald-400 { color: #43b97c; }
+.rh-screen-profile .border-\[\#00E5C9\]\/20,
+.rh-screen-profile .border-\[\#00E5C9\]\/35 { border-color: #ccebd7; }
+.rh-screen-profile .bg-\[\#00E5C9\]\/15,
+.rh-screen-profile .bg-\[\#00E5C9\]\/20 { background-color: #e8f7ed; }
+@media (max-width: 760px) {
+  .rh-main-content { padding-top: 14px; padding-bottom: calc(94px + var(--rh-safe-bottom)); }
+  .rh-screen-content > *:not(.rh-dashboard) { max-width: 100%; }
+  .rh-screen-content .p-5 { padding: 14px; }
+  .rh-screen-content .p-4 { padding: 12px; }
+  .rh-screen-content .space-y-6 { row-gap: 16px; }
+  .rh-screen-content .space-y-5 { row-gap: 14px; }
+  .rh-screen-content .grid-cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rh-screen-content .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rh-screen-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .rh-screen-content th, .rh-screen-content td { white-space: nowrap; }
+  .rh-screen-content input:not([type="checkbox"]):not([type="radio"]),
+  .rh-screen-content select,
+  .rh-screen-content textarea { font-size: 16px; }
+  .rh-menu-sheet { max-height: calc(88dvh - env(safe-area-inset-top)); overflow-y: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rh-app-shell *, .rh-app-shell *::before, .rh-app-shell *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
