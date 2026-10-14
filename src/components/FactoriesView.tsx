@@ -88,9 +88,9 @@ export const FactoriesView: React.FC = () => {
     setEmployeeOvertimeRateHourly(fac.employeeOvertimeRateHourly);
     setFactoryOvertimeRateHourly(fac.factoryOvertimeRateHourly);
     setBillingMethod(fac.billingMethod);
-    setSameRate(fac.sameRate || 3000);
-    setMaleRate(fac.maleRate || 3200);
-    setFemaleRate(fac.femaleRate || 2900);
+    setSameRate(fac.sameRate ?? 3000);
+    setMaleRate(fac.maleRate ?? 3200);
+    setFemaleRate(fac.femaleRate ?? 2900);
     setBillingEffectiveFrom(fac.billingEffectiveFrom || '2026-01-01');
     setBillingEffectiveTo(fac.billingEffectiveTo || '');
     setBreakfastRate(fac.breakfastRate);
