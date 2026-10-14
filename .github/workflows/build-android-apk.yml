@@ -25,6 +25,8 @@ jobs:
         run: npm install
       - name: TypeScript validation
         run: npm run lint
+      - name: Payroll, billing and invoicing unit checks
+        run: npm run test:unit
       - name: Build web app
         run: npm run build
       - name: Generate Android project
