@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import brandEmblem from '../../brand-assets/royal-hires-emblem-white.png';
+import brandEmblem from '../../brand-kit-export/company-logo/logo-mark-white.png';
 
 type SplashScreenProps = {
   onFinish: () => void;
