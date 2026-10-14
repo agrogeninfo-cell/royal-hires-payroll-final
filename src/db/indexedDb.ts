@@ -269,6 +269,13 @@ export class DatabaseService {
         await this.delete('factories', factory.id);
       }
     }
+    const adminUser = await this.getById<User>('users', 'usr-admin');
+    if (adminUser) {
+      await this.put('users', { ...adminUser, name: 'Royal Hires Admin', email: 'royalhiresinfo@gmail.com', phone: undefined, role: 'admin', active: true, assignedFactoryIds: undefined });
+    }
+    for (const userId of ['usr-office', 'usr-sup-kelani', 'usr-sup-biyagama']) {
+      await this.delete('users', userId);
+    }
     const demoEmployeeIds = new Set(['EMP-101', 'EMP-102', 'EMP-103', 'EMP-104']);
     for (const employee of await this.getAll<Employee>('employees')) {
       if (demoEmployeeIds.has(employee.id)) await this.delete('employees', employee.id);
