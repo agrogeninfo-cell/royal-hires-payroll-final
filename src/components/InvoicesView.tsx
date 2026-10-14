@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { FactoryInvoice, InvoiceLineItem } from '../types';
 import { InvoicingService } from '../services/invoicingService';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   FileText,
   Plus,
@@ -89,7 +92,7 @@ export const InvoicesView: React.FC = () => {
     }
   };
 
-  const exportInvoiceCsv = (inv: FactoryInvoice) => {
+  const exportInvoiceCsv = async (inv: FactoryInvoice) => {
     const headers = [
       'Helper ID',
       'Name',
@@ -106,12 +109,19 @@ export const InvoicesView: React.FC = () => {
       'Line Total (LKR)',
     ];
 
+    // Escape every field consistently so commas, quotes, and line breaks in text
+    // fields cannot shift the financial columns when opened in Excel.
+    const escapeCsvCell = (value: unknown): string => {
+      const text = value == null ? '' : String(value);
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
     const rows = inv.lineItems.map((l) => [
       l.employeeId,
-      `"${l.employeeName}"`,
+      l.employeeName,
       l.employeeGender,
       l.date,
-      `"${l.shift}"`,
+      l.shift,
       l.rateMethodSnapshot,
       l.snapshotBillingRate,
       l.billableDays,
@@ -122,14 +132,48 @@ export const InvoicesView: React.FC = () => {
       l.lineTotal,
     ]);
 
-    const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const encoded = encodeURI(csv);
-    const link = document.createElement('a');
-    link.href = encoded;
-    link.download = `Invoice_${inv.invoiceNumber}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // UTF-8 BOM improves Sinhala/Unicode compatibility in desktop Excel.
+    // Blob URLs avoid the data-URL length/escaping limitations of the old export.
+    const csvText = [headers, ...rows]
+      .map((row) => row.map(escapeCsvCell).join(','))
+      .join('\r\n');
+    const fileName = `Invoice_${inv.invoiceNumber.replace(/[^a-zA-Z0-9._-]/g, '_')}.csv`;
+    const csvWithBom = `\uFEFF${csvText}`;
+
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // Android WebView does not reliably download Blob URLs. Save a real file
+        // in app cache and invoke the native share sheet so the user can save it.
+        const saved = await Filesystem.writeFile({
+          path: fileName,
+          data: csvWithBom,
+          directory: Directory.Cache,
+          recursive: true,
+        });
+        await Share.share({
+          title: `Export invoice ${inv.invoiceNumber}`,
+          text: `Invoice ${inv.invoiceNumber} CSV export`,
+          url: saved.uri,
+          dialogTitle: 'Save or share invoice CSV',
+        });
+      } else {
+        const blob = new Blob([csvWithBom], { type: 'text/csv;charset=utf-8;' });
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+      }
+      setFeedback(`CSV export prepared: ${fileName}`);
+      window.setTimeout(() => setFeedback(''), 4000);
+    } catch (error) {
+      console.error('Invoice CSV export failed', error);
+      alert('Could not export the invoice CSV. Please try again or check Android sharing permissions.');
+    }
   };
 
   return (

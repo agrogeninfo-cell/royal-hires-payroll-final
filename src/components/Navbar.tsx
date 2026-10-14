@@ -1,4 +1,5 @@
 import React from 'react';
+import brandLogo from '../../brand-kit-export/company-logo/royal-hires-full-company-logo-white-1600x600.png';
 import {
   ArrowLeft,
   Bell,
@@ -61,11 +62,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               <ArrowLeft size={18} />
             </button>
           )}
-          <div className="rh-brand-mark"><img src="/pwa-192x192.png" alt="Royal Hires logo" /></div>
-          <div className="rh-brand-wordmark">
-            <strong>ROYAL HIRES</strong>
-            <span>PAYROLL MANAGEMENT</span>
-          </div>
+          <img
+            className="rh-brand-logo"
+            src={brandLogo}
+            alt="Royal Hires Private Limited"
+            draggable={false}
+          />
         </div>
 
         <div className="rh-topbar-actions">

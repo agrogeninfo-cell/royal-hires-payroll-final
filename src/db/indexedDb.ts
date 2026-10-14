@@ -66,6 +66,7 @@ export class DatabaseService {
         this.db = (event.target as IDBOpenDBRequest).result;
         this.isInitialized = true;
         await this.seedInitialDataIfNeeded();
+        await this.ensureRequiredFactoryRecords();
         resolve();
       };
 
@@ -196,6 +197,76 @@ export class DatabaseService {
 
   public async removeOfflineItem(id: string): Promise<void> {
     return this.delete('offline_queue', id);
+  }
+
+  // Idempotent additions for named client factories. These records are intentionally
+  // inactive and carry zero rates until an administrator configures approved rate
+  // sheets; this prevents demo/guessed rates from entering payroll or invoices.
+  private async ensureRequiredFactoryRecords(): Promise<void> {
+    const existing = await this.getAll<Factory>('factories');
+    const requiredFactories: Factory[] = [
+      {
+        id: 'fac-empire-teas',
+        code: 'FAC-EMPIRE-TEAS',
+        name: 'Empire Teas',
+        address: '',
+        contactPerson: 'Rate configuration required',
+        contactPhone: '',
+        active: false,
+        invoicePeriod: 'weekly',
+        shifts: [
+          { id: 'empire-day', name: 'Day Shift', startTime: '08:00', endTime: '17:00', standardHours: 8 },
+          { id: 'empire-night', name: 'Night Shift', startTime: '19:00', endTime: '04:00', standardHours: 8 },
+        ],
+        overtimeEnabled: false,
+        employeeOvertimeRateHourly: 0,
+        factoryOvertimeRateHourly: 0,
+        billingMethod: 'SAME_RATE_FOR_ALL',
+        sameRate: 0,
+        billingEffectiveFrom: '2026-10-14',
+        breakfastRate: 0,
+        lunchRate: 0,
+        dinnerRate: 0,
+        supervisorIds: [],
+        createdAt: '2026-10-14T00:00:00.000Z',
+        updatedAt: '2026-10-14T00:00:00.000Z',
+      },
+      {
+        id: 'fac-millennium-teas',
+        code: 'FAC-MILLENNIUM-TEAS',
+        name: 'Millennium Teas',
+        address: '',
+        contactPerson: 'Rate configuration required',
+        contactPhone: '',
+        active: false,
+        invoicePeriod: 'weekly',
+        shifts: [
+          { id: 'millennium-day', name: 'Day Shift', startTime: '08:00', endTime: '17:00', standardHours: 8 },
+          { id: 'millennium-night', name: 'Night Shift', startTime: '19:00', endTime: '04:00', standardHours: 8 },
+        ],
+        overtimeEnabled: false,
+        employeeOvertimeRateHourly: 0,
+        factoryOvertimeRateHourly: 0,
+        billingMethod: 'SAME_RATE_FOR_ALL',
+        sameRate: 0,
+        billingEffectiveFrom: '2026-10-14',
+        breakfastRate: 0,
+        lunchRate: 0,
+        dinnerRate: 0,
+        supervisorIds: [],
+        createdAt: '2026-10-14T00:00:00.000Z',
+        updatedAt: '2026-10-14T00:00:00.000Z',
+      },
+    ];
+
+    for (const factory of requiredFactories) {
+      const alreadyExists = existing.some(
+        (saved) => saved.id === factory.id || saved.name.trim().toLowerCase() === factory.name.toLowerCase()
+      );
+      if (!alreadyExists) {
+        await this.put('factories', factory);
+      }
+    }
   }
 
   // Data Seeding & Auto-Recovery
