@@ -14,6 +14,7 @@ import {
   PlayCircle,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import brandLogo from '../../brand-assets/royal-hires-logo-light.png';
 
 interface NavbarProps {
   onOpenTests: () => void;
@@ -61,9 +62,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <ArrowLeft size={18} />
             </button>
           )}
-          <div className="rh-brand-mark"><img src="/pwa-192x192.png" alt="Royal Hires logo" /></div>
           <div className="rh-brand-wordmark">
-            <strong>ROYAL HIRES</strong>
+            <img src={brandLogo} alt="Royal Hires Private Limited" />
             <span>PAYROLL MANAGEMENT</span>
           </div>
         </div>
