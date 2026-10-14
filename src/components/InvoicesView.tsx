@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { FactoryInvoice, InvoiceLineItem } from '../types';
 import { InvoicingService } from '../services/invoicingService';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   FileText,
   Plus,
@@ -89,7 +92,7 @@ export const InvoicesView: React.FC = () => {
     }
   };
 
-  const exportInvoiceCsv = (inv: FactoryInvoice) => {
+  const exportInvoiceCsv = async (inv: FactoryInvoice) => {
     const headers = [
       'Helper ID',
       'Name',
@@ -134,18 +137,44 @@ export const InvoicesView: React.FC = () => {
     const csvText = [headers, ...rows]
       .map((row) => row.map(escapeCsvCell).join(','))
       .join('\r\n');
-    const blob = new Blob(['\uFEFF', csvText], { type: 'text/csv;charset=utf-8;' });
-    const objectUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = objectUrl;
-    link.download = `Invoice_${inv.invoiceNumber.replace(/[^a-zA-Z0-9._-]/g, '_')}.csv`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    const fileName = `Invoice_${inv.invoiceNumber.replace(/[^a-zA-Z0-9._-]/g, '_')}.csv`;
+    const csvWithBom = `\\uFEFF${csvText}`;
 
-    // Give WebView/browser download handling time to consume the Blob URL.
-    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // Android WebView does not reliably download Blob URLs. Save a real file
+        // in app cache and invoke the native share sheet so the user can save it.
+        const saved = await Filesystem.writeFile({
+          path: fileName,
+          data: csvWithBom,
+          directory: Directory.Cache,
+          encoding: 'utf8',
+          recursive: true,
+        });
+        await Share.share({
+          title: `Export invoice ${inv.invoiceNumber}`,
+          text: `Invoice ${inv.invoiceNumber} CSV export`,
+          url: saved.uri,
+          dialogTitle: 'Save or share invoice CSV',
+        });
+      } else {
+        const blob = new Blob([csvWithBom], { type: 'text/csv;charset=utf-8;' });
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+      }
+      setFeedback(`CSV export prepared: ${fileName}`);
+      window.setTimeout(() => setFeedback(''), 4000);
+    } catch (error) {
+      console.error('Invoice CSV export failed', error);
+      alert('Could not export the invoice CSV. Please try again or check Android sharing permissions.');
+    }
   };
 
   return (
