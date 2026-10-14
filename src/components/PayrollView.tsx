@@ -343,8 +343,8 @@ export const PayrollView: React.FC = () => {
           </div>
         </div>
 
-        {/* Date & Factory Filter Strip */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
+        {/* Payslip frequency and payroll period controls */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Payslip Frequency</label>
             <select value={payslipPeriodType} onChange={(e) => setPayslipPeriodType(e.target.value as 'weekly' | 'monthly')} className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2">
@@ -363,41 +363,6 @@ export const PayrollView: React.FC = () => {
             <label className="block text-xs font-semibold text-slate-600 mb-1">Factory Filter</label>
             <select value={selectedFactoryId} onChange={(e) => setSelectedFactoryId(e.target.value)} className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2">
               <option value="all">All Factories</option>{factories.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
-          </div>
-        </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Period Start</label>
-            <input
-              type="date"
-              value={periodStart}
-              onChange={(e) => setPeriodStart(e.target.value)}
-              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Period End</label>
-            <input
-              type="date"
-              value={periodEnd}
-              onChange={(e) => setPeriodEnd(e.target.value)}
-              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Factory Filter</label>
-            <select
-              value={selectedFactoryId}
-              onChange={(e) => setSelectedFactoryId(e.target.value)}
-              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2"
-            >
-              <option value="all">All Factories</option>
-              {factories.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
             </select>
           </div>
         </div>
