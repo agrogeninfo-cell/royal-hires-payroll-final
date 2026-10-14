@@ -148,7 +148,6 @@ export const InvoicesView: React.FC = () => {
           path: fileName,
           data: csvWithBom,
           directory: Directory.Cache,
-          encoding: 'utf8',
           recursive: true,
         });
         await Share.share({
