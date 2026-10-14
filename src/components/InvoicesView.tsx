@@ -138,7 +138,7 @@ export const InvoicesView: React.FC = () => {
       .map((row) => row.map(escapeCsvCell).join(','))
       .join('\r\n');
     const fileName = `Invoice_${inv.invoiceNumber.replace(/[^a-zA-Z0-9._-]/g, '_')}.csv`;
-    const csvWithBom = `\\uFEFF${csvText}`;
+    const csvWithBom = `\uFEFF${csvText}`;
 
     try {
       if (Capacitor.isNativePlatform()) {
