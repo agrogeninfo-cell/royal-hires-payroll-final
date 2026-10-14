@@ -133,8 +133,8 @@ export const InvoicesView: React.FC = () => {
     // Blob URLs avoid the data-URL length/escaping limitations of the old export.
     const csvText = [headers, ...rows]
       .map((row) => row.map(escapeCsvCell).join(','))
-      .join('\\r\\n');
-    const blob = new Blob(['\\uFEFF', csvText], { type: 'text/csv;charset=utf-8;' });
+      .join('\r\n');
+    const blob = new Blob(['\uFEFF', csvText], { type: 'text/csv;charset=utf-8;' });
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = objectUrl;
