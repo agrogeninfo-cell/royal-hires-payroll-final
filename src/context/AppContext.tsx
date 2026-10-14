@@ -80,8 +80,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User>({
     id: 'usr-admin',
-    name: 'Pradeep Silva',
-    email: 'admin@lankamanpower.lk',
+    name: 'Royal Hires Admin',
+    email: 'royalhiresinfo@gmail.com',
     role: 'admin',
     active: true,
   });
