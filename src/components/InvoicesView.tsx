@@ -34,7 +34,7 @@ export const InvoicesView: React.FC = () => {
 
   // Generation parameters
   const [targetFactoryId, setTargetFactoryId] = useState<string>(factories[0]?.id || '');
-  const [periodStart, setPeriodStart] = useState<string>('2026-01-01');
+  const [periodStart, setPeriodStart] = useState<string>(() => `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`);
   const [periodEnd, setPeriodEnd] = useState<string>(new Date().toISOString().split('T')[0]);
   const [invoiceNumber, setInvoiceNumber] = useState<string>(`INV-2026-00${invoices.length + 1}`);
   const [feedback, setFeedback] = useState<string>('');
@@ -191,7 +191,7 @@ export const InvoicesView: React.FC = () => {
     printWindow.document.close();
   };
 
-  const exportMillenniumSummaryCsv = async (inv: FactoryInvoice) => {
+  const exportMillenniumSummaryCsv = async (inv: Pick<FactoryInvoice, 'factoryId' | 'periodStart' | 'periodEnd' | 'invoiceNumber'>) => {
     const records = (await Promise.resolve(attendance)).filter((record) => record.factoryId === inv.factoryId && record.date >= inv.periodStart && record.date <= inv.periodEnd && record.submissionStatus === 'approved' && (record.status === 'present' || record.status === 'half_day'));
     const escapeCell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
     const csvRows: unknown[][] = [['Invoice No:', inv.invoiceNumber], [], ['Labour catagery : Male'], [], ['Date', 'Day Shift Count', 'Rate (7.00-19.00)', 'Day Shift Total', 'Night Shift Count', 'Rate (20:30-8:00)', 'Night Shift Total', 'OT Hours', 'Total OT Rs 225 (Per Hours)', 'Late Rs 150 (Per Hours)', 'Total']];
@@ -405,10 +405,19 @@ export const InvoicesView: React.FC = () => {
                 Notice: Invoices compile only approved, billable attendance and overtime. Rates are locked immutably into invoice lines.
               </p>
 
-              <div className="flex justify-end space-x-2 pt-3 border-t">
+              <div className="flex justify-end flex-wrap gap-2 pt-3 border-t">
+                {factories.find((factory) => factory.id === targetFactoryId)?.name.trim().toLowerCase() === 'millennium teas' && (
+                  <button
+                    type="button"
+                    onClick={() => void exportMillenniumSummaryCsv({ factoryId: targetFactoryId, periodStart, periodEnd, invoiceNumber })}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold cursor-pointer"
+                  >
+                    Export Millennium Summary CSV
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setIsGenerateModalOpen(false)}
+                  onClick={() => setIsGenerateModalOpen(false)
                   className="px-4 py-2 border rounded-lg hover:bg-slate-100 font-semibold cursor-pointer"
                 >
                   Cancel
