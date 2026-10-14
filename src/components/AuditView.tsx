@@ -55,7 +55,7 @@ export const AuditView: React.FC = () => {
   };
 
   const handleResetData = async () => {
-    if (window.confirm('Are you sure you want to reset all data back to the default Sri Lankan demo seed?')) {
+    if (window.confirm('Are you sure you want to reset all data? This will remove all saved business records and re-create only the Empire Teas and Millennium Teas factory configurations.')) {
       await resetDatabase();
     }
   };
