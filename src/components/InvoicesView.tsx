@@ -106,12 +106,19 @@ export const InvoicesView: React.FC = () => {
       'Line Total (LKR)',
     ];
 
+    // Escape every field consistently so commas, quotes, and line breaks in text
+    // fields cannot shift the financial columns when opened in Excel.
+    const escapeCsvCell = (value: unknown): string => {
+      const text = value == null ? '' : String(value);
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
     const rows = inv.lineItems.map((l) => [
       l.employeeId,
-      `"${l.employeeName}"`,
+      l.employeeName,
       l.employeeGender,
       l.date,
-      `"${l.shift}"`,
+      l.shift,
       l.rateMethodSnapshot,
       l.snapshotBillingRate,
       l.billableDays,
@@ -122,14 +129,23 @@ export const InvoicesView: React.FC = () => {
       l.lineTotal,
     ]);
 
-    const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const encoded = encodeURI(csv);
+    // UTF-8 BOM improves Sinhala/Unicode compatibility in desktop Excel.
+    // Blob URLs avoid the data-URL length/escaping limitations of the old export.
+    const csvText = [headers, ...rows]
+      .map((row) => row.map(escapeCsvCell).join(','))
+      .join('\\r\\n');
+    const blob = new Blob(['\\uFEFF', csvText], { type: 'text/csv;charset=utf-8;' });
+    const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = encoded;
-    link.download = `Invoice_${inv.invoiceNumber}.csv`;
+    link.href = objectUrl;
+    link.download = `Invoice_${inv.invoiceNumber.replace(/[^a-zA-Z0-9._-]/g, '_')}.csv`;
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
+
+    // Give WebView/browser download handling time to consume the Blob URL.
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
   };
 
   return (
