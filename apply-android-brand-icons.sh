@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "$0")" && pwd)"
 RES="$ROOT/android/app/src/main/res"
 BRAND="$ROOT/brand-kit-export/android-assets"
 MANIFEST="$ROOT/android/app/src/main/AndroidManifest.xml"
@@ -13,31 +13,43 @@ if [ ! -f "$MANIFEST" ]; then
   echo "ERROR: AndroidManifest.xml not found at $MANIFEST." >&2
   exit 1
 fi
-for required in ic_launcher.xml ic_launcher_round.xml colors.xml ic_launcher_foreground.png; do
+for required in ic_launcher.xml ic_launcher_round.xml colors.xml; do
   if [ ! -s "$BRAND/$required" ]; then
     echo "ERROR: Required Royal Hires brand resource missing: $BRAND/$required" >&2
     exit 1
   fi
 done
 
-# Copy the approved, pre-rendered brand-kit icon resources instead of regenerating
-# icons from an older emblem. This keeps the CI APK aligned with the committed kit.
-mkdir -p "$RES/drawable-nodpi" "$RES/mipmap-anydpi-v26" "$RES/values"
-cp "$BRAND/ic_launcher_foreground.png" "$RES/drawable-nodpi/ic_launcher_foreground.png"
+# Copy committed pre-rendered brand-kit resources instead of regenerating launcher
+# images from the previous emblem. This preserves the approved icon artwork.
+mkdir -p "$RES/mipmap-anydpi-v26" "$RES/values"
 cp "$BRAND/ic_launcher.xml" "$RES/mipmap-anydpi-v26/ic_launcher.xml"
 cp "$BRAND/ic_launcher_round.xml" "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
-cp "$BRAND/colors.xml" "$RES/values/colors.xml"
+
+# Merge the launcher background into Android's existing colors resource so unrelated
+# native color definitions are preserved.
+COLORS="$RES/values/colors.xml"
+if [ -f "$COLORS" ]; then
+  if grep -q 'name="ic_launcher_background"' "$COLORS"; then
+    sed -i 's|<color name="ic_launcher_background">[^<]*</color>|<color name="ic_launcher_background">#064E3B</color>|' "$COLORS"
+  else
+    sed -i 's|</resources>|    <color name="ic_launcher_background">#064E3B</color>\n</resources>|' "$COLORS"
+  fi
+else
+  cp "$BRAND/colors.xml" "$COLORS"
+fi
 
 for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
   src="$BRAND/mipmap-$density"
   dst="$RES/mipmap-$density"
-  if [ ! -s "$src/ic_launcher.png" ] || [ ! -s "$src/ic_launcher_round.png" ]; then
-    echo "ERROR: Incomplete launcher icons for $density in $src" >&2
+  if [ ! -s "$src/ic_launcher.png" ] || [ ! -s "$src/ic_launcher_round.png" ] || [ ! -s "$src/ic_launcher_foreground.png" ]; then
+    echo "ERROR: Incomplete launcher resources for $density in $src" >&2
     exit 1
   fi
   mkdir -p "$dst"
   cp "$src/ic_launcher.png" "$dst/ic_launcher.png"
   cp "$src/ic_launcher_round.png" "$dst/ic_launcher_round.png"
+  cp "$src/ic_launcher_foreground.png" "$dst/ic_launcher_foreground.png"
 done
 
 if grep -q 'android:icon=' "$MANIFEST"; then
@@ -54,9 +66,11 @@ fi
 for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
   test -s "$RES/mipmap-$density/ic_launcher.png"
   test -s "$RES/mipmap-$density/ic_launcher_round.png"
+  test -s "$RES/mipmap-$density/ic_launcher_foreground.png"
 done
 grep -q 'android:icon="@mipmap/ic_launcher"' "$MANIFEST"
 grep -q 'android:roundIcon="@mipmap/ic_launcher_round"' "$MANIFEST"
 test -s "$RES/mipmap-anydpi-v26/ic_launcher.xml"
 test -s "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
+grep -q 'name="ic_launcher_background"' "$COLORS"
 echo "Royal Hires brand-kit launcher resources copied and manifest references verified."
