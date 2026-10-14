@@ -90,7 +90,7 @@ export class SystemTestSuite {
       updatedAt: '2026-01-01',
     };
 
-    // Test 20: Empire Teas shift and special-day rates.
+    // Test 21: Empire Teas shift and special-day rates.
     try {
       const empire: Factory = { ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas', sameRate: 1525, specialBillingDates: ['2026-10-21'] };
       const weekday = BillingService.getApplicableDailyBillingRate(empire, 'male', '2026-10-19', 'Day Shift').rate;
@@ -99,26 +99,26 @@ export class SystemTestSuite {
       const poyaFemale = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-21', 'Night Shift').rate;
       const femaleNight = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-19', 'Night Shift').rate;
       const passed = weekday === 1525 && saturday === 1875 && sundayFemale === 3700 && poyaFemale === 3700 && femaleNight === 1625;
-      results.push({ id: 20, title: 'Empire Teas shift and special-day billing rules', category: 'Billing', passed, message: passed ? 'Verified weekday 1525, Saturday 1875, Sunday/Poya female 3700, female night 1625.' : `Unexpected rates: ${[weekday, saturday, sundayFemale, poyaFemale, femaleNight].join(', ')}` });
-    } catch (err: any) { results.push({ id: 20, title: 'Empire Teas billing rules', category: 'Billing', passed: false, message: err.message }); }
+      results.push({ id: 21, title: 'Empire Teas shift and special-day billing rules', category: 'Billing', passed, message: passed ? 'Verified weekday 1525, Saturday 1875, Sunday/Poya female 3700, female night 1625.' : `Unexpected rates: ${[weekday, saturday, sundayFemale, poyaFemale, femaleNight].join(', ')}` });
+    } catch (err: any) { results.push({ id: 21, title: 'Empire Teas billing rules', category: 'Billing', passed: false, message: err.message }); }
 
-    // Test 21: Millennium Teas reference rates.
+    // Test 22: Millennium Teas reference rates.
     try {
       const millennium: Factory = { ...factoryB, id: 'fac-millennium-teas', name: 'Millennium Teas', maleRate: 3000, femaleRate: 2500 };
       const male = BillingService.getApplicableDailyBillingRate(millennium, 'male', '2026-08-01', 'Day Shift').rate;
       const female = BillingService.getApplicableDailyBillingRate(millennium, 'female', '2026-08-01', 'Day Shift').rate;
       const passed = male === 3000 && female === 2500;
-      results.push({ id: 21, title: 'Millennium Teas reference rates', category: 'Billing', passed, message: passed ? 'Verified male LKR 3,000 and female LKR 2,500.' : `Unexpected rates: male ${male}, female ${female}` });
-    } catch (err: any) { results.push({ id: 21, title: 'Millennium Teas rates', category: 'Billing', passed: false, message: err.message }); }
+      results.push({ id: 22, title: 'Millennium Teas reference rates', category: 'Billing', passed, message: passed ? 'Verified male LKR 3,000 and female LKR 2,500.' : `Unexpected rates: male ${male}, female ${female}` });
+    } catch (err: any) { results.push({ id: 22, title: 'Millennium Teas rates', category: 'Billing', passed: false, message: err.message }); }
 
-    // Test 22: Never invent a missing Millennium Teas night rate.
+    // Test 23: Never invent a missing Millennium Teas night rate.
     try {
       const millennium: Factory = { ...factoryB, id: 'fac-millennium-teas', name: 'Millennium Teas', maleRate: 3000, femaleRate: 2500 };
       let rejected = false;
       try { BillingService.getApplicableDailyBillingRate(millennium, 'male', '2026-08-01', 'Night Shift'); }
       catch (err: any) { rejected = /night-shift.*not configured/i.test(err.message); }
-      results.push({ id: 22, title: 'Millennium night shift rate validation', category: 'Billing', passed: rejected, message: rejected ? 'Night invoices are blocked until an approved night rate is configured.' : 'Missing night rate was not rejected.' });
-    } catch (err: any) { results.push({ id: 22, title: 'Millennium night rate validation', category: 'Billing', passed: false, message: err.message }); }
+      results.push({ id: 23, title: 'Millennium night shift rate validation', category: 'Billing', passed: rejected, message: rejected ? 'Night invoices are blocked until an approved night rate is configured.' : 'Missing night rate was not rejected.' });
+    } catch (err: any) { results.push({ id: 23, title: 'Millennium night rate validation', category: 'Billing', passed: false, message: err.message }); }
 
     // Test 1: Factory A SAME_RATE_FOR_ALL equal male and female
     try {
