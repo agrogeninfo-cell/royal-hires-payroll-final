@@ -38,6 +38,10 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 
 /* Brand header */
 .rh-topbar { position: sticky; top: 0; z-index: 40; width: 100%; color: #fff; background: linear-gradient(105deg, var(--rh-forest-deep), var(--rh-forest) 58%, #075a3b); box-shadow: 0 4px 18px rgba(2, 31, 20, .16); }
+/* Respect Android/iOS status-bar cutouts when the WebView draws edge-to-edge. */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .rh-topbar { padding-top: env(safe-area-inset-top); }
+}
 .rh-topbar-inner { width: 100%; max-width: 1240px; min-height: 66px; margin: 0 auto; padding: 9px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .rh-topbar-brand-group { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .rh-brand-mark { width: 42px; height: 42px; border-radius: 14px; padding: 4px; background: rgba(255,255,255,.96); box-shadow: 0 4px 12px rgba(0,0,0,.1); flex: 0 0 auto; }
