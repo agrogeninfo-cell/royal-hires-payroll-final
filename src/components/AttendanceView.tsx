@@ -21,6 +21,7 @@ interface EntryRow {
   payableUnits: number;
   otHours: number;
   otMinutes: number;
+  lateHours: number;
   hadBreakfast: boolean;
   hadLunch: boolean;
   hadDinner: boolean;
@@ -101,6 +102,7 @@ export const AttendanceView: React.FC = () => {
           payableUnits: existing.payableUnits,
           otHours: existing.otHours,
           otMinutes: existing.otMinutes,
+          lateHours: existing.lateHours || 0,
           hadBreakfast: existing.hadBreakfast,
           hadLunch: existing.hadLunch,
           hadDinner: existing.hadDinner,
@@ -119,6 +121,7 @@ export const AttendanceView: React.FC = () => {
         payableUnits: 1.0,
         otHours: 0,
         otMinutes: 0,
+        lateHours: 0,
         hadBreakfast: emp.eligibleForMeals,
         hadLunch: emp.eligibleForMeals,
         hadDinner: false,
@@ -179,6 +182,7 @@ export const AttendanceView: React.FC = () => {
           otHours: Number(row.otHours) || 0,
           otMinutes: Number(row.otMinutes) || 0,
           totalOtHours,
+          lateHours: Number(row.lateHours) || 0,
           hadBreakfast: row.hadBreakfast,
           hadLunch: row.hadLunch,
           hadDinner: row.hadDinner,
@@ -499,6 +503,13 @@ export const AttendanceView: React.FC = () => {
                       </button>
                     </div>
                   </div>
+
+                  {selectedFactory?.name.trim().toLowerCase() === 'millennium teas' && (
+                    <div className="mt-3">
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">Late hours (Millennium Teas deduction)</label>
+                      <input type="number" min="0" max="12" step="0.25" value={row.lateHours} onChange={(e) => updateRow(emp.id, { lateHours: Math.max(0, Number(e.target.value) || 0) })} className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none" aria-label={`Late hours for ${emp.fullName}`} />
+                    </div>
+                  )}
 
                   {/* Meals & Boarding Checkboxes */}
                   <div>
