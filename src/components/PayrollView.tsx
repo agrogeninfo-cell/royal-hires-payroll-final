@@ -58,34 +58,34 @@ export const PayrollView: React.FC = () => {
 
   const printPayslips = (items: PayrollItem[]) => {
     if (!previewRun || items.length === 0) return;
-    const money = (amount: number) => \`LKR \${Number(amount || 0).toLocaleString('en-LK')}\`;
-    const slipMarkup = items.map((item, index) => \`
-      <section class="payslip \${index > 0 ? 'page-break' : ''}">
+    const money = (amount: number) => `LKR ${Number(amount || 0).toLocaleString('en-LK')}`;
+    const slipMarkup = items.map((item, index) => `
+      <section class="payslip ${index > 0 ? 'page-break' : ''}">
         <header><div class="brand">ROYAL HIRES PRIVATE LIMITED</div><h1>EMPLOYEE PAYSLIP</h1>
-          <div class="period">\${payslipPeriodType.toUpperCase()} PAYSLIP · \${escapeHtml(previewRun.periodStart)} to \${escapeHtml(previewRun.periodEnd)}</div></header>
+          <div class="period">${payslipPeriodType.toUpperCase()} PAYSLIP · ${escapeHtml(previewRun.periodStart)} to ${escapeHtml(previewRun.periodEnd)}</div></header>
         <div class="details">
-          <div><span>Employee Name</span><strong>\${escapeHtml(item.employeeName)}</strong></div>
-          <div><span>Employee ID</span><strong>\${escapeHtml(item.employeeId)}</strong></div>
-          <div><span>Factory</span><strong>\${escapeHtml(item.factoryName)}</strong></div>
-          <div><span>Wage Arrangement</span><strong>\${escapeHtml(item.wageArrangement)}</strong></div>
-          <div><span>Payroll No.</span><strong>\${escapeHtml(previewRun.payrollNumber)}</strong></div>
-          <div><span>Days Worked</span><strong>\${escapeHtml(item.daysWorked)}</strong></div>
+          <div><span>Employee Name</span><strong>${escapeHtml(item.employeeName)}</strong></div>
+          <div><span>Employee ID</span><strong>${escapeHtml(item.employeeId)}</strong></div>
+          <div><span>Factory</span><strong>${escapeHtml(item.factoryName)}</strong></div>
+          <div><span>Wage Arrangement</span><strong>${escapeHtml(item.wageArrangement)}</strong></div>
+          <div><span>Payroll No.</span><strong>${escapeHtml(previewRun.payrollNumber)}</strong></div>
+          <div><span>Days Worked</span><strong>${escapeHtml(item.daysWorked)}</strong></div>
         </div>
         <table><thead><tr><th>Earnings</th><th>Amount</th><th>Deductions</th><th>Amount</th></tr></thead><tbody>
-          <tr><td>Normal Wages</td><td>\${money(item.normalWage)}</td><td>Meals</td><td>\${money(item.totalMealDeductions)}</td></tr>
-          <tr><td>Approved Overtime (\${escapeHtml(item.approvedOtHours)} hrs)</td><td>\${money(item.otWage)}</td><td>Boarding</td><td>\${money(item.totalBoardingDeductions)}</td></tr>
-          <tr><td>Other Earnings</td><td>\${money(0)}</td><td>Salary Advances</td><td>\${money(item.advancesDeducted)}</td></tr>
-          <tr class="total"><td>Gross Earnings</td><td>\${money(item.grossEarnings)}</td><td>Total Deductions</td><td>\${money(item.totalDeductions)}</td></tr>
+          <tr><td>Normal Wages</td><td>${money(item.normalWage)}</td><td>Meals</td><td>${money(item.totalMealDeductions)}</td></tr>
+          <tr><td>Approved Overtime (${escapeHtml(item.approvedOtHours)} hrs)</td><td>${money(item.otWage)}</td><td>Boarding</td><td>${money(item.totalBoardingDeductions)}</td></tr>
+          <tr><td>Other Earnings</td><td>${money(0)}</td><td>Salary Advances</td><td>${money(item.advancesDeducted)}</td></tr>
+          <tr class="total"><td>Gross Earnings</td><td>${money(item.grossEarnings)}</td><td>Total Deductions</td><td>${money(item.totalDeductions)}</td></tr>
         </tbody></table>
-        <div class="net"><span>NET PAYABLE</span><strong>\${money(item.netPayable)}</strong></div>
+        <div class="net"><span>NET PAYABLE</span><strong>${money(item.netPayable)}</strong></div>
         <div class="payment">
-          <div><span>Amount Paid</span><strong>\${money(item.amountPaid)}</strong></div>
-          <div><span>Remaining Balance</span><strong>\${money(item.remainingBalance)}</strong></div>
-          <div><span>Payment Status</span><strong>\${escapeHtml(item.paymentStatus)}</strong></div>
+          <div><span>Amount Paid</span><strong>${money(item.amountPaid)}</strong></div>
+          <div><span>Remaining Balance</span><strong>${money(item.remainingBalance)}</strong></div>
+          <div><span>Payment Status</span><strong>${escapeHtml(item.paymentStatus)}</strong></div>
         </div>
-        <footer><span>Generated: \${escapeHtml(new Date().toLocaleDateString())}</span><span>Employee Signature: __________________</span><span>Authorized By: __________________</span></footer>
+        <footer><span>Generated: ${escapeHtml(new Date().toLocaleDateString())}</span><span>Employee Signature: __________________</span><span>Authorized By: __________________</span></footer>
       </section>
-    \`).join('');
+    `).join('');
 
     // Avoid window.open('', '_blank'): Android WebView/Chrome can block the
     // blank popup, leaving the user on about:blank#blocked. Print an isolated
@@ -103,9 +103,9 @@ export const PayrollView: React.FC = () => {
       opacity: '0',
       pointerEvents: 'none',
     });
-    const printDocument = \`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Royal Hires Payslips - \${escapeHtml(previewRun.payrollNumber)}</title><style>
+    const printDocument = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Royal Hires Payslips - ${escapeHtml(previewRun.payrollNumber)}</title><style>
       *{box-sizing:border-box}html,body{width:100%;max-width:100%;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#17212b;font-size:11px;overflow-wrap:anywhere}.payslip{width:100%;max-width:100%;min-height:250mm;display:flex;flex-direction:column;padding:0}.page-break{page-break-before:always;break-before:page}.brand{font-size:18px;font-weight:800;color:#065f46;letter-spacing:.4px}header{border-bottom:3px solid #d4b36a;padding-bottom:12px}h1{font-size:17px;margin:12px 0 5px}.period{color:#475569;font-size:10px}.details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:20px 0}.details div,.payment div{min-width:0;background:#f8fafc;padding:9px;border:1px solid #e2e8f0}.details span,.payment span{display:block;color:#64748b;font-size:9px;margin-bottom:4px;text-transform:uppercase}.details strong,.payment strong{font-size:11px;overflow-wrap:anywhere}table{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-top:4px}th,td{padding:8px 6px;border:1px solid #cbd5e1;text-align:left;overflow-wrap:anywhere;word-break:normal}th{background:#ecfdf5;color:#065f46}th:nth-child(2),th:nth-child(4),td:nth-child(2),td:nth-child(4){width:19%}.total{font-weight:700;background:#f8fafc}.net{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;padding:16px;background:#065f46;color:white}.net span{font-weight:700;letter-spacing:.5px}.net strong{font-size:20px}.payment{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:auto;padding-top:32px;color:#475569;font-size:9px}@page{size:A4;margin:12mm}@media screen{body{padding:12px;background:#f1f5f9}.payslip{max-width:760px;margin:0 auto 18px;padding:16px;background:white;box-shadow:0 1px 6px #0002}}@media print{html,body{width:auto;max-width:none}.payslip{min-height:260mm;padding:0}.page-break{break-before:page;page-break-before:always}}
-    </style></head><body>\${slipMarkup}</body></html>\`;
+    </style></head><body>${slipMarkup}</body></html>`;
     document.body.appendChild(frame);
     const frameWindow = frame.contentWindow;
     const frameDoc = frame.contentDocument;
