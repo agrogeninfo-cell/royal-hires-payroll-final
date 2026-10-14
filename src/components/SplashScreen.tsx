@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import brandLogo from '../../brand-assets/royal-hires-logo-dark.png';
 
 type SplashScreenProps = {
   onFinish: () => void;
@@ -30,21 +31,22 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        backgroundColor: '#F7FAF8',
+        backgroundColor: '#ffffff',
         opacity: isLeaving ? 0 : 1,
         transition: 'opacity 330ms ease-out',
         pointerEvents: isLeaving ? 'none' : 'auto',
       }}
     >
       <img
-        src="/royal-hires-splash.png"
+        src={brandLogo}
         alt="Royal Hires Private Limited — Manpower Payroll Management System"
         draggable={false}
         style={{
           display: 'block',
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
+          width: 'min(78vw, 440px)',
+          height: 'auto',
+          maxHeight: '42vh',
+          objectFit: 'contain',
           objectPosition: 'center center',
           userSelect: 'none',
         }}
