@@ -39,7 +39,8 @@ export class InvoicingService {
       const rateResult = BillingService.getApplicableDailyBillingRate(
         factory,
         att.employeeGender,
-        att.date
+        att.date,
+        att.shift
       );
 
       const billableDays = att.payableUnits;
