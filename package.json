@@ -12,7 +12,8 @@
     "android:setup": "cap add android",
     "android:sync": "cap sync android",
     "android:open": "cap open android",
-    "android:build-help": "echo \"Open Android Studio, select Build > Build Bundle(s) / APK(s) > Build APK(s)\""
+    "android:build-help": "echo \"Open Android Studio, select Build > Build Bundle(s) / APK(s) > Build APK(s)\"",
+    "test:unit": "tsx src/test/runUnitTests.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",
