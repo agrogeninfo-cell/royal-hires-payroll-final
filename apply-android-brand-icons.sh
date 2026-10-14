@@ -72,5 +72,12 @@ grep -q 'android:icon="@mipmap/ic_launcher"' "$MANIFEST"
 grep -q 'android:roundIcon="@mipmap/ic_launcher_round"' "$MANIFEST"
 test -s "$RES/mipmap-anydpi-v26/ic_launcher.xml"
 test -s "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
-grep -q 'name="ic_launcher_background"' "$COLORS"
+if [ -f "$BACKGROUND_XML" ]; then
+  grep -q 'name="ic_launcher_background"' "$BACKGROUND_XML"
+elif [ -f "$COLORS" ]; then
+  grep -q 'name="ic_launcher_background"' "$COLORS"
+else
+  echo "ERROR: Launcher background color resource is missing after branding." >&2
+  exit 1
+fi
 echo "Royal Hires brand-kit launcher resources copied and manifest references verified."
