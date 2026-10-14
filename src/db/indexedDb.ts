@@ -260,6 +260,8 @@ export class DatabaseService {
     // Payroll runs, invoices, receipts and existing audit history are intentionally preserved.
     const migrationId = 'MIGRATION-2026-10-15-FACTORY-DEMO-CLEANUP';
     if (await this.getById('audit_logs', migrationId)) return;
+    // Snapshot the pre-migration database before removing factory/demo records.
+    await this.triggerMirrorBackup();
     const allowedIds = new Set(['fac-empire-teas', 'fac-millennium-teas']);
     const allowedNames = new Set(['empire teas', 'millennium teas']);
     for (const factory of await this.getAll<Factory>('factories')) {
