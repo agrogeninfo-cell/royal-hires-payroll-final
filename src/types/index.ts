@@ -39,12 +39,16 @@ export interface Factory {
   sameRate?: number; // Standard daily billing rate for all Helpers in LKR
   maleRate?: number; // Male Helper daily rate in LKR
   femaleRate?: number; // Female Helper daily rate in LKR
+  nightMaleRate?: number; // Optional Millennium Teas night-shift billing rate; blank until confirmed
+  nightFemaleRate?: number; // Optional Millennium Teas night-shift billing rate; blank until confirmed
   billingEffectiveFrom: string; // YYYY-MM-DD
   billingEffectiveTo?: string; // YYYY-MM-DD
   breakfastRate: number; // LKR
   lunchRate: number; // LKR
   dinnerRate: number; // LKR
   supervisorIds: string[];
+  /** Admin-maintained dates billed using the factory's Sunday/Poya special-day rule. */
+  specialBillingDates?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -128,6 +132,7 @@ export interface AttendanceRecord {
   otHours: number; // integer hours
   otMinutes: number; // 0, 15, 30, 45, etc.
   totalOtHours: number; // otHours + (otMinutes / 60)
+  lateHours?: number; // Millennium Teas late-time deduction hours, when recorded
   hadBreakfast: boolean;
   hadLunch: boolean;
   hadDinner: boolean;
