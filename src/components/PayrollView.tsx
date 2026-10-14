@@ -50,6 +50,47 @@ export const PayrollView: React.FC = () => {
   const [paymentNotes, setPaymentNotes] = useState<string>('');
   const [feedback, setFeedback] = useState<string>('');
 
+  const [payslipPeriodType, setPayslipPeriodType] = useState<'weekly' | 'monthly'>('monthly');
+
+  const escapeHtml = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[char] || char));
+
+  const printPayslips = (items: PayrollItem[]) => {
+    if (!previewRun || items.length === 0) return;
+    const money = (amount: number) => `LKR ${Number(amount || 0).toLocaleString('en-LK')}`;
+    const slipMarkup = items.map((item, index) => `
+      <section class="payslip ${index > 0 ? 'page-break' : ''}">
+        <header><div class="brand">ROYAL HIRES PRIVATE LIMITED</div><h1>EMPLOYEE PAYSLIP</h1>
+          <div class="period">${payslipPeriodType.toUpperCase()} PAYSLIP · ${escapeHtml(previewRun.periodStart)} to ${escapeHtml(previewRun.periodEnd)}</div></header>
+        <div class="details"><div><span>Employee Name</span><strong>${escapeHtml(item.employeeName)}</strong></div>
+          <div><span>Employee ID</span><strong>${escapeHtml(item.employeeId)}</strong></div>
+          <div><span>Factory</span><strong>${escapeHtml(item.factoryName)}</strong></div>
+          <div><span>Wage Arrangement</span><strong>${escapeHtml(item.wageArrangement)}</strong></div>
+          <div><span>Payroll No.</span><strong>${escapeHtml(previewRun.payrollNumber)}</strong></div>
+          <div><span>Days Worked</span><strong>${escapeHtml(item.daysWorked)}</strong></div></div>
+        <table><thead><tr><th>Earnings</th><th>Amount</th><th>Deductions</th><th>Amount</th></tr></thead><tbody>
+          <tr><td>Normal Wages</td><td>${money(item.normalWage)}</td><td>Meals</td><td>${money(item.totalMealDeductions)}</td></tr>
+          <tr><td>Approved Overtime (${escapeHtml(item.approvedOtHours)} hrs)</td><td>${money(item.otWage)}</td><td>Boarding</td><td>${money(item.totalBoardingDeductions)}</td></tr>
+          <tr><td>Other Earnings</td><td>${money(0)}</td><td>Salary Advances</td><td>${money(item.advancesDeducted)}</td></tr>
+          <tr class="total"><td>Gross Earnings</td><td>${money(item.grossEarnings)}</td><td>Total Deductions</td><td>${money(item.totalDeductions)}</td></tr>
+        </tbody></table>
+        <div class="net"><span>NET PAYABLE</span><strong>${money(item.netPayable)}</strong></div>
+        <div class="payment"><div><span>Amount Paid</span><strong>${money(item.amountPaid)}</strong></div><div><span>Remaining Balance</span><strong>${money(item.remainingBalance)}</strong></div><div><span>Payment Status</span><strong>${escapeHtml(item.paymentStatus)}</strong></div></div>
+        <footer><span>Generated: ${escapeHtml(new Date().toLocaleDateString())}</span><span>Employee Signature: __________________</span><span>Authorized By: __________________</span></footer>
+      </section>
+    `).join('');
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      setFeedback('Allow pop-ups to print payslips, then try again.');
+      return;
+    }
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Royal Hires Payslips - ${escapeHtml(previewRun.payrollNumber)}</title><style>
+      @page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#17212b;font-size:11px;margin:0}.payslip{min-height:260mm;display:flex;flex-direction:column}.page-break{page-break-before:always;break-before:page}.brand{font-size:18px;font-weight:800;color:#065f46;letter-spacing:.4px}header{border-bottom:3px solid #d4b36a;padding-bottom:12px}h1{font-size:17px;margin:12px 0 5px}.period{color:#475569;font-size:10px}.details{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}.details div,.payment div{background:#f8fafc;padding:9px;border:1px solid #e2e8f0}.details span,.payment span{display:block;color:#64748b;font-size:9px;margin-bottom:4px;text-transform:uppercase}.details strong,.payment strong{font-size:11px}table{width:100%;border-collapse:collapse;margin-top:4px}th,td{padding:10px 8px;border:1px solid #cbd5e1;text-align:left}th{background:#ecfdf5;color:#065f46}.total{font-weight:700;background:#f8fafc}.net{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding:16px;background:#065f46;color:white}.net span{font-weight:700;letter-spacing:.5px}.net strong{font-size:20px}.payment{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}footer{display:flex;justify-content:space-between;gap:12px;margin-top:auto;padding-top:32px;color:#475569;font-size:9px}@media print{.page-break{break-before:page;page-break-before:always}}</style></head><body>${slipMarkup}<script>window.onload=()=>{window.print()}</script></body></html>`);
+    printWindow.document.close();
+  };
+
   const handleGeneratePayroll = () => {
     const targetEmployees = employees.filter((e) => {
       if (e.status !== 'active') return false;
@@ -279,6 +320,10 @@ export const PayrollView: React.FC = () => {
 
           <div className="flex items-center space-x-2">
             {previewRun && (
+              <>
+              <button onClick={() => printPayslips(previewRun.items)} className="px-3 py-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg border border-emerald-200 flex items-center space-x-1 transition cursor-pointer">
+                <Download className="w-3.5 h-3.5" /><span>Print All Payslips</span>
+              </button>
               <button
                 onClick={exportPayrollCsv}
                 className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 flex items-center space-x-1 transition cursor-pointer"
@@ -286,6 +331,7 @@ export const PayrollView: React.FC = () => {
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
               </button>
+              </>
             )}
             <button
               onClick={handleGeneratePayroll}
@@ -298,7 +344,29 @@ export const PayrollView: React.FC = () => {
         </div>
 
         {/* Date & Factory Filter Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Payslip Frequency</label>
+            <select value={payslipPeriodType} onChange={(e) => setPayslipPeriodType(e.target.value as 'weekly' | 'monthly')} className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2">
+              <option value="weekly">Weekly</option><option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Period Start</label>
+            <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Period End</label>
+            <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Factory Filter</label>
+            <select value={selectedFactoryId} onChange={(e) => setSelectedFactoryId(e.target.value)} className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2">
+              <option value="all">All Factories</option>{factories.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+          </div>
+        </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Period Start</label>
             <input
@@ -454,7 +522,8 @@ export const PayrollView: React.FC = () => {
                       <td className="p-3 font-bold text-rose-800">
                         LKR {item.remainingBalance.toLocaleString()}
                       </td>
-                      <td className="p-3 text-right">
+                      <td className="p-3 text-right space-x-1">
+                        <button onClick={() => printPayslips([item])} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold">Payslip</button>
                         {item.remainingBalance > 0 ? (
                           <button
                             onClick={() => {
