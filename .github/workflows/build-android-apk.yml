@@ -23,6 +23,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: TypeScript validation
+        run: npm run lint
       - name: Build web app
         run: npm run build
       - name: Generate Android project
