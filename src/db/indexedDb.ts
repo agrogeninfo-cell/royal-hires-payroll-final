@@ -258,7 +258,7 @@ export class DatabaseService {
 
     // One-time cleanup of old seeded factories and known demo-only records.
     // Payroll runs, invoices, receipts and existing audit history are intentionally preserved.
-    const migrationId = 'MIGRATION-2026-10-15-FACTORY-DEMO-CLEANUP';
+    const migrationId = 'MIGRATION-2026-10-15-FACTORY-DEMO-CLEANUP-V2';
     if (await this.getById('audit_logs', migrationId)) return;
     // Snapshot the pre-migration database before removing factory/demo records.
     await this.triggerMirrorBackup();
