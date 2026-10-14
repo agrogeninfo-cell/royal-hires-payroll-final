@@ -26,17 +26,17 @@ mkdir -p "$RES/mipmap-anydpi-v26" "$RES/values"
 cp "$BRAND/ic_launcher.xml" "$RES/mipmap-anydpi-v26/ic_launcher.xml"
 cp "$BRAND/ic_launcher_round.xml" "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
 
-# Merge the launcher background into Android's existing colors resource so unrelated
-# native color definitions are preserved.
+# Capacitor creates values/ic_launcher_background.xml. Update that resource when present
+# instead of declaring the same resource again in colors.xml (which breaks AAPT merge).
+BACKGROUND_XML="$RES/values/ic_launcher_background.xml"
 COLORS="$RES/values/colors.xml"
-if [ -f "$COLORS" ]; then
-  if grep -q 'name="ic_launcher_background"' "$COLORS"; then
-    sed -i 's|<color name="ic_launcher_background">[^<]*</color>|<color name="ic_launcher_background">#064E3B</color>|' "$COLORS"
-  else
-    sed -i 's|</resources>|    <color name="ic_launcher_background">#064E3B</color>\n</resources>|' "$COLORS"
-  fi
+if [ -f "$BACKGROUND_XML" ]; then
+  sed -i 's|<color name="ic_launcher_background">[^<]*</color>|<color name="ic_launcher_background">#064E3B</color>|' "$BACKGROUND_XML"
+elif [ -f "$COLORS" ] && grep -q 'name="ic_launcher_background"' "$COLORS"; then
+  sed -i 's|<color name="ic_launcher_background">[^<]*</color>|<color name="ic_launcher_background">#064E3B</color>|' "$COLORS"
 else
-  cp "$BRAND/colors.xml" "$COLORS"
+  echo "ERROR: No existing ic_launcher_background resource to update." >&2
+  exit 1
 fi
 
 for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
