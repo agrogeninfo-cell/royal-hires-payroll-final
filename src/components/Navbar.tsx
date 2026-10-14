@@ -1,5 +1,5 @@
 import React from 'react';
-import brandLogo from '../../brand-assets/royal-hires-logo-light.png';
+import brandLogo from '../../brand-kit-export/company-logo/royal-hires-full-company-logo-white-1600x600.png';
 import {
   ArrowLeft,
   Bell,
