@@ -417,7 +417,7 @@ export const InvoicesView: React.FC = () => {
                 )}
                 <button
                   type="button"
-                  onClick={() => setIsGenerateModalOpen(false)
+                  onClick={() => setIsGenerateModalOpen(false)}
                   className="px-4 py-2 border rounded-lg hover:bg-slate-100 font-semibold cursor-pointer"
                 >
                   Cancel
