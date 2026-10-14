@@ -33,6 +33,10 @@ jobs:
         run: if [ -f android/gradlew ]; then echo "Android project exists; reusing it."; else echo "Incomplete Android project; regenerating in CI."; rm -rf android; npx cap add android; fi
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Install ImageMagick for launcher icon generation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
       - name: Apply Royal Hires launcher branding
         run: bash apply-android-brand-icons.sh
       - name: Set up Java
