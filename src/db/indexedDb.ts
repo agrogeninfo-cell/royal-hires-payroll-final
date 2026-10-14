@@ -297,6 +297,8 @@ export class DatabaseService {
       action: 'CLEAN_DEMO_FACTORY_SEED', entityType: 'Factory', entityId: migrationId,
       details: 'Removed demo factories and known demo-only records; preserved payroll runs, invoices, receipts and audit history.',
     } as AuditLog);
+    // Refresh the mirror so a later recovery cannot restore the removed demo seed.
+    await this.triggerMirrorBackup();
   }
 
   // Fresh installations do not get fabricated demo employees or attendance.
