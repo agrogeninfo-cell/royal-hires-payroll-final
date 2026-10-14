@@ -349,3 +349,154 @@ html, body, #root { min-height: 100%; min-height: 100dvh; }
   .rh-topbar-actions button, .rh-topbar-actions select { min-width: 40px; min-height: 40px; }
   .rh-main-content { padding-left: 8px; padding-right: 8px; }
 }
+
+
+/* Royal Pay mobile redesign: visual system inspired by the supplied reference,
+   preserving current React routes and all payroll/business data operations. */
+:root {
+  --rh-forest: #07894f;
+  --rh-forest-deep: #065b39;
+  --rh-green: #079957;
+  --rh-green-bright: #20b66c;
+  --rh-mint: #e8f7ed;
+  --rh-canvas: #f7faf7;
+  --rh-surface: #ffffff;
+  --rh-ink: #17231c;
+  --rh-muted: #7a8880;
+  --rh-border: #e6ede7;
+  --rh-shadow: 0 10px 28px rgba(12, 61, 35, .055);
+  --rh-champagne: #c7a66b;
+}
+.rh-app-shell { background: #f7faf7; }
+.rh-theme-light .rh-main-content { background: #f7faf7; }
+.rh-topbar {
+  background: linear-gradient(135deg, #13a956 0%, #079a55 62%, #07884d 100%);
+  box-shadow: none;
+}
+.rh-topbar-inner { min-height: 72px; padding: 12px clamp(14px, 3vw, 26px); }
+.rh-brand-logo { max-height: 42px; }
+.rh-topbar-actions { gap: 8px; }
+.rh-topbar-back, .rh-topbar-icon {
+  border-radius: 14px; border-color: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.13); width: 42px; height: 42px;
+}
+.rh-role-select, .rh-frame-toggle {
+  border-radius: 14px; min-height: 42px; border-color: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.13); color: #fff;
+}
+.rh-desktop-nav { background: #fff; border-bottom: 1px solid #e6ede7; box-shadow: 0 4px 20px rgba(15, 58, 36, .025); }
+.rh-desktop-tab { border-radius: 12px; }
+.rh-desktop-tab.active { background: #e7f7ed; color: #07894f; }
+.rh-main-content { padding-top: 20px; padding-bottom: calc(90px + var(--rh-safe-bottom)); }
+.rh-screen-content { max-width: 1120px; }
+.rh-dashboard { gap: 24px; }
+.rh-welcome-panel {
+  isolation: isolate; overflow: hidden; border: 0; border-radius: 28px;
+  color: #fff; background: linear-gradient(130deg, #07964f 0%, #10ad5b 58%, #16b86a 100%);
+  box-shadow: 0 14px 35px rgba(5, 127, 67, .13);
+  padding: clamp(23px, 5vw, 38px);
+}
+.rh-welcome-panel::before {
+  content: ""; position: absolute; z-index: -1; width: 240px; height: 240px;
+  right: -55px; top: -78px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow: 0 0 0 25px rgba(255,255,255,.035), 0 0 0 52px rgba(255,255,255,.025);
+}
+.rh-welcome-copy h1 { color: #fff; letter-spacing: -.045em; font-weight: 780; }
+.rh-welcome-copy p, .rh-date-line { color: rgba(255,255,255,.84); }
+.rh-eyebrow { color: rgba(255,255,255,.85); letter-spacing: .12em; }
+.rh-primary-button { border-radius: 14px; min-height: 46px; padding: 0 18px; color: #07894f; background: #fff; box-shadow: 0 4px 15px rgba(1, 60, 30, .10); }
+.rh-primary-button:hover { background: #f0fff5; }
+.rh-connection-pill { border: 1px solid rgba(255,255,255,.23); background: rgba(255,255,255,.12); border-radius: 999px; color: #fff; }
+.rh-dashboard-section { gap: 14px; }
+.rh-section-heading { margin-bottom: 4px; }
+.rh-section-heading h2 { color: #17231c; font-size: clamp(17px, 2vw, 21px); font-weight: 760; letter-spacing: -.03em; }
+.rh-section-heading p { color: #7a8880; font-size: 12px; }
+.rh-text-button { border-radius: 999px; color: #07894f; }
+.rh-stats-grid { gap: 12px; }
+.rh-stat-card {
+  min-height: 132px; background: #fff; border: 1px solid #e8eee9; border-radius: 20px;
+  box-shadow: 0 6px 23px rgba(16, 49, 30, .025); padding: 17px;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.rh-stat-card:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(16,49,30,.07); }
+.rh-stat-icon { width: 40px; height: 40px; border-radius: 13px; }
+.rh-stat-value { color: #17231c; font-size: clamp(22px, 2.2vw, 29px); font-weight: 780; letter-spacing: -.04em; }
+.rh-stat-label { color: #263a2d; font-size: 12px; font-weight: 700; }
+.rh-stat-foot { color: #87948b; font-size: 10px; }
+.rh-module-grid { gap: 12px; }
+.rh-module-tile {
+  position: relative; min-height: 132px; border: 1px solid #e8eee9; border-radius: 20px;
+  background: #fff; box-shadow: 0 6px 23px rgba(16,49,30,.025); padding: 17px; gap: 8px;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.rh-module-tile:hover { transform: translateY(-2px); border-color: #bfe7cc; box-shadow: 0 12px 26px rgba(16,49,30,.07); }
+.rh-module-icon { width: 42px; height: 42px; border-radius: 14px; }
+.rh-module-title { font-size: 13px; font-weight: 760; color: #20362a; }
+.rh-module-subtitle { color: #7c8b81; font-size: 10px; }
+.rh-module-arrow { color: #819489; }
+.rh-attendance-panel, .rh-finance-card, .rh-factory-card, .rh-system-panel, .rh-director-card {
+  border: 1px solid #e7eee8; border-radius: 22px; box-shadow: 0 7px 26px rgba(16,49,30,.03); background: #fff;
+}
+.rh-attendance-panel { padding: 22px; }
+.rh-secondary-button { background: #e8f7ed; color: #07894f; border-radius: 12px; }
+.rh-filter-chip { border-radius: 999px; }
+.rh-filter-chip.active { background: #07894f; color: #fff; border-color: #07894f; }
+.rh-factory-card { border-radius: 20px; }
+.rh-mobile-nav {
+  background: rgba(255,255,255,.96); border-top: 1px solid #e6ede7;
+  box-shadow: 0 -8px 32px rgba(17,55,34,.06); backdrop-filter: blur(20px);
+  padding: 8px 8px calc(9px + env(safe-area-inset-bottom)); gap: 3px;
+}
+.rh-mobile-nav-item { min-height: 56px; border-radius: 14px; gap: 5px; font-size: 10px; font-weight: 700; color: #89958d; }
+.rh-mobile-nav-icon { width: 42px; height: 29px; border-radius: 11px; }
+.rh-mobile-nav-item.active { color: #07894f; }
+.rh-mobile-nav-item.active .rh-mobile-nav-icon { background: #e6f7ec; color: #07894f; }
+.rh-mobile-nav-item.active::after { width: 18px; height: 3px; bottom: -1px; background: #07894f; }
+.rh-menu-sheet { border-radius: 28px 28px 0 0; border: 1px solid #e4ece5; box-shadow: 0 -18px 50px rgba(10,42,25,.12); }
+.rh-sheet-heading strong { color: #17231c; }
+.rh-sheet-actions > button, .rh-preferences-list > button, .rh-role-row { border-radius: 16px; border-color: #e6ede7; }
+.rh-sheet-module { border-radius: 15px; }
+.rh-sheet-module.active { background: #e8f7ed; color: #07894f; }
+@media (max-width: 900px) {
+  .rh-topbar-inner { min-height: 64px; }
+  .rh-main-content { padding: 16px 12px calc(88px + var(--rh-safe-bottom)); }
+  .rh-welcome-panel { border-radius: 23px; padding: 23px 20px; }
+  .rh-dashboard { gap: 20px; }
+  .rh-stat-card { min-height: 116px; }
+  .rh-module-tile { min-height: 116px; border-radius: 17px; }
+}
+@media (max-width: 480px) {
+  .rh-topbar-inner { align-items: center; gap: 8px; }
+  .rh-topbar-brand-group { flex: 1 1 auto; min-height: 40px; }
+  .rh-topbar-actions { width: auto; flex: 0 0 auto; justify-content: flex-end; }
+  .rh-current-user-copy, .rh-desktop-tool, .rh-frame-toggle span { display: none; }
+  .rh-dashboard { gap: 18px; }
+  .rh-welcome-panel { padding: 22px 18px; border-radius: 22px; }
+  .rh-welcome-copy h1 { font-size: 25px; line-height: 1.16; }
+  .rh-welcome-copy p { font-size: 12px; max-width: 280px; }
+  .rh-welcome-actions { gap: 8px; }
+  .rh-primary-button { min-height: 44px; padding: 0 13px; font-size: 12px; }
+  .rh-stats-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+  .rh-stat-card { grid-template-columns: 34px minmax(0,1fr); min-height: 112px; gap: 4px 8px; padding: 12px; border-radius: 17px; }
+  .rh-stat-icon { width: 34px; height: 34px; border-radius: 11px; }
+  .rh-stat-value { font-size: 22px; }
+  .rh-stat-label { font-size: 10px; }
+  .rh-stat-foot { grid-column: 1 / -1; font-size: 9px; }
+  .rh-module-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
+  .rh-module-tile { min-height: 112px; padding: 12px; gap: 6px; border-radius: 16px; }
+  .rh-module-icon { width: 36px; height: 36px; border-radius: 11px; }
+  .rh-module-title { font-size: 11px; }
+  .rh-module-subtitle { font-size: 9px; }
+  .rh-module-arrow { top: 13px; right: 10px; }
+  .rh-attendance-panel { grid-template-columns: 86px minmax(0,1fr); gap: 12px; padding: 13px; border-radius: 18px; }
+  .rh-attendance-chart { width: 84px; height: 84px; }
+  .rh-attendance-detail { min-width: 0; }
+  .rh-attendance-topline { flex-wrap: wrap; }
+  .rh-attendance-legend { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rh-finance-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .rh-finance-card { padding: 12px; border-radius: 16px; }
+  .rh-finance-card strong { overflow-wrap: anywhere; }
+  .rh-factory-grid { grid-template-columns: 1fr; }
+  .rh-main-content { padding-left: 10px; padding-right: 10px; }
+}
