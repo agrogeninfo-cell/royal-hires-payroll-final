@@ -322,3 +322,30 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 }
 
 .rh-module-icon-svg { width: 21px; height: 21px; stroke-width: 2.1; }
+
+
+/* Android edge-to-edge/full-screen safety: keep controls below the status bar. */
+:root { --rh-safe-top: env(safe-area-inset-top, 0px); --rh-safe-bottom: env(safe-area-inset-bottom, 0px); }
+html, body, #root { min-height: 100%; min-height: 100dvh; }
+.rh-app-shell, .rh-theme-light, .rh-theme-dark { min-height: 100dvh; }
+.rh-topbar { padding-top: var(--rh-safe-top); }
+.rh-desktop-nav { top: calc(66px + var(--rh-safe-top)); }
+.rh-main-content { min-height: calc(100dvh - 132px - var(--rh-safe-top)); padding-bottom: calc(34px + var(--rh-safe-bottom)); }
+@media (max-width: 900px) {
+  .rh-topbar-inner { min-height: 60px; padding: 8px 10px; gap: 8px; flex-wrap: wrap; }
+  .rh-brand-logo { width: clamp(112px, 34vw, 150px); max-height: 38px; }
+  .rh-topbar-actions { flex: 1 1 auto; flex-wrap: wrap; gap: 5px; }
+  .rh-header-connection { height: 30px; padding: 0 7px; }
+  .rh-topbar-back, .rh-topbar-icon { width: 40px; height: 40px; }
+  .rh-role-select, .rh-frame-toggle { min-height: 40px; }
+  .rh-desktop-nav { top: calc(60px + var(--rh-safe-top)); }
+  .rh-main-content { padding: 14px 10px calc(24px + var(--rh-safe-bottom)); }
+}
+@media (max-width: 480px) {
+  .rh-topbar-inner { align-items: flex-start; }
+  .rh-topbar-brand-group { min-height: 40px; flex: 1 1 100%; }
+  .rh-topbar-actions { width: 100%; justify-content: flex-start; }
+  .rh-current-user-copy, .rh-desktop-tool, .rh-frame-toggle span { display: none; }
+  .rh-topbar-actions button, .rh-topbar-actions select { min-width: 40px; min-height: 40px; }
+  .rh-main-content { padding-left: 8px; padding-right: 8px; }
+}
