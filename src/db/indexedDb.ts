@@ -268,12 +268,14 @@ export class DatabaseService {
   // FOREVER STORAGE METHODS
   public async exportFullBackupPayload(): Promise<SystemBackupPayload> {
     await this.init();
-    const [users, factories, employees, attendance, payroll_runs, employee_payments, invoices, receipts, boarding_locations, billing_rate_history, audit_logs] =
+    const [users, factories, employees, attendance, overtime, offline_queue, payroll_runs, employee_payments, invoices, receipts, boarding_locations, billing_rate_history, audit_logs] =
       await Promise.all([
         this.getAll<User>('users'),
         this.getAll<Factory>('factories'),
         this.getAll<Employee>('employees'),
         this.getAll<AttendanceRecord>('attendance'),
+        this.getAll<OvertimeSubmission>('overtime'),
+        this.getAll<OfflineQueueItem>('offline_queue'),
         this.getAll<PayrollRun>('payroll_runs'),
         this.getAll<EmployeePayment>('employee_payments'),
         this.getAll<FactoryInvoice>('invoices'),
@@ -291,6 +293,8 @@ export class DatabaseService {
         factories: factories.length,
         employees: employees.length,
         attendance: attendance.length,
+        overtime: overtime.length,
+        offlineQueue: offline_queue.length,
         payrollRuns: payroll_runs.length,
         payments: employee_payments.length,
         invoices: invoices.length,
@@ -303,6 +307,8 @@ export class DatabaseService {
         factories,
         employees,
         attendance,
+        overtime,
+        offline_queue,
         payroll_runs,
         employee_payments,
         invoices,
@@ -334,6 +340,12 @@ export class DatabaseService {
     }
     if (Array.isArray(data.attendance)) {
       for (const item of data.attendance) await this.put('attendance', item);
+    }
+    if (Array.isArray(data.overtime)) {
+      for (const item of data.overtime) await this.put('overtime', item);
+    }
+    if (Array.isArray(data.offline_queue)) {
+      for (const item of data.offline_queue) await this.put('offline_queue', item);
     }
     if (Array.isArray(data.payroll_runs)) {
       for (const item of data.payroll_runs) await this.put('payroll_runs', item);
