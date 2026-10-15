@@ -58,6 +58,10 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
 
   if (!supervisor) {
     for (const f of locals) {
+      const isRequiredFactory = ['Empire Teas', 'Millennium Teas'].includes(String(f.name || '').trim());
+      // Only the two approved target factories may bootstrap from legacy local data.
+      // Other factory rows require a fresh, explicit admin edit (updatedAt) before cloud creation.
+      if (!isRequiredFactory && !f.updatedAt) continue;
       let q = await supabase.from('factories').select('id').eq('company_id', access.companyId).eq('legacy_id', f.id).maybeSingle();
       if (q.error) { out.failedCount++; out.errors.push('Factory mapping: ' + q.error.message); continue; }
       if (access.user.role !== 'admin') {
