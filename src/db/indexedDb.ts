@@ -286,7 +286,7 @@ export class DatabaseService {
       ]);
 
     const payload: SystemBackupPayload = {
-      version: '2.4.0',
+      version: '2.5.0',
       timestamp: new Date().toISOString(),
       recordsCount: {
         users: users.length,
