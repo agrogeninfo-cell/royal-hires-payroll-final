@@ -5,6 +5,7 @@ import { Browser } from '@capacitor/browser';
 import { App as CapacitorApp } from '@capacitor/app';
 import { ArrowRight, CheckCircle2, CircleAlert, KeyRound, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import type { User, UserRole } from '../types';
+import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
 
 type AuthContextValue = { signOut: () => Promise<void> };
@@ -61,7 +62,7 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
     }
 
     let mounted = true;
-    const resolveSession = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']) => {
+    const resolveSession = async (session: Session | null) => {
       if (!mounted) return;
       if (!session) {
         setGate({ status: 'signed_out' });
