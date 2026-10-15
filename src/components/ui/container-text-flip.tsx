@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { cn } from '@/utils/cn';
 
 export interface ContainerTextFlipProps {
   words: string[];
@@ -40,10 +39,10 @@ export function ContainerTextFlip({
 
   return (
     <span
-      className={cn(
+      className={[
         'relative inline-flex align-baseline whitespace-nowrap rounded-md border border-[#c8ad73]/40 bg-[#f7f1e4] px-2 py-0.5 font-semibold text-[#07583c] shadow-[0_2px_8px_rgba(7,63,45,0.06)] dark:border-[#d5bd86]/40 dark:bg-[#243a2d] dark:text-[#e8d6a8]',
         className,
-      )}
+      ].filter(Boolean).join(' ')}
       aria-label={activeWord}
     >
       <span className="sr-only">{safeWords.join(', ')}</span>
