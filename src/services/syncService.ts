@@ -1,4 +1,4 @@
-import { syncCloudRecords, type CloudSyncReport } from './cloudSyncServiceV2';
+import { syncCloudRecords, type CloudSyncReport } from './cloudSyncServiceV3';
 
 export type SyncReport = CloudSyncReport;
 
