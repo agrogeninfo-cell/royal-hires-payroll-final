@@ -72,15 +72,24 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
       }, 0);
     }).data.subscription;
 
+    const processAuthCallback = (url: string) => {
+      if (!mounted || !url.startsWith('lk.royalhires.payroll://auth/callback')) return;
+      void handleNativeAuthCallback(url).catch((error) => {
+        if (mounted) setErrorMessage(error instanceof Error ? error.message : 'Google sign-in callback failed.');
+      });
+    };
+
     let appListener: { remove: () => Promise<void> } | undefined;
-    void App.addListener('appUrlOpen', ({ url }) => {
-      if (url.startsWith('lk.royalhires.payroll://auth/callback')) {
-        void handleNativeAuthCallback(url).catch((error) => {
-          setErrorMessage(error instanceof Error ? error.message : 'Google sign-in callback failed.');
-        });
-      }
-    }).then((listener) => {
+    void App.addListener('appUrlOpen', ({ url }) => processAuthCallback(url)).then((listener) => {
       appListener = listener;
+      // The OS may cold-start the app directly into the OAuth callback, in which
+      // case appUrlOpen is not guaranteed to fire. Register the listener first,
+      // then inspect the launch URL so neither return path is missed.
+      void App.getLaunchUrl().then((launch) => {
+        if (launch?.url) processAuthCallback(launch.url);
+      }).catch((error) => {
+        if (mounted) setErrorMessage(error instanceof Error ? error.message : 'Could not inspect the authentication callback URL.');
+      });
     });
 
     return () => {
