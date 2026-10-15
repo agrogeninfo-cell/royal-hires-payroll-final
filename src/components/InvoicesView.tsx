@@ -5,6 +5,7 @@ import { InvoicingService } from '../services/invoicingService';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { Printer } from '@capgo/capacitor-printer';
 import {
   FileText,
   Plus,
@@ -14,6 +15,7 @@ import {
   Calendar,
   Building2,
   Download,
+  Printer as PrinterIcon,
   Send,
   Lock,
 } from 'lucide-react';
@@ -151,9 +153,8 @@ export const InvoicesView: React.FC = () => {
           recursive: true,
         });
         await Share.share({
-          title: `Export invoice ${inv.invoiceNumber}`,
-          text: `Invoice ${inv.invoiceNumber} CSV export`,
-          url: saved.uri,
+          title: `Invoice ${inv.invoiceNumber} CSV`,
+          files: [saved.uri],
           dialogTitle: 'Save or share invoice CSV',
         });
       } else {
@@ -173,6 +174,87 @@ export const InvoicesView: React.FC = () => {
     } catch (error) {
       console.error('Invoice CSV export failed', error);
       alert('Could not export the invoice CSV. Please try again or check Android sharing permissions.');
+    }
+  };
+
+
+  const exportInvoicePdf = async (inv: FactoryInvoice) => {
+    const escapeHtml = (value: unknown): string =>
+      String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[char] || char));
+    const money = (value: number) => `LKR ${Number(value || 0).toLocaleString('en-LK')}`;
+    const safeInvoiceNumber = inv.invoiceNumber.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const lineRows = inv.lineItems.map((line) => `
+      <tr>
+        <td>${escapeHtml(line.date)}</td>
+        <td>${escapeHtml(line.employeeName)} (${line.employeeGender === 'male' ? 'M' : 'F'})</td>
+        <td>${escapeHtml(line.shift)}</td>
+        <td class="num">${money(line.snapshotBillingRate)}</td>
+        <td class="num">${escapeHtml(line.billableDays)}</td>
+        <td class="num">${money(line.dayBillingTotal)}</td>
+        <td class="num">${escapeHtml(line.approvedOtHours)}</td>
+        <td class="num">${money(line.snapshotOtBillingRateHourly)}</td>
+        <td class="num">${money(line.otBillingTotal)}</td>
+        <td class="num strong">${money(line.lineTotal)}</td>
+      </tr>
+    `).join('');
+    const html = `<!doctype html>
+      <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>Royal Hires Invoice ${escapeHtml(inv.invoiceNumber)}</title>
+      <style>
+        *{box-sizing:border-box}body{font:10px Arial,Helvetica,sans-serif;color:#18382a;margin:0;padding:8px}
+        .letterhead{border-bottom:3px solid #c8ad73;padding:0 0 14px;margin-bottom:16px}
+        .brand{color:#073f2d;font-size:22px;font-weight:800;letter-spacing:.4px}
+        .subtitle{font-size:11px;color:#647568;margin-top:5px}
+        h1{font-size:17px;margin:14px 0 10px;color:#073f2d}
+        .meta{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-bottom:14px}
+        .meta div{padding:7px;background:#f4f8f3;border:1px solid #e1e9e1}
+        .label{display:block;color:#63776a;font-size:8px;text-transform:uppercase;margin-bottom:4px}
+        .value{font-weight:700;overflow-wrap:anywhere}
+        table{width:100%;border-collapse:collapse;table-layout:auto;font-size:8px}
+        th{background:#073f2d;color:white;text-align:left;font-size:7.5px}
+        th,td{padding:6px 5px;border:1px solid #d9e4d9;vertical-align:top;overflow-wrap:anywhere}
+        tbody tr:nth-child(even){background:#f7faf6}.num{text-align:right;white-space:nowrap}.strong{font-weight:700}
+        .totals{width:310px;max-width:100%;margin:14px 0 0 auto;border-top:2px solid #c8ad73;padding-top:8px}
+        .total-row{display:flex;justify-content:space-between;gap:14px;padding:4px 0}
+        .grand{font-weight:800;font-size:13px;color:#073f2d;border-top:1px solid #d9e4d9;margin-top:4px;padding-top:8px}
+        .outstanding{color:#a52626;font-weight:800}
+        footer{margin-top:25px;padding-top:9px;border-top:1px solid #d9e4d9;display:flex;justify-content:space-between;gap:12px;color:#647568;font-size:8px}
+        @page{size:A4 landscape;margin:10mm}
+        @media print{body{padding:0}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}}
+      </style></head><body>
+      <header class="letterhead"><div class="brand">ROYAL HIRES PRIVATE LIMITED</div>
+        <div class="subtitle">Factory Manpower Supply · Invoice Statement</div>
+        <h1>FACTORY INVOICE</h1></header>
+      <section class="meta">
+        <div><span class="label">Invoice Number</span><span class="value">${escapeHtml(inv.invoiceNumber)}</span></div>
+        <div><span class="label">Invoice Status</span><span class="value">${escapeHtml(inv.status.replace('_', ' ').toUpperCase())}</span></div>
+        <div><span class="label">Billed To</span><span class="value">${escapeHtml(inv.factoryName)}</span></div>
+        <div><span class="label">Billing Period</span><span class="value">${escapeHtml(inv.periodStart)} to ${escapeHtml(inv.periodEnd)}</span></div>
+        <div><span class="label">Due Date</span><span class="value">${escapeHtml(inv.dueDate || 'Not specified')}</span></div>
+        <div><span class="label">Line Items</span><span class="value">${inv.lineItems.length}</span></div>
+      </section>
+      <table><thead><tr>
+        <th>Date</th><th>Employee / Helper</th><th>Shift</th><th>Daily Rate</th><th>Days</th>
+        <th>Day Charge</th><th>OT Hours</th><th>OT Rate</th><th>OT Charge</th><th>Line Total</th>
+      </tr></thead><tbody>${lineRows}</tbody></table>
+      <section class="totals">
+        <div class="total-row"><span>Subtotal</span><strong>${money(inv.subtotal)}</strong></div>
+        <div class="total-row grand"><span>TOTAL INVOICE AMOUNT</span><strong>${money(inv.totalAmount)}</strong></div>
+        <div class="total-row"><span>Amount Received</span><strong>${money(inv.amountReceived)}</strong></div>
+        <div class="total-row outstanding"><span>Outstanding Balance</span><strong>${money(inv.outstandingBalance)}</strong></div>
+      </section>
+      <footer><span>Royal Hires Private Limited</span><span>Generated: ${escapeHtml(new Date().toLocaleDateString('en-LK'))}</span></footer>
+      </body></html>`;
+
+    try {
+      await Printer.printHtml({ name: `Invoice-${safeInvoiceNumber}`, html });
+      setFeedback(`Invoice ${inv.invoiceNumber}: print dialog opened. Choose “Save as PDF” to export.`);
+      window.setTimeout(() => setFeedback(''), 5000);
+    } catch (error) {
+      console.error('Invoice PDF export failed', error);
+      setFeedback('Invoice PDF could not be opened. Check the device print service and try again.');
     }
   };
 
@@ -391,9 +473,16 @@ export const InvoicesView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 <button
-                  onClick={() => exportInvoiceCsv(selectedInvoice)}
+                  onClick={() => void exportInvoicePdf(selectedInvoice)}
+                  className="px-3 py-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg border border-emerald-200 flex items-center space-x-1 cursor-pointer"
+                >
+                  <PrinterIcon className="w-3.5 h-3.5" />
+                  <span>Print / Save PDF</span>
+                </button>
+                <button
+                  onClick={() => void exportInvoiceCsv(selectedInvoice)}
                   className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 flex items-center space-x-1 cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -420,9 +509,8 @@ export const InvoicesView: React.FC = () => {
             {/* Invoice Printable Layout Header */}
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">LankaManpower Agency Ltd</h4>
-                <p className="text-slate-500">Industrial Manpower Supply Division</p>
-                <p className="text-slate-500">Colombo, Sri Lanka • Tel: +94 11 291 0000</p>
+                <h4 className="font-bold text-slate-900 text-sm">ROYAL HIRES PRIVATE LIMITED</h4>
+                <p className="text-slate-500">Factory Manpower Supply</p>
               </div>
               <div className="text-right space-y-1">
                 <p>
