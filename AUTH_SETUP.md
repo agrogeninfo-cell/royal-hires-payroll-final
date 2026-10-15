@@ -5,13 +5,14 @@ This branch adds the client-side authentication foundation and the server-side a
 ## Required configuration
 
 1. Copy `.env.example` to `.env.local` for local development and set `VITE_SUPABASE_URL` plus `VITE_SUPABASE_PUBLISHABLE_KEY`. These are public client settings. Never place a Supabase service-role key in a Vite variable or in the Android app.
-2. In Supabase Dashboard → Authentication → Providers, enable Email and Google. Configure Google OAuth with the OAuth Client ID/Secret from Google Cloud. The Google OAuth web client must allow the Supabase callback URL shown in the provider settings.
-3. Add these URLs to Supabase Authentication → URL Configuration → Redirect URLs:
+2. In GitHub repository Settings → Secrets and variables → Actions → Variables, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. The Android workflow injects these values during the Vite build; if they are absent, the APK will build but show the authentication configuration message.
+3. In Supabase Dashboard → Authentication → Providers, enable Email and Google. Configure Google OAuth with the OAuth Client ID/Secret from Google Cloud. The Google OAuth web client must allow the Supabase callback URL shown in the provider settings.
+4. Add these URLs to Supabase Authentication → URL Configuration → Redirect URLs:
    - `lk.royalhires.payroll://auth/callback` (Android)
    - the exact HTTPS origin used by the hosted PWA
    - `http://localhost:3000` for local development only
-4. For Android Google OAuth, configure the Android OAuth client with the SHA-1 certificate fingerprint for each signing certificate used. Debug and release fingerprints are different.
-5. Deploy the `admin-user-access` Edge Function from `supabase/functions/admin-user-access/index.ts` with JWT verification enabled. Supabase Edge Functions must have their normal `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` runtime secrets available. Never expose the service-role key to the client.
+5. For Android Google OAuth, configure the Android OAuth client with the SHA-1 certificate fingerprint for each signing certificate used. Debug and release fingerprints are different.
+6. Deploy the `admin-user-access` Edge Function from `supabase/functions/admin-user-access/index.ts` with JWT verification enabled. Supabase Edge Functions must have their normal `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` runtime secrets available. Never expose the service-role key to the client.
 
 ## First administrator bootstrap
 
