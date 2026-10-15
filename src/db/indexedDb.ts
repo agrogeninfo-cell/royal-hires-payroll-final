@@ -174,6 +174,7 @@ export class DatabaseService {
     const auditItem: AuditLog = {
       id: `AUDIT-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       timestamp: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       actor,
       actorRole,
       action,
