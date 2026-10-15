@@ -195,6 +195,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Saved factory "${factory.name}" with rate method ${factory.billingMethod}`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Employee Operations
@@ -215,6 +216,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Saved helper "${employee.fullName}" (NIC: ${employee.nic}) assigned to factory ${employee.currentFactoryId}`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Attendance Operations (Supports Offline Queueing!)
@@ -229,6 +231,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       await dbService.put('attendance', record);
       await dbService.enqueueOffline('CREATE_ATTENDANCE', record);
       await reloadData();
+    if (isOnline) await syncOfflineQueue();
       return;
     }
 
@@ -244,6 +247,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Recorded attendance for ${record.employeeName} (${record.date}, Status: ${record.status}, OT: ${record.totalOtHours}h)`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   const batchSaveAttendance = async (records: AttendanceRecord[]) => {
@@ -275,6 +279,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       );
     }
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   const approveAttendanceOT = async (attendanceId: string, approve: boolean) => {
@@ -301,6 +306,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `${approve ? 'Approved' : 'Rejected'} attendance & overtime (${record.totalOtHours} hrs) for ${record.employeeName}`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Payroll Operations
@@ -318,6 +324,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Processed payroll run #${run.payrollNumber} for period ${run.periodStart} to ${run.periodEnd} (Net: LKR ${run.totalNet})`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   const savePayment = async (payment: EmployeePayment) => {
@@ -334,6 +341,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Recorded ${payment.paymentType} of LKR ${payment.amount} for ${payment.employeeName}`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Invoice Operations
@@ -351,6 +359,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Saved factory invoice #${invoice.invoiceNumber} for ${invoice.factoryName} (Amount: LKR ${invoice.totalAmount})`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Receipt Operations
@@ -368,6 +377,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Recorded factory receipt #${receipt.receiptNumber} for ${receipt.factoryName} (Amount: LKR ${receipt.amount})`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
     await dbService.triggerMirrorBackup();
     setLastBackupTime(new Date().toLocaleTimeString());
   };
@@ -386,6 +396,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Saved boarding location "${location.name}" (Rate: LKR ${location.dailyRate}/day)`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
     await dbService.triggerMirrorBackup();
     setLastBackupTime(new Date().toLocaleTimeString());
   };
@@ -428,6 +439,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     if (!mirror || !mirror.data) return false;
     await dbService.restoreFromPayload(mirror);
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
     setLastBackupTime(new Date().toLocaleTimeString());
     return true;
   };
@@ -461,6 +473,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       }
     }
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
     await dbService.triggerMirrorBackup();
     setLastBackupTime(new Date().toLocaleTimeString());
   };
