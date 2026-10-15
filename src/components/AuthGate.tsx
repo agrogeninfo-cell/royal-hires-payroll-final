@@ -61,6 +61,7 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
       return;
     }
 
+    const client = supabase;
     let mounted = true;
     const resolveSession = async (session: Session | null) => {
       if (!mounted) return;
@@ -69,7 +70,7 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('profiles')
         .select('user_id, company_id, full_name, role, is_active')
         .eq('user_id', session.user.id)
@@ -98,7 +99,7 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
 
       let assignedFactoryIds: string[] | undefined;
       if (role === 'supervisor') {
-        const { data: assignments, error: assignmentError } = await supabase
+        const { data: assignments, error: assignmentError } = await client
           .from('user_factory_assignments')
           .select('factory_id, factories(legacy_id)')
           .eq('user_id', session.user.id)
@@ -127,13 +128,13 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
       });
     };
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = client.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
       // Defer database work until Supabase finishes its auth event callback.
       void Promise.resolve().then(() => resolveSession(session));
     });
 
-    void supabase.auth.getSession().then(({ data, error }) => {
+    void client.auth.getSession().then(({ data, error }) => {
       if (error) {
         if (mounted) setGate({ status: 'error', message: error.message });
         return;
@@ -145,7 +146,7 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
     if (Capacitor.isNativePlatform()) {
       void CapacitorApp.addListener('appUrlOpen', async ({ url }) => {
         if (!url.startsWith('lk.royalhires.payroll://auth/callback')) return;
-        const { error } = await supabase.auth.exchangeCodeForSession(url);
+        const { error } = await client.auth.exchangeCodeForSession(url);
         if (error && mounted) setFormError(error.message);
         try { await Browser.close(); } catch { /* Browser may already be closed. */ }
       }).then((listener) => { appUrlListener = listener; });
