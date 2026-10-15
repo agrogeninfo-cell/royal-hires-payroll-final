@@ -13,7 +13,9 @@ import {
   WifiOff,
   UserRound,
   PlayCircle,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from './AuthGate';
 import { useApp } from '../context/AppContext';
 
 interface NavbarProps {
@@ -37,8 +39,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const {
     currentUser,
-    allUsers,
-    setCurrentUser,
     isOnline,
     toggleOnlineStatus,
     pendingSyncCount,
@@ -48,6 +48,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     setMobileFrameMode,
     attendance,
   } = useApp();
+
+  const { signOut } = useAuth();
 
   const pendingOtCount = attendance.filter((record) => record.totalOtHours > 0 && record.submissionStatus === 'submitted').length;
   const initials = currentUser.name.split(' ').filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase();
@@ -95,17 +97,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="rh-current-user-copy"><strong>{currentUser.name.split(' ')[0]}</strong><small>{roleName}</small></span>
             </button>
           )}
-          <select
-            className="rh-role-select"
-            aria-label="Switch demo user role"
-            value={currentUser.id}
-            onChange={(event) => {
-              const selected = allUsers.find((user) => user.id === event.target.value);
-              if (selected) setCurrentUser(selected);
-            }}
-          >
-            {allUsers.map((user) => <option key={user.id} value={user.id}>{user.role === 'admin' ? 'Admin' : user.role === 'office_staff' ? 'Office' : 'Supervisor'}</option>)}
-          </select>
+          <button className="rh-topbar-icon" onClick={() => void signOut()} title="Sign out of Royal Pay" aria-label="Sign out">
+            <LogOut size={17} />
+          </button>
           <button className="rh-frame-toggle" onClick={() => setMobileFrameMode(!mobileFrameMode)} title="Toggle mobile preview frame">
             {mobileFrameMode ? <Smartphone size={15} /> : <Monitor size={15} />}
             <span>{mobileFrameMode ? 'Phone preview' : 'Preview'}</span>
