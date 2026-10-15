@@ -115,33 +115,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       const usersData = await dbService.getAll<User>('users');
       setAllUsers(usersData);
 
+      const isSupervisor = currentUser.role === 'supervisor';
+      const assignedFactories = new Set(currentUser.assignedFactoryIds || []);
       const fData = await dbService.getAll<Factory>('factories');
-      setFactories(fData);
+      setFactories(isSupervisor ? fData.filter((factory) => assignedFactories.has(factory.id)) : fData);
 
       const eData = await dbService.getAll<Employee>('employees');
-      setEmployees(eData);
+      setEmployees(isSupervisor ? eData.filter((employee) => assignedFactories.has(employee.currentFactoryId)) : eData);
 
       const aData = await dbService.getAll<AttendanceRecord>('attendance');
-      // Sort attendance by date desc
-      setAttendance(aData.sort((a, b) => b.date.localeCompare(a.date)));
+      // Supervisors only receive in-memory records for explicitly assigned local factories.
+      setAttendance((isSupervisor ? aData.filter((record) => assignedFactories.has(record.factoryId)) : aData)
+        .sort((a, b) => b.date.localeCompare(a.date)));
 
       const pData = await dbService.getAll<PayrollRun>('payroll_runs');
-      setPayrollRuns(pData.sort((a, b) => b.generatedAt.localeCompare(a.generatedAt)));
+      setPayrollRuns(isSupervisor ? [] : pData.sort((a, b) => b.generatedAt.localeCompare(a.generatedAt)));
 
       const payData = await dbService.getAll<EmployeePayment>('employee_payments');
-      setPayments(payData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      setPayments(isSupervisor ? [] : payData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
       const invData = await dbService.getAll<FactoryInvoice>('invoices');
-      setInvoices(invData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      setInvoices(isSupervisor ? [] : invData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
       const recData = await dbService.getAll<FactoryReceipt>('receipts');
-      setReceipts(recData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      setReceipts(isSupervisor ? [] : recData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
       const bData = await dbService.getAll<BoardingLocation>('boarding_locations');
-      setBoardingLocations(bData);
+      setBoardingLocations(isSupervisor ? [] : bData);
 
       const auditData = await dbService.getAll<AuditLog>('audit_logs');
-      setAuditLogs(auditData.sort((a, b) => b.timestamp.localeCompare(a.timestamp)));
+      setAuditLogs(isSupervisor ? [] : auditData.sort((a, b) => b.timestamp.localeCompare(a.timestamp)));
 
       const queue = await dbService.getOfflineQueue();
       setPendingSyncCount(queue.filter((q) => q.status === 'pending').length);
@@ -213,6 +216,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
 
   // Attendance Operations (Supports Offline Queueing!)
   const saveAttendance = async (record: AttendanceRecord) => {
+    if (currentUser.role === 'supervisor' && !(currentUser.assignedFactoryIds || []).includes(record.factoryId)) {
+      throw new Error('Unauthorized: this supervisor is not assigned to the selected factory.');
+    }
     if (!isOnline) {
       // Save locally to offline queue
       record.syncStatus = 'pending';
@@ -238,6 +244,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
   };
 
   const batchSaveAttendance = async (records: AttendanceRecord[]) => {
+    if (currentUser.role === 'supervisor') {
+      const assignedFactories = new Set(currentUser.assignedFactoryIds || []);
+      if (records.some((record) => !assignedFactories.has(record.factoryId))) {
+        throw new Error('Unauthorized: attendance batch contains a factory not assigned to this supervisor.');
+      }
+    }
     for (const record of records) {
       if (!isOnline) {
         record.syncStatus = 'pending';
