@@ -46,6 +46,18 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
   const supabase = getSupabaseClient();
   const supervisor = access.user.role === 'supervisor';
   const locals = await dbService.getAll<LocalRecord>('factories');
+  const targetFactoryIds = new Set(locals.filter(f => ['empire teas', 'millennium teas'].includes(String(f.name || '').trim().toLowerCase())).map(f => f.id));
+  const localEmployees = await dbService.getAll<LocalRecord>('employees');
+  const employeeFactoryById = new Map(localEmployees.map(e => [e.id, e.currentFactoryId]));
+  const allowedRecord = (store: string, record: LocalRecord): boolean => {
+    if (store === 'factories') return targetFactoryIds.has(record.id);
+    if (store === 'employees') return targetFactoryIds.has(record.currentFactoryId);
+    if (store === 'employee_payments') return targetFactoryIds.has(employeeFactoryById.get(record.employeeId) || '');
+    if (store === 'payroll_runs') return Array.isArray(record.items) && record.items.length > 0 && record.items.every((item: any) => targetFactoryIds.has(item.factoryId));
+    if (store === 'boarding_locations' || store === 'audit_logs') return true;
+    const fid = factoryId(record);
+    return !fid || targetFactoryIds.has(fid);
+  };
   const cloudToLocal = new Map<string, string>();
   const localToCloud = new Map<string, string>();
 
@@ -101,6 +113,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
       const remoteById = new Map<string, RemoteRecord>((remote.data || []).map((r: RemoteRecord) => [r.record_id, r]));
       const localById = new Map(localRows.map(r => [r.id, r]));
       for (const l of localRows) {
+        if (!allowedRecord(store, l)) continue;
         const fid = store === 'factories' ? l.id : factoryId(l);
         if (supervisor && (!fid || !localToCloud.has(fid))) continue;
         const r = remoteById.get(l.id);
