@@ -1,6 +1,6 @@
-# Royal Pay Authentication Setup
+# Royal Pay Online Authentication and Cloud Setup
 
-This branch adds the client-side authentication foundation and the server-side admin access workflow. It does not migrate any IndexedDB payroll records to the cloud.
+This branch includes Supabase authentication, approval-gated roles, company/factory-scoped cloud record synchronization, realtime refresh, a guarded legacy-record migration workflow, and complete local backup/restore. Legacy local records are intentionally not bulk-uploaded automatically.
 
 ## Required configuration
 
@@ -43,7 +43,8 @@ Confirm exactly one intended row is returned. Do not run this against production
 
 ## Data preservation and rollout
 
-- No IndexedDB stores are cleared or rewritten by authentication startup.
-- No payroll formulas or historical financial records are changed.
-- This does not yet migrate local IndexedDB data or make the current local sync queue write to Supabase. Do not describe data as cloud-synced until that separate implementation is completed and verified.
-- First test on a separate Android test installation with synthetic data. Keep a JSON backup before any upgrade of a device containing real payroll records.
+- No IndexedDB stores are cleared by authentication startup or cloud sync. Existing local records outside Empire Teas and Millennium Teas remain in local storage and are excluded from operational views without being deleted.
+- New and explicitly edited records sync to Supabase; live refresh is enabled for `app_records` and `factories`. Supabase RLS remains the authorization boundary.
+- Legacy records are not silently uploaded. Use Backup Hub → **Download backup & preview cloud migration**, inspect and select each legitimate record, then explicitly authorize migration. The migration never deletes local records. Factory rate configurations and old audit logs are excluded from bulk migration.
+- Factory rate configuration must be reviewed and explicitly saved by an Admin before it becomes cloud-authoritative. Confirm rates against approved rate sheets before processing payroll or invoices.
+- First administrator bootstrap, Email/Google provider configuration, role-specific end-to-end testing, and physical Android testing are still required. Keep a downloaded JSON backup before migrating any device containing real payroll records.
