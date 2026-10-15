@@ -128,6 +128,7 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
       setMigrationPreview(nextPreview);
       setSelectedMigration({});
       setMigrationConfirmed(false);
+      setBackupReady(false);
     } catch (err: any) {
       setErrorMsg(err.message || 'Cloud migration failed. Local records were preserved.');
     } finally {
