@@ -61,7 +61,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
       const isRequiredFactory = ['Empire Teas', 'Millennium Teas'].includes(String(f.name || '').trim());
       // Only the two approved target factories may bootstrap from legacy local data.
       // Other factory rows require a fresh, explicit admin edit (updatedAt) before cloud creation.
-      if (!isRequiredFactory && !f.updatedAt) continue;
+      if (!isRequiredFactory && !f.cloudSyncReady) continue;
       let q = await supabase.from('factories').select('id,code,name,is_active').eq('company_id', access.companyId).eq('legacy_id', f.id).maybeSingle();
       if (q.error) { out.failedCount++; out.errors.push('Factory mapping: ' + q.error.message); continue; }
       if (access.user.role !== 'admin') {
@@ -73,7 +73,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         const ins = await supabase.from('factories').insert({ company_id: access.companyId, legacy_id: f.id, code: f.code, name: f.name, is_active: !!f.active }).select('id').single();
         if (ins.error) { out.failedCount++; out.errors.push('Factory mapping for ' + f.name + ': ' + ins.error.message); continue; }
         id = ins.data.id;
-      } else if (q.data.code !== f.code || q.data.name !== f.name || q.data.is_active !== !!f.active) {
+      } else if (f.cloudSyncReady && (q.data.code !== f.code || q.data.name !== f.name || q.data.is_active !== !!f.active)) {
         const upd = await supabase.from('factories').update({ code: f.code, name: f.name, is_active: !!f.active }).eq('company_id', access.companyId).eq('id', id);
         if (upd.error) { out.failedCount++; out.errors.push('Factory metadata for ' + f.name + ': ' + upd.error.message); continue; }
       }
@@ -108,7 +108,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
           if (supervisor && store === 'employees') continue;
           // Existing local-only records are not automatically migrated on first sign-in.
           // This prevents legacy demo/history data from being silently uploaded.
-          if (!l.updatedAt) {
+          if (!l.cloudSyncReady) {
             out.conflictCount++;
             out.errors.push('Local legacy record pending admin-reviewed migration: ' + store + '/' + l.id);
             continue;
@@ -126,6 +126,14 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         if (supervisor && store === 'employees') {
           if (rt !== null && (lt === null || rt > lt)) { await dbService.put(store, r.payload); out.pulledCount++; out.syncedCount++; }
           else { out.conflictCount++; out.errors.push('Supervisor employee record retained pending a safe refresh: ' + l.id); }
+          continue;
+        }
+        if (!l.cloudSyncReady) {
+          if (rt !== null && (lt === null || rt > lt)) {
+            await dbService.put(store, r.payload); out.pulledCount++; out.syncedCount++;
+          } else {
+            out.conflictCount++; out.errors.push('Local legacy record differs from cloud and needs admin review: ' + store + '/' + l.id);
+          }
           continue;
         }
         if (lt !== null && (rt === null || lt > rt)) {
