@@ -2,6 +2,7 @@ import { Factory, Employee, AttendanceRecord, FactoryInvoice, FactoryReceipt } f
 import { BillingService } from '../services/billingService';
 import { PayrollService } from '../services/payrollService';
 import { InvoicingService } from '../services/invoicingService';
+import { getMissingRequiredFactories } from '../db/indexedDb';
 
 export interface TestResult {
   id: number;
@@ -864,6 +865,48 @@ export class SystemTestSuite {
       });
     } catch (err: any) {
       results.push({ id: 20, title: 'Conflict resolution test', category: 'Security & Sync', passed: false, message: err.message });
+    }
+
+    // Test 24: Required factory initialization adds only missing defaults and preserves saved configuration.
+    try {
+      const savedEmpire: Factory = {
+        ...factoryA,
+        id: 'fac-empire-teas',
+        name: 'Empire Teas',
+        active: false,
+        overtimeEnabled: false,
+        employeeOvertimeRateHourly: 333,
+        factoryOvertimeRateHourly: 444,
+        billingMethod: 'SAME_RATE_FOR_ALL',
+        sameRate: 1710,
+        shifts: [{ id: 'custom-shift', name: 'Custom Shift', startTime: '09:00', endTime: '18:00', standardHours: 8 }],
+      };
+      const savedOtherFactory: Factory = { ...factoryC, id: 'fac-existing-client', name: 'Existing Client Factory' };
+      const existing = [savedEmpire, savedOtherFactory];
+      const before = JSON.stringify(existing);
+      const empireDefault: Factory = { ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas', sameRate: 1525 };
+      const millenniumDefault: Factory = { ...factoryB, id: 'fac-millennium-teas', name: 'Millennium Teas', maleRate: 3000, femaleRate: 2500 };
+      const missing = getMissingRequiredFactories(existing, [empireDefault, millenniumDefault]);
+      const passed = missing.length === 1
+        && missing[0].id === 'fac-millennium-teas'
+        && JSON.stringify(existing) === before
+        && savedEmpire.sameRate === 1710
+        && savedEmpire.overtimeEnabled === false
+        && savedEmpire.employeeOvertimeRateHourly === 333
+        && savedEmpire.factoryOvertimeRateHourly === 444
+        && savedEmpire.shifts[0].name === 'Custom Shift'
+        && savedOtherFactory.name === 'Existing Client Factory';
+      results.push({
+        id: 24,
+        title: 'Factory initialization preserves saved configuration and adds only missing defaults',
+        category: 'Security & Sync',
+        passed,
+        message: passed
+          ? 'Verified: saved Empire rates/settings and unrelated factory remain unchanged; only missing Millennium default is returned.'
+          : 'Factory initialization changed saved data or did not select only the missing default.',
+      });
+    } catch (err: any) {
+      results.push({ id: 24, title: 'Non-destructive factory initialization', category: 'Security & Sync', passed: false, message: err.message });
     }
 
     return results;
