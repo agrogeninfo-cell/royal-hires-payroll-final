@@ -135,6 +135,9 @@ Deno.serve(async (request: Request) => {
     if (targetError) return json({ error: 'Could not verify the access request.' }, 500);
     if (!target) return json({ error: 'Access request was not found in your company.' }, 404);
     if (targetUserId === actor.user_id) return json({ error: 'You cannot approve or reject your own account.' }, 400);
+    if (target.approval_status !== 'pending') {
+      return json({ error: 'Only pending access requests can be approved or rejected.' }, 409);
+    }
 
     if (action === 'reject') {
       const { error } = await adminClient.from('profiles').update({
