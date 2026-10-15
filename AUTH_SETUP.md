@@ -4,8 +4,7 @@ This branch adds the client-side authentication foundation and the server-side a
 
 ## Required configuration
 
-1. Copy `.env.example` to `.env.local` for local development and set `VITE_SUPABASE_URL` plus `VITE_SUPABASE_PUBLISHABLE_KEY`. These are public client settings. Never place a Supabase service-role key in a Vite variable or in the Android app.
-2. In GitHub repository Settings → Secrets and variables → Actions → Variables, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. The Android workflow injects these values during the Vite build; if they are absent, the APK will build but show the authentication configuration message.
+1. The client defaults to the authorized `royal-hires-dev` project using its public publishable key. These values are intentionally client-side and are not service-role credentials. You may override them with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local` or GitHub Actions Variables for another environment. Never put a Supabase service-role key in a Vite variable or in the Android app.
 3. In Supabase Dashboard → Authentication → Providers, enable Email and Google. Configure Google OAuth with the OAuth Client ID/Secret from Google Cloud. The Google OAuth web client must allow the Supabase callback URL shown in the provider settings.
 4. Add these URLs to Supabase Authentication → URL Configuration → Redirect URLs:
    - `lk.royalhires.payroll://auth/callback` (Android)
