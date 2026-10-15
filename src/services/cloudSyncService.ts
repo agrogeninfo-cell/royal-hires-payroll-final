@@ -1,0 +1,132 @@
+import { dbService } from '../db/indexedDb';
+import { getCurrentSession, getSupabaseClient, loadAccessProfile } from './authService';
+
+type LocalRecord = Record<string, any> & { id: string };
+type RemoteRecord = { record_id: string; factory_id: string | null; payload: LocalRecord };
+const COLLECTIONS = [
+  ['factories', 'factory_configs'], ['employees', 'employees'], ['attendance', 'attendance'],
+  ['overtime', 'overtime'], ['payroll_runs', 'payroll_runs'], ['employee_payments', 'employee_payments'],
+  ['invoices', 'invoices'], ['receipts', 'receipts'], ['boarding_locations', 'boarding_locations'],
+  ['billing_rate_history', 'billing_rate_history'], ['audit_logs', 'audit_logs'],
+] as const;
+
+const stamp = (r: LocalRecord | undefined): number | null => {
+  if (!r) return null;
+  for (const k of ['updatedAt', 'createdAt', 'timestamp', 'generatedAt']) {
+    const n = typeof r[k] === 'string' ? Date.parse(r[k]) : NaN;
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+};
+const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+const factoryId = (r: LocalRecord) => r.factoryId || r.currentFactoryId || null;
+
+export interface CloudSyncReport {
+  syncedCount: number; pushedCount: number; pulledCount: number;
+  conflictCount: number; failedCount: number; errors: string[];
+}
+
+/** Safe two-way sync: no deletes; newer timestamp wins; ambiguous edits are retained as conflicts. */
+export async function syncCloudRecords(): Promise<CloudSyncReport> {
+  const out: CloudSyncReport = { syncedCount: 0, pushedCount: 0, pulledCount: 0, conflictCount: 0, failedCount: 0, errors: [] };
+  const session = await getCurrentSession();
+  if (!session?.user?.id) { out.failedCount++; out.errors.push('Sign in before cloud sync.'); return out; }
+  const access = await loadAccessProfile(session.user.id);
+  if (!access?.user.active || access.approvalStatus !== 'approved') {
+    out.failedCount++; out.errors.push('Cloud sync requires an approved, active account.'); return out;
+  }
+  const supabase = getSupabaseClient();
+  const supervisor = access.user.role === 'supervisor';
+  const locals = await dbService.getAll<LocalRecord>('factories');
+  const cloudToLocal = new Map<string, string>();
+  const localToCloud = new Map<string, string>();
+
+  if (!supervisor) {
+    for (const f of locals) {
+      let q = await supabase.from('factories').select('id').eq('company_id', access.companyId).eq('legacy_id', f.id).maybeSingle();
+      if (q.error) { out.failedCount++; out.errors.push('Factory mapping: ' + q.error.message); continue; }
+      let id = q.data?.id as string | undefined;
+      if (!id) {
+        const ins = await supabase.from('factories').insert({ company_id: access.companyId, legacy_id: f.id, code: f.code, name: f.name, is_active: !!f.active }).select('id').single();
+        if (ins.error) { out.failedCount++; out.errors.push('Factory mapping for ' + f.name + ': ' + ins.error.message); continue; }
+        id = ins.data.id;
+      } else {
+        const upd = await supabase.from('factories').update({ code: f.code, name: f.name, is_active: !!f.active }).eq('company_id', access.companyId).eq('id', id);
+        if (upd.error) { out.failedCount++; out.errors.push('Factory metadata for ' + f.name + ': ' + upd.error.message); continue; }
+      }
+      localToCloud.set(f.id, id); cloudToLocal.set(id, f.id);
+    }
+  } else {
+    const a = await supabase.from('user_factory_assignments').select('factory_id').eq('user_id', session.user.id).eq('company_id', access.companyId);
+    if (a.error) { out.failedCount++; out.errors.push(a.error.message); return out; }
+    const ids = (a.data || []).map((v: { factory_id: string }) => v.factory_id);
+    if (ids.length) {
+      const m = await supabase.from('factories').select('id,legacy_id').eq('company_id', access.companyId).in('id', ids);
+      if (m.error) { out.failedCount++; out.errors.push(m.error.message); return out; }
+      for (const f of m.data || []) if (f.legacy_id) { cloudToLocal.set(f.id, f.legacy_id); localToCloud.set(f.legacy_id, f.id); }
+    }
+  }
+
+  const collections = supervisor ? COLLECTIONS.filter(x => x[0] === 'attendance') : COLLECTIONS;
+  for (const [store, cloudName] of collections) {
+    try {
+      const localRows = await dbService.getAll<LocalRecord>(store);
+      const remote = await supabase.from('app_records').select('record_id,factory_id,payload')
+        .eq('company_id', access.companyId).eq('collection_name', cloudName);
+      if (remote.error) throw remote.error;
+      const remoteById = new Map<string, RemoteRecord>((remote.data || []).map((r: RemoteRecord) => [r.record_id, r]));
+      const localById = new Map(localRows.map(r => [r.id, r]));
+      for (const l of localRows) {
+        const fid = factoryId(l);
+        if (supervisor && (!fid || !localToCloud.has(fid))) continue;
+        const r = remoteById.get(l.id);
+        if (!r) {
+          const cfid = fid ? localToCloud.get(fid) : null;
+          if (fid && !cfid) { out.failedCount++; out.errors.push('Missing factory mapping for ' + store + '/' + l.id); continue; }
+          const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload: l, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
+          if (put.error) throw put.error;
+          out.pushedCount++; out.syncedCount++; continue;
+        }
+        if (equal(l, r.payload)) continue;
+        const lt = stamp(l), rt = stamp(r.payload);
+        if (lt !== null && (rt === null || lt > rt)) {
+          const cfid = fid ? localToCloud.get(fid) : null;
+          const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload: l, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
+          if (put.error) throw put.error;
+          out.pushedCount++; out.syncedCount++;
+        } else if (rt !== null && (lt === null || rt > lt)) {
+          await dbService.put(store, r.payload); out.pulledCount++; out.syncedCount++;
+        } else {
+          out.conflictCount++; out.errors.push('Conflict retained: ' + store + '/' + l.id + ' has no unambiguous newer timestamp.');
+        }
+      }
+      for (const r of remoteById.values()) {
+        if (localById.has(r.record_id)) continue;
+        let payload = r.payload;
+        if (supervisor) {
+          if (!r.factory_id || !cloudToLocal.has(r.factory_id)) continue;
+          payload = { ...payload };
+          if (payload.factoryId) payload.factoryId = cloudToLocal.get(r.factory_id);
+          if (payload.currentFactoryId) payload.currentFactoryId = cloudToLocal.get(r.factory_id);
+        } else if (r.factory_id && !cloudToLocal.has(r.factory_id)) {
+          out.conflictCount++; out.errors.push('Remote ' + store + '/' + r.record_id + ' has no local factory mapping.'); continue;
+        }
+        await dbService.put(store, payload); out.pulledCount++; out.syncedCount++;
+      }
+    } catch (e: any) { out.failedCount++; out.errors.push(store + ' sync failed: ' + (e?.message || 'unknown error')); }
+  }
+
+  const queue = await dbService.getOfflineQueue();
+  const attendance = new Map((await dbService.getAll<LocalRecord>('attendance')).map(r => [r.id, r]));
+  for (const item of queue) {
+    const local = attendance.get(item.payload?.id);
+    if (!local) continue;
+    const check = await supabase.from('app_records').select('payload').eq('company_id', access.companyId)
+      .eq('collection_name', 'attendance').eq('record_id', local.id).maybeSingle();
+    if (!check.error && check.data && equal(local, check.data.payload)) {
+      await dbService.removeOfflineItem(item.id);
+      local.syncStatus = 'synced'; delete local.conflictReason; await dbService.put('attendance', local);
+    }
+  }
+  return out;
+}
