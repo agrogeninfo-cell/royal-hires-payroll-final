@@ -140,6 +140,20 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
           if (store === 'attendance' || store === 'factories') await dbService.put(store, payload);
           out.pushedCount++; out.syncedCount++; continue;
         }
+        if (store === 'factories' && l.cloudSyncReady && !l.cloudSyncConfirmed && r.payload.cloudSyncConfirmed === true) {
+          await dbService.put(store, r.payload); out.pulledCount++; out.syncedCount++;
+          continue;
+        }
+        if (store === 'attendance' && l.syncStatus !== 'synced' && r.payload.syncStatus === 'synced') {
+          const stripSyncMetadata = (record: LocalRecord) => {
+            const { syncStatus: _syncStatus, isOfflineCreated: _isOfflineCreated, ...businessFields } = record;
+            return businessFields;
+          };
+          if (equal(stripSyncMetadata(l), stripSyncMetadata(r.payload))) {
+            await dbService.put(store, r.payload); out.pulledCount++; out.syncedCount++;
+            continue;
+          }
+        }
         if (equal(l, r.payload)) continue;
         const lt = stamp(l), rt = stamp(r.payload);
         if (supervisor && store === 'employees') {
