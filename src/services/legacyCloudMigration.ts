@@ -42,7 +42,11 @@ const COLLECTION_MAP: Record<MigrationCollection, string> = {
   billing_rate_history: 'billing_rate_history',
 };
 const TARGET_NAMES = new Set(['empire teas', 'millennium teas']);
-const money = (n: unknown) => 'LKR ' + Number(n || 0).toLocaleString('en-LK');
+const money = (n: unknown) => {
+  if (n === null || n === undefined || n === '') return 'amount not stored';
+  const value = Number(n);
+  return Number.isFinite(value) ? 'LKR ' + value.toLocaleString('en-LK') : 'amount not stored';
+};
 
 async function requireAdmin() {
   const session = await getCurrentSession();
