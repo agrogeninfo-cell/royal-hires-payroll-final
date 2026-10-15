@@ -1,0 +1,136 @@
+import { App } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
+import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
+import type { User, UserRole } from '../types';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
+export const AUTH_CALLBACK_URL = 'lk.royalhires.payroll://auth/callback';
+
+let client: SupabaseClient | null = null;
+
+export function getSupabaseClient(): SupabaseClient {
+  if (!supabaseUrl || !supabasePublishableKey) {
+    throw new Error('Royal Pay authentication is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY, then rebuild the app.');
+  }
+
+  if (!client) {
+    client = createClient(supabaseUrl, supabasePublishableKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: !Capacitor.isNativePlatform(),
+        flowType: 'pkce',
+      },
+    });
+  }
+  return client;
+}
+
+export interface AccessProfile {
+  user: User;
+  companyId: string;
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+}
+
+const isUserRole = (role: unknown): role is UserRole =>
+  role === 'admin' || role === 'office_staff' || role === 'supervisor';
+
+export async function loadAccessProfile(userId: string): Promise<AccessProfile | null> {
+  const supabase = getSupabaseClient();
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('user_id, company_id, full_name, role, is_active, approval_status')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!profile || !profile.company_id || !isUserRole(profile.role)) return null;
+
+  const { data: assignments, error: assignmentError } = await supabase
+    .from('user_factory_assignments')
+    .select('factory_id')
+    .eq('user_id', userId)
+    .eq('company_id', profile.company_id);
+
+  if (assignmentError) throw assignmentError;
+
+  const approvalStatus = profile.approval_status === 'approved'
+    ? 'approved'
+    : profile.approval_status === 'rejected'
+      ? 'rejected'
+      : 'pending';
+
+  return {
+    companyId: profile.company_id,
+    approvalStatus,
+    user: {
+      id: profile.user_id,
+      name: profile.full_name || 'Royal Pay User',
+      email: '',
+      role: profile.role,
+      active: Boolean(profile.is_active) && approvalStatus === 'approved',
+      assignedFactoryIds: (assignments || []).map((item: { factory_id: string }) => item.factory_id),
+    },
+  };
+}
+
+export async function signInWithPassword(email: string, password: string): Promise<void> {
+  const { error } = await getSupabaseClient().auth.signInWithPassword({ email: email.trim(), password });
+  if (error) throw error;
+}
+
+export async function signUpWithPassword(fullName: string, email: string, password: string): Promise<void> {
+  const { error } = await getSupabaseClient().auth.signUp({
+    email: email.trim(),
+    password,
+    options: { data: { full_name: fullName.trim() } },
+  });
+  if (error) throw error;
+}
+
+export async function signInWithGoogle(): Promise<void> {
+  const native = Capacitor.isNativePlatform();
+  const redirectTo = native ? AUTH_CALLBACK_URL : `${window.location.origin}/`;
+  const { data, error } = await getSupabaseClient().auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo,
+      skipBrowserRedirect: native,
+      queryParams: { prompt: 'select_account' },
+    },
+  });
+  if (error) throw error;
+  if (native && data.url) await Browser.open({ url: data.url });
+}
+
+export async function handleNativeAuthCallback(url: string): Promise<void> {
+  if (!url.startsWith(AUTH_CALLBACK_URL)) return;
+  const { error } = await getSupabaseClient().auth.exchangeCodeForSession(url);
+  await Browser.close().catch(() => undefined);
+  if (error) throw error;
+}
+
+export async function signOut(): Promise<void> {
+  const { error } = await getSupabaseClient().auth.signOut();
+  if (error) throw error;
+}
+
+export function subscribeToAuthChanges(callback: (session: Session | null) => void) {
+  return getSupabaseClient().auth.onAuthStateChange((_event, session) => callback(session)).data.subscription;
+}
+
+export async function getCurrentSession(): Promise<Session | null> {
+  const { data, error } = await getSupabaseClient().auth.getSession();
+  if (error) throw error;
+  return data.session;
+}
+
+export async function sendAdminAccessAction<T = unknown>(body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await getSupabaseClient().functions.invoke('admin-user-access', { body });
+  if (error) throw error;
+  return data as T;
+}
