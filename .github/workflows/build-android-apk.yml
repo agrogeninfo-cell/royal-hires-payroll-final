@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main, master, fix/non-destructive-factory-init]
+    branches: [main, master, fix/non-destructive-factory-init, feat/royal-pay-approved-auth]
   pull_request:
     branches: ['**']
 
@@ -33,6 +33,8 @@ jobs:
         run: if [ -f android/gradlew ]; then echo "Android project exists; reusing it."; else echo "Incomplete Android project; regenerating in CI."; rm -rf android; npx cap add android; fi
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Configure Android OAuth deep link
+        run: node scripts/configure-android-auth-deeplink.mjs
       - name: Apply Royal Hires launcher branding
         run: bash apply-android-brand-icons.sh
       - name: Set up Java
