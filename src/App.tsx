@@ -20,6 +20,7 @@ import { QuickActionModal } from './components/QuickActionModal';
 import { InstallAppModal } from './components/InstallAppModal';
 import { Wifi, Battery } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
+import { AuthGate } from './components/AuthGate';
 
 const MainLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -202,11 +203,15 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <>
-      <AppProvider>
-        <MainLayout />
-      </AppProvider>
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
-    </>
+    <AuthGate>
+      {(authenticatedUser) => (
+        <>
+          <AppProvider authenticatedUser={authenticatedUser}>
+            <MainLayout />
+          </AppProvider>
+          {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+        </>
+      )}
+    </AuthGate>
   );
 }
