@@ -176,7 +176,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       setAuditLogs(isSupervisor ? [] : auditData.sort((a, b) => b.timestamp.localeCompare(a.timestamp)));
 
       const queue = await dbService.getOfflineQueue();
-      setPendingSyncCount(queue.filter((q) => q.status === 'pending').length);
+      const pendingQueue = queue.filter((q) => q.status === 'pending');
+      const queuedAttendanceIds = new Set(pendingQueue.map((q) => q.payload?.id).filter(Boolean));
+      const unsyncedAttendance = await dbService.getAll<AttendanceRecord>('attendance');
+      const pendingAttendanceNotQueued = unsyncedAttendance.filter((record) =>
+        record.syncStatus === 'pending' && !queuedAttendanceIds.has(record.id)
+      ).length;
+      setPendingSyncCount(pendingQueue.length + pendingAttendanceNotQueued);
     } catch (err) {
       console.error('Error loading data from IndexedDB:', err);
     }
