@@ -49,14 +49,14 @@ export const TestSuiteModal: React.FC<TestSuiteModalProps> = ({ isOpen, onClose 
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto w-full max-w-full">
       <div className="bg-white rounded-2xl max-w-4xl w-full p-4 sm:p-8 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b pb-4">
-          <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-4">
+          <div className="flex items-start sm:items-center space-x-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-slate-900">
-                System Verification Test Suite (20 Automated Tests)
+              <h3 className="font-bold text-base sm:text-lg text-slate-900">
+                System Verification Test Suite ({results.length || SystemTestSuite.runAllTests().length} Automated Tests)
               </h3>
               <p className="text-xs text-slate-500">
                 Mandatory operational assertions verifying Billing, Payroll, Invoicing, Role Isolation &amp; Sync
@@ -64,11 +64,11 @@ export const TestSuiteModal: React.FC<TestSuiteModalProps> = ({ isOpen, onClose 
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between sm:justify-end flex-wrap gap-2 w-full sm:w-auto">
             <button
               onClick={runTests}
               disabled={isRunning}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-xs flex items-center space-x-1.5 transition cursor-pointer disabled:opacity-50"
+              className="px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-xs flex items-center space-x-1.5 transition cursor-pointer disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRunning ? 'animate-spin' : ''}`} />
               <span>Re-run All Tests</span>
@@ -86,7 +86,7 @@ export const TestSuiteModal: React.FC<TestSuiteModalProps> = ({ isOpen, onClose 
         <div className="grid grid-cols-3 gap-4">
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
             <span className="text-xs text-slate-500 block uppercase font-medium">Total Test Cases</span>
-            <span className="text-2xl font-bold text-slate-900 mt-1">{results.length} / 20</span>
+            <span className="text-2xl font-bold text-slate-900 mt-1">{results.length}</span>
           </div>
           <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
             <span className="text-xs text-emerald-700 block uppercase font-medium">Passing Assertions</span>
@@ -110,7 +110,7 @@ export const TestSuiteModal: React.FC<TestSuiteModalProps> = ({ isOpen, onClose 
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {cat === 'all' ? 'All 20 Tests' : cat}
+              {cat === 'all' ? `All ${results.length} Tests` : cat}
             </button>
           ))}
         </div>
