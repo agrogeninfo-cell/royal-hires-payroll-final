@@ -137,7 +137,7 @@ export async function previewLegacyCloudMigration(): Promise<LegacyMigrationPrev
 export async function migrateSelectedLegacyRecords(
   selected: Partial<Record<MigrationCollection, string[]>>
 ): Promise<LegacyMigrationResult> {
-  const { access } = await requireAdmin();
+  await requireAdmin();
   const preview = await previewLegacyCloudMigration();
   const candidateKeys = new Set(preview.candidates.map(item => item.collection + ':' + item.id));
   const selectedPairs = Object.entries(selected).flatMap(([collection, ids]) =>
