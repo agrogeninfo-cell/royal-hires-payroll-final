@@ -132,10 +132,12 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
             else { out.conflictCount++; out.errors.push('Local ' + store + '/' + l.id + ' is not assigned to an approved cloud factory; preserved locally.'); }
             continue;
           }
-          const payload = store === 'attendance' ? { ...l, syncStatus: 'synced', isOfflineCreated: false } : l;
+          const payload = store === 'attendance'
+            ? { ...l, syncStatus: 'synced', isOfflineCreated: false }
+            : store === 'factories' ? { ...l, cloudSyncConfirmed: true } : l;
           const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
           if (put.error) throw put.error;
-          if (store === 'attendance') await dbService.put(store, payload);
+          if (store === 'attendance' || store === 'factories') await dbService.put(store, payload);
           out.pushedCount++; out.syncedCount++; continue;
         }
         if (equal(l, r.payload)) continue;
@@ -157,10 +159,12 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         if (lt !== null && (rt === null || lt > rt)) {
           const cfid = fid ? localToCloud.get(fid) : null;
           if (fid && !cfid) { out.failedCount++; out.errors.push('Cloud update blocked: no authorized factory mapping for ' + store + '/' + l.id + '.'); continue; }
-          const payload = store === 'attendance' ? { ...l, syncStatus: 'synced', isOfflineCreated: false } : l;
+          const payload = store === 'attendance'
+            ? { ...l, syncStatus: 'synced', isOfflineCreated: false }
+            : store === 'factories' ? { ...l, cloudSyncConfirmed: true } : l;
           const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
           if (put.error) throw put.error;
-          if (store === 'attendance') await dbService.put(store, payload);
+          if (store === 'attendance' || store === 'factories') await dbService.put(store, payload);
           out.pushedCount++; out.syncedCount++;
         } else if (rt !== null && (lt === null || rt > lt)) {
           await dbService.put(store, r.payload); out.pulledCount++; out.syncedCount++;
