@@ -28,6 +28,7 @@ import {
 import { TabType } from './NavigationTabs';
 import { getProfilePhoto, subscribeToPhotoUpdates } from '../utils/profilePhotoHelper';
 import { RoyalHoverCard } from './RoyalHoverCard';
+import { ContainerTextFlip } from './ui/container-text-flip';
 
 interface DashboardViewProps {
   setActiveTab: (tab: TabType) => void;
@@ -144,7 +145,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="rh-welcome-copy">
           <span className="rh-eyebrow"><span className="rh-live-dot" /> WORKFORCE OVERVIEW</span>
           <h1>{greeting}, {currentUser.name.split(' ')[0]} <span className="rh-wave">✦</span></h1>
-          <p>Here’s what’s happening across your workforce today.</p>
+          <p className="rh-dashboard-tagline">
+            Workforce management, made{' '}
+            <ContainerTextFlip
+              words={['simpler', 'clearer', 'more organised', 'more efficient']}
+              className="rh-dashboard-flip"
+              interval={2600}
+            />
+          </p>
           <div className="rh-date-line"><CalendarCheck size={14} /> {formattedDate}</div>
         </div>
         <div className="rh-welcome-actions">
