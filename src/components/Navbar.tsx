@@ -13,6 +13,7 @@ import {
   WifiOff,
   UserRound,
   PlayCircle,
+  LogOut,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -24,6 +25,8 @@ interface NavbarProps {
   onOpenProfile?: () => void;
   activeTab?: string;
   onBackToDashboard?: () => void;
+  onManageAccess?: () => void;
+  onSignOut?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -34,11 +37,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenProfile,
   activeTab,
   onBackToDashboard,
+  onManageAccess,
+  onSignOut,
 }) => {
   const {
     currentUser,
-    allUsers,
-    setCurrentUser,
     isOnline,
     toggleOnlineStatus,
     pendingSyncCount,
@@ -85,6 +88,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           {onOpenInstall && (
             <button className="rh-topbar-icon" onClick={onOpenInstall} title="App installation help"><Download size={17} /></button>
           )}
+          {currentUser.role === 'admin' && onManageAccess && (
+            <button className="rh-topbar-icon" onClick={onManageAccess} title="Manage user access" aria-label="Manage user access"><ShieldCheck size={17} /></button>
+          )}
           <button className="rh-topbar-icon rh-notification-button" onClick={onQuickAction} title={`${pendingOtCount} pending overtime approvals`} aria-label="Open notifications and quick actions">
             <Bell size={17} />
             {pendingOtCount > 0 && <span className="rh-notification-dot">{pendingOtCount > 9 ? '9+' : pendingOtCount}</span>}
@@ -95,17 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="rh-current-user-copy"><strong>{currentUser.name.split(' ')[0]}</strong><small>{roleName}</small></span>
             </button>
           )}
-          <select
-            className="rh-role-select"
-            aria-label="Switch demo user role"
-            value={currentUser.id}
-            onChange={(event) => {
-              const selected = allUsers.find((user) => user.id === event.target.value);
-              if (selected) setCurrentUser(selected);
-            }}
-          >
-            {allUsers.map((user) => <option key={user.id} value={user.id}>{user.role === 'admin' ? 'Admin' : user.role === 'office_staff' ? 'Office' : 'Supervisor'}</option>)}
-          </select>
+          {onSignOut && <button className="rh-topbar-icon" onClick={onSignOut} title="Sign out" aria-label="Sign out"><LogOut size={17} /></button>}
           <button className="rh-frame-toggle" onClick={() => setMobileFrameMode(!mobileFrameMode)} title="Toggle mobile preview frame">
             {mobileFrameMode ? <Smartphone size={15} /> : <Monitor size={15} />}
             <span>{mobileFrameMode ? 'Phone preview' : 'Preview'}</span>

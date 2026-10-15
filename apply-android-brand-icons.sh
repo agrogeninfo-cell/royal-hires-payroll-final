@@ -63,6 +63,31 @@ else
   sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"|' "$MANIFEST"
 fi
 
+# Add the custom-scheme callback used by Supabase PKCE OAuth on Android.
+# Keep the existing launcher intent filter and make this patch idempotent.
+if ! grep -q 'android:scheme="lk.royalhires.payroll"' "$MANIFEST"; then
+  python3 - "$MANIFEST" <<'PY'
+import sys
+from pathlib import Path
+
+manifest = Path(sys.argv[1])
+source = manifest.read_text()
+activity_close = "        </activity>"
+intent_filter = """            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="lk.royalhires.payroll" android:host="auth" android:path="/callback" />
+            </intent-filter>
+"""
+if 'android:scheme="lk.royalhires.payroll"' not in source:
+    if activity_close not in source:
+        raise SystemExit("ERROR: Could not locate MainActivity closing tag for OAuth callback.")
+    source = source.replace(activity_close, intent_filter + activity_close, 1)
+    manifest.write_text(source)
+PY
+fi
+
 for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
   test -s "$RES/mipmap-$density/ic_launcher.png"
   test -s "$RES/mipmap-$density/ic_launcher_round.png"
@@ -70,6 +95,7 @@ for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
 done
 grep -q 'android:icon="@mipmap/ic_launcher"' "$MANIFEST"
 grep -q 'android:roundIcon="@mipmap/ic_launcher_round"' "$MANIFEST"
+grep -q 'android:scheme="lk.royalhires.payroll"' "$MANIFEST"
 test -s "$RES/mipmap-anydpi-v26/ic_launcher.xml"
 test -s "$RES/mipmap-anydpi-v26/ic_launcher_round.xml"
 if [ -f "$BACKGROUND_XML" ]; then
