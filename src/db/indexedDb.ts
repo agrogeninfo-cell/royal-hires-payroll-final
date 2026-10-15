@@ -234,71 +234,15 @@ export class DatabaseService {
     ];
     const existing = await this.getAll<Factory>('factories');
     for (const base of defaults) {
-      const saved = existing.find((item) => item.id === base.id || item.name.trim().toLowerCase() === base.name.toLowerCase());
-      if (!saved) { await this.put('factories', base); continue; }
-      const isEmpire = base.id === 'fac-empire-teas';
-      const configured: Factory = {
-        ...base, ...saved,
-        id: saved.id, name: base.name, code: saved.code || base.code,
-        active: true, shifts: saved.shifts?.length ? saved.shifts : base.shifts,
-        overtimeEnabled: true,
-        employeeOvertimeRateHourly: saved.employeeOvertimeRateHourly > 0 ? saved.employeeOvertimeRateHourly : 225,
-        factoryOvertimeRateHourly: saved.factoryOvertimeRateHourly > 0 ? saved.factoryOvertimeRateHourly : 225,
-        billingMethod: isEmpire ? 'SAME_RATE_FOR_ALL' : 'SEPARATE_MALE_FEMALE_RATES',
-        sameRate: isEmpire ? 1525 : undefined,
-        maleRate: isEmpire ? undefined : 3000,
-        femaleRate: isEmpire ? undefined : 2500,
-        specialBillingDates: saved.specialBillingDates || [],
-        nightMaleRate: saved.nightMaleRate,
-        nightFemaleRate: saved.nightFemaleRate,
-        updatedAt: now,
-      };
-      await this.put('factories', configured);
-    }
-
-    // One-time cleanup of old seeded factories and known demo-only records.
-    // Payroll runs, invoices, receipts and existing audit history are intentionally preserved.
-    const migrationId = 'MIGRATION-2026-10-15-FACTORY-DEMO-CLEANUP-V2';
-    if (await this.getById('audit_logs', migrationId)) return;
-    // Snapshot the pre-migration database before removing factory/demo records.
-    await this.triggerMirrorBackup();
-    const allowedIds = new Set(['fac-empire-teas', 'fac-millennium-teas']);
-    const allowedNames = new Set(['empire teas', 'millennium teas']);
-    for (const factory of await this.getAll<Factory>('factories')) {
-      if (!allowedIds.has(factory.id) && !allowedNames.has(factory.name.trim().toLowerCase())) {
-        await this.delete('factories', factory.id);
+      const saved = existing.find(
+        (item) => item.id === base.id || item.name.trim().toLowerCase() === base.name.toLowerCase()
+      );
+      // Add only missing required factories. Existing configuration may contain
+      // administrator-approved rates and must never be overwritten during startup.
+      if (!saved) {
+        await this.put('factories', base);
       }
     }
-    const adminUser = await this.getById<User>('users', 'usr-admin');
-    if (adminUser) {
-      await this.put('users', { ...adminUser, name: 'Royal Hires Admin', email: 'royalhiresinfo@gmail.com', phone: undefined, role: 'admin', active: true, assignedFactoryIds: undefined });
-    }
-    for (const userId of ['usr-office', 'usr-sup-kelani', 'usr-sup-biyagama']) {
-      await this.delete('users', userId);
-    }
-    const demoEmployeeIds = new Set(['EMP-101', 'EMP-102', 'EMP-103', 'EMP-104']);
-    for (const employee of await this.getAll<Employee>('employees')) {
-      if (demoEmployeeIds.has(employee.id)) await this.delete('employees', employee.id);
-    }
-    for (const record of await this.getAll<AttendanceRecord>('attendance')) {
-      if (demoEmployeeIds.has(record.employeeId)) await this.delete('attendance', record.id);
-    }
-    for (const payment of await this.getAll<EmployeePayment>('employee_payments')) {
-      if (payment.id === 'ADV-101' || demoEmployeeIds.has(payment.employeeId)) await this.delete('employee_payments', payment.id);
-    }
-    for (const rate of await this.getAll<FactoryBillingRateHistory>('billing_rate_history')) {
-      if (['brh-1', 'brh-2', 'brh-3'].includes(rate.id)) await this.delete('billing_rate_history', rate.id);
-    }
-    for (const location of await this.getAll<BoardingLocation>('boarding_locations')) {
-      if (['board-01', 'board-02'].includes(location.id)) await this.delete('boarding_locations', location.id);
-    }
-    await this.put('audit_logs', {
-      id: migrationId, timestamp: now, actor: 'System Migration', actorRole: 'admin',
-      action: 'CLEAN_DEMO_FACTORY_SEED', entityType: 'Factory', entityId: migrationId,
-      details: 'Removed demo factories and known demo-only records; preserved payroll runs, invoices, receipts and audit history.',
-    } as AuditLog);
-    // Refresh the mirror so a later recovery cannot restore the removed demo seed.
-    await this.triggerMirrorBackup();
   }
 
   // Fresh installations do not get fabricated demo employees or attendance.
