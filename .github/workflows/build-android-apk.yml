@@ -3,9 +3,9 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main, master]
+    branches: [main, master, fix/non-destructive-factory-init]
   pull_request:
-    branches: [main, master]
+    branches: ['**']
 
 permissions:
   contents: read
