@@ -51,6 +51,8 @@ export interface Factory {
   specialBillingDates?: string[];
   createdAt: string;
   updatedAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export type WageArrangement = 'daily' | 'weekly' | 'monthly';
@@ -75,6 +77,8 @@ export interface Employee {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface EmployeeAssignmentHistory {
@@ -101,6 +105,8 @@ export interface FactoryBillingRateHistory {
   active: boolean;
   createdBy: string;
   createdAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface BoardingLocation {
@@ -110,6 +116,8 @@ export interface BoardingLocation {
   contactPhone: string;
   dailyRate: number; // LKR per day
   active: boolean;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export type AttendanceStatus = 'present' | 'absent' | 'leave' | 'half_day';
@@ -149,6 +157,8 @@ export interface AttendanceRecord {
   conflictReason?: string;
   createdAt: string;
   updatedAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface OvertimeSubmission {
@@ -169,6 +179,8 @@ export interface OvertimeSubmission {
   approvedBy?: string;
   approvedAt?: string;
   notes?: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface PayrollItem {
@@ -222,6 +234,8 @@ export interface PayrollRun {
   totalBalance: number;
   items: PayrollItem[];
   notes?: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export type PaymentType = 'advance' | 'salary_payment' | 'partial_payment';
@@ -240,6 +254,8 @@ export interface EmployeePayment {
   notes?: string;
   recordedBy: string;
   createdAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface InvoiceLineItem {
@@ -280,6 +296,8 @@ export interface FactoryInvoice {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface ReceiptAllocation {
@@ -306,6 +324,8 @@ export interface FactoryReceipt {
   allocations: ReceiptAllocation[];
   recordedBy: string;
   createdAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface AuditLog {
@@ -319,6 +339,8 @@ export interface AuditLog {
   details: string;
   beforeValues?: any;
   afterValues?: any;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface OfflineQueueItem {
