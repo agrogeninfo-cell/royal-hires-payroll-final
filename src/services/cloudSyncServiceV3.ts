@@ -142,7 +142,8 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
           continue;
         }
         if (!l.cloudSyncReady) {
-          if (rt !== null && (lt === null || rt > lt)) {
+          // Factory configuration is centrally authoritative unless an Admin explicitly saved a local edit.
+          if (store === 'factories' || (rt !== null && (lt === null || rt > lt))) {
             await dbService.put(store, r.payload); out.pulledCount++; out.syncedCount++;
           } else {
             out.conflictCount++; out.errors.push('Local legacy record differs from cloud and needs admin review: ' + store + '/' + l.id);
