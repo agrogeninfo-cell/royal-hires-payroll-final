@@ -100,7 +100,6 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
   }
 
   if (!user || accessState !== 'approved' || !user.active) {
-    if (!getSupabaseClient) return <AuthScreen />;
     if (!user && !accessState) return <AuthScreen />;
     const rejected = accessState === 'rejected';
     const title = rejected ? 'Access request declined' : accessState === 'unlinked' ? 'Account setup required' : 'Waiting for administrator approval';
