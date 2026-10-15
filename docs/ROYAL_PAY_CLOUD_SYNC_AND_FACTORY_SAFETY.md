@@ -43,3 +43,16 @@ Public company profile sources (identity/profile only, not payroll rules):
 - Test two devices, offline attendance, retry after network restoration, duplicate attendance conflicts, concurrent edits, and RLS rejection for unassigned factories.
 - Compare Empire and Millennium rates against owner-approved rate sheets before enabling live billing.
 - Build CI proves compilation only; physical Android testing is still required.
+
+
+## Online synchronization behavior (implementation notes)
+- Supabase is the shared cloud data layer; IndexedDB remains a device cache and supports recovery/offline attendance.
+- Live updates are enabled for `public.app_records` and `public.factories` through the `supabase_realtime` publication. RLS remains the authorization boundary.
+- New or explicitly edited local records receive `cloudSyncReady=true`; sync does not automatically upload legacy local records merely because a user signs in.
+- Legacy records are migrated only through the Admin Backup Hub, after downloading a full backup and selecting each candidate record for the two approved factories. No local record is deleted by migration.
+- Legacy factory rate configurations and old audit logs are excluded from bulk migration. An Admin must review and explicitly save each factory configuration before it is synchronized. Do not activate live billing from the hardcoded defaults without approved rate sheets.
+- Existing records with an ambiguous cloud/local version remain conflicts. A cloud update is not claimed when Supabase rejects a write.
+
+## Backup completeness
+- Full JSON backup/restore includes overtime submissions and pending offline queue items in addition to the existing payroll, attendance, payment, invoice, receipt and audit data.
+- Keep a downloaded backup before migrating legacy records. The local mirror is a recovery aid, not a replacement for an exported backup.
