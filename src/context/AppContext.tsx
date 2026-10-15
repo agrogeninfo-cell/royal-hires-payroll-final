@@ -301,7 +301,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
         await dbService.put('attendance', record);
         await dbService.enqueueOffline('CREATE_ATTENDANCE', record);
       } else {
-        record.syncStatus = 'synced';
+        record.syncStatus = 'pending';
         await dbService.put('attendance', record);
       }
     }
