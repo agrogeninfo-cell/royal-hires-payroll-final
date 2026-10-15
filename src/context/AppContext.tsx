@@ -16,6 +16,7 @@ import {
 } from '../types';
 import { dbService } from '../db/indexedDb';
 import { SyncService } from '../services/syncService';
+import { getCurrentSession, getSupabaseClient, loadAccessProfile } from '../services/authService';
 import { translations } from '../i18n/translations';
 
 interface AppContextType {
@@ -94,7 +95,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      void syncOfflineQueue();
+      void syncOfflineQueue().catch((error) => console.error('Cloud sync after reconnect failed:', error));
     };
     const handleOffline = () => {
       setIsOnline(false);
@@ -155,7 +156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
 
   useEffect(() => {
     void reloadData().then(() => {
-      if (navigator.onLine) void syncOfflineQueue();
+      if (navigator.onLine) void syncOfflineQueue().catch((error) => console.error('Initial cloud sync failed:', error));
     });
   }, []);
 
@@ -163,7 +164,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     const nextState = !isOnline;
     setIsOnline(nextState);
     if (nextState) {
-      void syncOfflineQueue();
+      void syncOfflineQueue().catch((error) => console.error('Cloud sync failed:', error));
     }
   };
 
@@ -175,16 +176,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       if (report.conflictCount > 0 || report.failedCount > 0) {
         console.warn('Cloud sync needs attention:', report.errors);
       }
+      if (report.failedCount > 0) {
+        throw new Error('Some records were not confirmed in cloud storage. Local data is preserved. ' + report.errors.slice(0, 3).join(' '));
+      }
     } catch (err) {
       console.error('Cloud sync failed:', err);
+      throw err;
     }
   };
+
+  // Keep open sessions updated when another approved user changes cloud records.
+  useEffect(() => {
+    let active = true;
+    let channel: ReturnType<ReturnType<typeof getSupabaseClient>['channel']> | undefined;
+    void (async () => {
+      try {
+        const session = await getCurrentSession();
+        if (!active || !session?.user?.id) return;
+        const access = await loadAccessProfile(session.user.id);
+        if (!active || !access || access.approvalStatus !== 'approved' || !access.user.active) return;
+        channel = getSupabaseClient()
+          .channel('royal-pay-company-' + access.companyId)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'app_records', filter: 'company_id=eq.' + access.companyId }, () => {
+            void syncOfflineQueue().catch((error) => console.error('Realtime cloud refresh failed:', error));
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'factories', filter: 'company_id=eq.' + access.companyId }, () => {
+            void syncOfflineQueue().catch((error) => console.error('Realtime factory refresh failed:', error));
+          })
+          .subscribe();
+      } catch (error) {
+        console.error('Could not start cloud realtime subscription:', error);
+      }
+    })();
+    return () => {
+      active = false;
+      if (channel) void getSupabaseClient().removeChannel(channel);
+    };
+  }, [currentUser.id]);
 
   // Factory Operations
   const saveFactory = async (factory: Factory) => {
     if (currentUser.role !== 'admin') {
       throw new Error('Unauthorized: Only Administrators can create or update factory configurations.');
     }
+    factory.updatedAt = new Date().toISOString();
     await dbService.put('factories', factory);
     await dbService.logAudit(
       currentUser.name,
@@ -205,6 +240,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     }
     // Hard enforce Helper designation
     employee.designation = 'Helper';
+    employee.updatedAt = new Date().toISOString();
 
     await dbService.put('employees', employee);
     await dbService.logAudit(
@@ -224,6 +260,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     if (currentUser.role === 'supervisor' && !(currentUser.assignedFactoryIds || []).includes(record.factoryId)) {
       throw new Error('Unauthorized: this supervisor is not assigned to the selected factory.');
     }
+    record.updatedAt = new Date().toISOString();
     if (!isOnline) {
       // Save locally to offline queue
       record.syncStatus = 'pending';
@@ -235,7 +272,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     }
 
     // Online save
-    record.syncStatus = 'synced';
+    record.syncStatus = 'pending';
     await dbService.put('attendance', record);
     await dbService.logAudit(
       currentUser.name,
@@ -257,6 +294,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       }
     }
     for (const record of records) {
+      record.updatedAt = new Date().toISOString();
       if (!isOnline) {
         record.syncStatus = 'pending';
         record.isOfflineCreated = true;
@@ -313,6 +351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot access or process payroll.');
     }
+    run.updatedAt = new Date().toISOString();
     await dbService.put('payroll_runs', run);
     await dbService.logAudit(
       currentUser.name,
@@ -330,6 +369,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot record payments or advances.');
     }
+    payment.updatedAt = new Date().toISOString();
     await dbService.put('employee_payments', payment);
     await dbService.logAudit(
       currentUser.name,
@@ -348,6 +388,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot manage factory invoices.');
     }
+    invoice.updatedAt = new Date().toISOString();
     await dbService.put('invoices', invoice);
     await dbService.logAudit(
       currentUser.name,
@@ -366,6 +407,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot record factory receipts.');
     }
+    receipt.updatedAt = new Date().toISOString();
     await dbService.put('receipts', receipt);
     await dbService.logAudit(
       currentUser.name,
@@ -385,6 +427,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     if (currentUser.role !== 'admin') {
       throw new Error('Unauthorized: Only Administrators can configure boarding locations.');
     }
+    location.updatedAt = new Date().toISOString();
     await dbService.put('boarding_locations', location);
     await dbService.logAudit(
       currentUser.name,
