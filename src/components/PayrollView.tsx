@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   DollarSign,
   Download,
+  Printer as PrinterIcon,
   AlertCircle,
   CreditCard,
   Building2,
@@ -373,7 +374,7 @@ export const PayrollView: React.FC = () => {
             {previewRun && (
               <>
               <button onClick={() => void printPayslips(previewRun.items)} className="px-3 py-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg border border-emerald-200 flex items-center space-x-1 transition cursor-pointer">
-                <Download className="w-3.5 h-3.5" /><span>Print / Save All PDFs</span>
+                <PrinterIcon className="w-3.5 h-3.5" /><span>Print / Save All PDFs</span>
               </button>
               <button
                 onClick={() => void exportPayrollCsv()}
