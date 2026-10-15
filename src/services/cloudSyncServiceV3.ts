@@ -85,7 +85,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         const ins = await supabase.from('factories').insert({ company_id: access.companyId, legacy_id: f.id, code: f.code, name: f.name, is_active: !!f.active }).select('id').single();
         if (ins.error) { out.failedCount++; out.errors.push('Factory mapping for ' + f.name + ': ' + ins.error.message); continue; }
         id = ins.data.id;
-      } else if (f.cloudSyncReady && (q.data.code !== f.code || q.data.name !== f.name || q.data.is_active !== !!f.active)) {
+      } else if (f.cloudSyncReady && (q.data?.code !== f.code || q.data?.name !== f.name || q.data?.is_active !== !!f.active)) {
         const upd = await supabase.from('factories').update({ code: f.code, name: f.name, is_active: !!f.active }).eq('company_id', access.companyId).eq('id', id);
         if (upd.error) { out.failedCount++; out.errors.push('Factory metadata for ' + f.name + ': ' + upd.error.message); continue; }
       }
