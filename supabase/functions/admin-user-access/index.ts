@@ -97,7 +97,8 @@ Deno.serve(async (request: Request) => {
     if (factoryValidation) return json({ error: factoryValidation }, 400);
 
     const { data: invited, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-      data: { full_name: fullName },
+      data: { full_name: fullName, must_set_password: true },
+      redirectTo: Deno.env.get('AUTH_INVITE_REDIRECT_URL') || 'lk.royalhires.payroll://auth/callback',
     });
     if (inviteError || !invited.user) {
       return json({ error: inviteError?.message || 'Invitation could not be created.' }, 400);
