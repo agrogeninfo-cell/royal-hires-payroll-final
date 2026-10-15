@@ -105,6 +105,7 @@ export interface FactoryBillingRateHistory {
   active: boolean;
   createdBy: string;
   createdAt: string;
+  updatedAt?: string;
   /** True only after an explicit local create/edit approved for cloud synchronization. */
   cloudSyncReady?: boolean;
 }
@@ -116,6 +117,7 @@ export interface BoardingLocation {
   contactPhone: string;
   dailyRate: number; // LKR per day
   active: boolean;
+  updatedAt?: string;
   /** True only after an explicit local create/edit approved for cloud synchronization. */
   cloudSyncReady?: boolean;
 }
@@ -179,6 +181,7 @@ export interface OvertimeSubmission {
   approvedBy?: string;
   approvedAt?: string;
   notes?: string;
+  updatedAt?: string;
   /** True only after an explicit local create/edit approved for cloud synchronization. */
   cloudSyncReady?: boolean;
 }
@@ -234,6 +237,7 @@ export interface PayrollRun {
   totalBalance: number;
   items: PayrollItem[];
   notes?: string;
+  updatedAt?: string;
   /** True only after an explicit local create/edit approved for cloud synchronization. */
   cloudSyncReady?: boolean;
 }
@@ -254,6 +258,7 @@ export interface EmployeePayment {
   notes?: string;
   recordedBy: string;
   createdAt: string;
+  updatedAt?: string;
   /** True only after an explicit local create/edit approved for cloud synchronization. */
   cloudSyncReady?: boolean;
 }
@@ -324,6 +329,7 @@ export interface FactoryReceipt {
   allocations: ReceiptAllocation[];
   recordedBy: string;
   createdAt: string;
+  updatedAt?: string;
   /** True only after an explicit local create/edit approved for cloud synchronization. */
   cloudSyncReady?: boolean;
 }
@@ -339,6 +345,7 @@ export interface AuditLog {
   details: string;
   beforeValues?: any;
   afterValues?: any;
+  updatedAt?: string;
   /** True only after an explicit local create/edit approved for cloud synchronization. */
   cloudSyncReady?: boolean;
 }
