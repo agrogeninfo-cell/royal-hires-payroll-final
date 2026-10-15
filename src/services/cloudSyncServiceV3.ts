@@ -62,7 +62,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
       // Only the two approved target factories may bootstrap from legacy local data.
       // Other factory rows require a fresh, explicit admin edit (updatedAt) before cloud creation.
       if (!isRequiredFactory && !f.updatedAt) continue;
-      let q = await supabase.from('factories').select('id').eq('company_id', access.companyId).eq('legacy_id', f.id).maybeSingle();
+      let q = await supabase.from('factories').select('id,code,name,is_active').eq('company_id', access.companyId).eq('legacy_id', f.id).maybeSingle();
       if (q.error) { out.failedCount++; out.errors.push('Factory mapping: ' + q.error.message); continue; }
       if (access.user.role !== 'admin') {
         if (q.data?.id) { localToCloud.set(f.id, q.data.id); cloudToLocal.set(q.data.id, f.id); }
@@ -73,7 +73,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         const ins = await supabase.from('factories').insert({ company_id: access.companyId, legacy_id: f.id, code: f.code, name: f.name, is_active: !!f.active }).select('id').single();
         if (ins.error) { out.failedCount++; out.errors.push('Factory mapping for ' + f.name + ': ' + ins.error.message); continue; }
         id = ins.data.id;
-      } else {
+      } else if (q.data.code !== f.code || q.data.name !== f.name || q.data.is_active !== !!f.active) {
         const upd = await supabase.from('factories').update({ code: f.code, name: f.name, is_active: !!f.active }).eq('company_id', access.companyId).eq('id', id);
         if (upd.error) { out.failedCount++; out.errors.push('Factory metadata for ' + f.name + ': ' + upd.error.message); continue; }
       }
@@ -101,7 +101,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
       const remoteById = new Map<string, RemoteRecord>((remote.data || []).map((r: RemoteRecord) => [r.record_id, r]));
       const localById = new Map(localRows.map(r => [r.id, r]));
       for (const l of localRows) {
-        const fid = factoryId(l);
+        const fid = store === 'factories' ? l.id : factoryId(l);
         if (supervisor && (!fid || !localToCloud.has(fid))) continue;
         const r = remoteById.get(l.id);
         if (!r) {
@@ -114,7 +114,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
             continue;
           }
           const cfid = fid ? localToCloud.get(fid) : null;
-          if (fid && !cfid) { out.failedCount++; out.errors.push('Missing factory mapping for ' + store + '/' + l.id); continue; }
+          if (fid && !cfid) { out.conflictCount++; out.errors.push('Local ' + store + '/' + l.id + ' is not assigned to an approved cloud factory; preserved locally.'); continue; }
           const payload = store === 'attendance' ? { ...l, syncStatus: 'synced', isOfflineCreated: false } : l;
           const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
           if (put.error) throw put.error;
