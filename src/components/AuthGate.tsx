@@ -49,6 +49,7 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [recoveryMode, setRecoveryMode] = useState(false);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [formError, setFormError] = useState('');
@@ -126,7 +127,7 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
     };
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true);
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
       // Defer database work until Supabase finishes its auth event callback.
       void Promise.resolve().then(() => resolveSession(session));
     });
@@ -243,7 +244,7 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
 
   const isPending = gate.status === 'pending';
   const isError = gate.status === 'error' || gate.status === 'blocked';
-  const showRecovery = recoveryMode || (gate.status === 'signed_out' && notice.startsWith('If this email'));
+  const showRecovery = recoveryMode || passwordRecovery;
 
   return (
     <main className="min-h-screen bg-[#071B14] px-4 py-8 text-slate-100 flex items-center justify-center">
@@ -279,11 +280,11 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
               {notice && <div role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</div>}
 
               {showRecovery ? (
-                <form onSubmit={recoveryMode ? handlePasswordUpdate : handlePasswordReset} className="mt-5 space-y-4">
-                  {!recoveryMode && <label className="block text-sm font-medium">Email address<input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100" /></label>}
-                  {recoveryMode && <label className="block text-sm font-medium">New password<input type="password" required minLength={12} autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100" /></label>}
-                  <button disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white disabled:opacity-60">{busy ? 'Please wait…' : recoveryMode ? 'Update password' : 'Send reset link'} <ArrowRight size={17} /></button>
-                  <button type="button" onClick={() => { setRecoveryMode(false); setNotice(''); setFormError(''); }} className="w-full py-2 text-sm font-medium text-emerald-900">Back to sign in</button>
+                <form onSubmit={passwordRecovery ? handlePasswordUpdate : handlePasswordReset} className="mt-5 space-y-4">
+                  {!passwordRecovery && <label className="block text-sm font-medium">Email address<input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100" /></label>}
+                  {passwordRecovery && <label className="block text-sm font-medium">New password<input type="password" required minLength={12} autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100" /></label>}
+                  <button disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-900 px-4 py-3 font-semibold text-white disabled:opacity-60">{busy ? 'Please wait…' : passwordRecovery ? 'Update password' : 'Send reset link'} <ArrowRight size={17} /></button>
+                  <button type="button" onClick={() => { setRecoveryMode(false); setPasswordRecovery(false); setNotice(''); setFormError(''); }} className="w-full py-2 text-sm font-medium text-emerald-900">Back to sign in</button>
                 </form>
               ) : (
                 <>
