@@ -151,8 +151,10 @@ body { color: var(--rp-ink); }
 /* Touch-first dashboard card feedback. Hover-only transforms are not reliable
    on Android, so cards also animate on initial entry and while pressed. */
 @keyframes rp-dashboard-card-enter {
-  from { opacity: 0; transform: translateY(9px) scale(.992); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  /* Animate the individual translate property so the filled entrance animation
+     does not override :hover/:active transforms on the card itself. */
+  from { opacity: 0; translate: 0 9px; }
+  to { opacity: 1; translate: 0 0; }
 }
 .rh-hover-card {
   -webkit-appearance: none;
