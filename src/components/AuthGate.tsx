@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { App } from '@capacitor/app';
 import type { User } from '../types';
 import { AuthScreen } from './AuthScreen';
+import { SetPasswordScreen } from './SetPasswordScreen';
 import { getCurrentSession, getSupabaseClient, handleNativeAuthCallback, isSupabaseConfigured, loadAccessProfile, signOut } from '../services/authService';
 
 interface AuthGateProps {
@@ -13,6 +14,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessState, setAccessState] = useState<'approved' | 'pending' | 'rejected' | 'unlinked' | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [requiresPasswordSetup, setRequiresPasswordSetup] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -21,16 +23,18 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     }
 
     let mounted = true;
-    const refresh = async (userId: string, email: string) => {
+    const refresh = async (userId: string, email: string, mustSetPassword: boolean) => {
       try {
         const access = await loadAccessProfile(userId);
         if (!mounted) return;
         if (!access) {
           setUser(null);
           setAccessState('unlinked');
+          setRequiresPasswordSetup(false);
         } else {
           setUser({ ...access.user, email });
           setAccessState(access.approvalStatus);
+          setRequiresPasswordSetup(mustSetPassword);
         }
         setErrorMessage('');
       } catch (error) {
@@ -43,7 +47,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     void getCurrentSession()
       .then((session) => {
         if (!mounted) return;
-        if (session?.user) void refresh(session.user.id, session.user.email || '');
+        if (session?.user) void refresh(session.user.id, session.user.email || '', session.user.user_metadata?.must_set_password === true);
         else setLoading(false);
       })
       .catch((error) => {
@@ -62,6 +66,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
         if (session?.user) void refresh(session.user.id, session.user.email || '');
         else {
           setLoading(false);
+          setRequiresPasswordSetup(false);
           setErrorMessage('');
         }
       }, 0);
@@ -89,6 +94,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     await signOut();
     setUser(null);
     setAccessState(null);
+    setRequiresPasswordSetup(false);
   };
 
   if (loading) {
@@ -97,6 +103,10 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
 
   if (errorMessage && !user) {
     return <main className="min-h-screen bg-[#071D17] text-white flex items-center justify-center p-5"><section className="max-w-md rounded-2xl border border-rose-300/20 bg-white/[0.06] p-6"><h1 className="text-xl font-bold">Unable to verify access</h1><p role="alert" className="mt-3 text-sm text-rose-200">{errorMessage}</p><button onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-emerald-600 px-4 py-2.5 font-semibold">Try again</button></section></main>;
+  }
+
+  if (user && accessState === 'approved' && user.active && requiresPasswordSetup) {
+    return <SetPasswordScreen onComplete={() => setRequiresPasswordSetup(false)} />;
   }
 
   if (!user || accessState !== 'approved' || !user.active) {
