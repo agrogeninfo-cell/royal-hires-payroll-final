@@ -16,6 +16,7 @@ import {
 export const FactoriesView: React.FC = () => {
   const { currentUser, factories, saveFactory, allUsers, t } = useApp();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [rateReviewConfirmed, setRateReviewConfirmed] = useState(false);
   const [editingFactory, setEditingFactory] = useState<Factory | null>(null);
 
   // Form State
@@ -53,6 +54,7 @@ export const FactoriesView: React.FC = () => {
   const supervisors = allUsers.filter((u) => u.role === 'supervisor');
 
   const openCreateModal = () => {
+    setRateReviewConfirmed(false);
     setEditingFactory(null);
     setName('');
     setCode(`FAC-0${factories.length + 1}`);
@@ -82,6 +84,7 @@ export const FactoriesView: React.FC = () => {
   };
 
   const openEditModal = (fac: Factory) => {
+    setRateReviewConfirmed(false);
     setEditingFactory(fac);
     setName(fac.name);
     setCode(fac.code);
@@ -116,6 +119,10 @@ export const FactoriesView: React.FC = () => {
 
     if (!name.trim() || !code.trim()) {
       setErrorMsg('Factory name and code are required.');
+      return;
+    }
+    if (!rateReviewConfirmed) {
+      setErrorMsg('Confirm that rates, shifts, overtime, meal charges and effective dates match the approved factory rate sheet before saving to cloud.');
       return;
     }
 
@@ -637,6 +644,10 @@ export const FactoriesView: React.FC = () => {
                 </div>
               </div>
 
+              <label className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-950">
+                <input type="checkbox" checked={rateReviewConfirmed} onChange={(event) => setRateReviewConfirmed(event.target.checked)} className="mt-1 accent-emerald-700" />
+                <span>I verified the daily rates, OT rates, shifts, special-day rules, meal charges and effective dates against the approved rate sheet. Saving sends this configuration to cloud and enables payroll/invoicing for this factory once the server confirms it.</span>
+              </label>
               <div className="flex justify-end space-x-2 pt-3 border-t">
                 <button
                   type="button"
