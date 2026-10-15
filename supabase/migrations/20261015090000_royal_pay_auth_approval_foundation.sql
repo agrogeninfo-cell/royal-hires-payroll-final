@@ -57,7 +57,7 @@ begin
       approval_status, approval_requested_at
     )
     values (
-      new.id, target_company_id, coalesce(requested_name, split_part(new.email, '@', 1)),
+      new.id, target_company_id, coalesce(requested_name, nullif(split_part(coalesce(new.email, ''), '@', 1), ''), 'Royal Pay User'),
       'supervisor', false, 'pending', now()
     )
     on conflict (user_id) do nothing;
