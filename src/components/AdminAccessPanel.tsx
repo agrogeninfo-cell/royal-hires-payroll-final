@@ -15,6 +15,7 @@ export const AdminAccessPanel: React.FC<AdminAccessPanelProps> = ({ isOpen, onCl
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'office_staff' | 'supervisor'>('office_staff');
   const [factoryIds, setFactoryIds] = useState<string[]>([]);
+  const [pendingRoles, setPendingRoles] = useState<Record<string, 'office_staff' | 'supervisor'>>({});
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [notice, setNotice] = useState('');
@@ -64,8 +65,9 @@ export const AdminAccessPanel: React.FC<AdminAccessPanelProps> = ({ isOpen, onCl
     setNotice('');
     try {
       if (action === 'approve') {
-        await sendAdminAccessAction({ action, userId: request.user_id, role: 'supervisor', factoryIds });
-        setNotice((request.email || request.full_name) + ' approved as Supervisor.');
+        const approvedRole = pendingRoles[request.user_id] || 'supervisor';
+        await sendAdminAccessAction({ action, userId: request.user_id, role: approvedRole, factoryIds: approvedRole === 'supervisor' ? factoryIds : [] });
+        setNotice((request.email || request.full_name) + ' approved as ' + (approvedRole === 'office_staff' ? 'Office Staff' : 'Supervisor') + '.');
       } else {
         await sendAdminAccessAction({ action, userId: request.user_id });
         setNotice('Access request for ' + (request.email || request.full_name) + ' rejected.');
@@ -123,7 +125,7 @@ export const AdminAccessPanel: React.FC<AdminAccessPanelProps> = ({ isOpen, onCl
             <h3 className="font-semibold">Pending requests <span className="ml-1 rounded-full bg-amber-300/10 px-2 py-0.5 text-xs text-amber-100">{pending.length}</span></h3>
             <button onClick={() => void refresh()} disabled={busy} className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-slate-300 hover:bg-white/10"><RefreshCw size={14} />Refresh</button>
           </div>
-          {pending.length === 0 ? <div className="rounded-2xl border border-dashed border-white/10 p-5 text-center text-sm text-slate-400"><Check size={18} className="mx-auto mb-2 text-emerald-300" />No pending access requests.</div> : <div className="space-y-3">{pending.map((request) => <article key={request.user_id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-slate-300"><UserRound size={18} /></div><div className="min-w-0 flex-1"><p className="font-semibold">{request.full_name || 'New user'}</p><p className="break-all text-sm text-slate-300">{request.email || request.user_id}</p><p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500"><Clock size={12} />{request.approval_requested_at ? new Date(request.approval_requested_at).toLocaleString() : 'Recently requested'}</p></div></div><div className="mt-4 grid grid-cols-2 gap-2"><button disabled={busy} onClick={() => void decide(request, 'approve')} className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-50"><Check size={15} />Approve as Supervisor</button><button disabled={busy} onClick={() => void decide(request, 'reject')} className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-300/20 px-3 py-2.5 text-sm font-semibold text-rose-200 hover:bg-rose-300/10 disabled:opacity-50"><X size={15} />Reject</button></div></article>)}</div>}
+          {pending.length === 0 ? <div className="rounded-2xl border border-dashed border-white/10 p-5 text-center text-sm text-slate-400"><Check size={18} className="mx-auto mb-2 text-emerald-300" />No pending access requests.</div> : <div className="space-y-3">{pending.map((request) => <article key={request.user_id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-slate-300"><UserRound size={18} /></div><div className="min-w-0 flex-1"><p className="font-semibold">{request.full_name || 'New user'}</p><p className="break-all text-sm text-slate-300">{request.email || request.user_id}</p><p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500"><Clock size={12} />{request.approval_requested_at ? new Date(request.approval_requested_at).toLocaleString() : 'Recently requested'}</p></div></div><div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]"><select aria-label={'Role for ' + (request.email || request.full_name)} value={pendingRoles[request.user_id] || 'supervisor'} onChange={(event) => setPendingRoles((old) => ({ ...old, [request.user_id]: event.target.value as 'office_staff' | 'supervisor' }))} className="rounded-xl border border-white/10 bg-[#102d23] px-3 py-2.5 text-sm text-white"><option value="office_staff">Office Staff</option><option value="supervisor">Factory Supervisor</option></select><button disabled={busy} onClick={() => void decide(request, 'approve')} className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-50"><Check size={15} />Approve</button><button disabled={busy} onClick={() => void decide(request, 'reject')} className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-300/20 px-3 py-2.5 text-sm font-semibold text-rose-200 hover:bg-rose-300/10 disabled:opacity-50"><X size={15} />Reject</button></div></article>)}</div>}
         </div>
       </section>
     </div>
