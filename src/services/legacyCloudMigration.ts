@@ -14,6 +14,7 @@ export interface LegacyMigrationCandidate {
   id: string;
   label: string;
   details: string;
+  fingerprint: string;
 }
 export interface LegacyMigrationPreview {
   factoryNames: string[];
@@ -80,7 +81,7 @@ function candidateDetails(collection: MigrationCollection, row: RecordRow): Lega
                 : collection === 'boarding_locations'
                   ? String(row.address || '') + ' · ' + money(row.dailyRate) + '/day'
                   : String(row.effectiveStart || '?') + ' · rate history';
-  return { collection, id: row.id, label, details };
+  return { collection, id: row.id, label, details, fingerprint: JSON.stringify(row) };
 }
 
 export async function previewLegacyCloudMigration(): Promise<LegacyMigrationPreview> {
@@ -135,7 +136,8 @@ export async function previewLegacyCloudMigration(): Promise<LegacyMigrationPrev
  * backup first, only adds missing cloud rows, and never deletes or rewrites business values.
  */
 export async function migrateSelectedLegacyRecords(
-  selected: Partial<Record<MigrationCollection, string[]>>
+  selected: Partial<Record<MigrationCollection, string[]>>,
+  reviewedCandidates: LegacyMigrationCandidate[]
 ): Promise<LegacyMigrationResult> {
   await requireAdmin();
   const preview = await previewLegacyCloudMigration();
@@ -145,8 +147,14 @@ export async function migrateSelectedLegacyRecords(
   );
   if (!selectedPairs.length) throw new Error('Select at least one record to migrate.');
   for (const item of selectedPairs) {
-    if (!candidateKeys.has(item.collection + ':' + item.id)) {
+    const key = item.collection + ':' + item.id;
+    if (!candidateKeys.has(key)) {
       throw new Error('A selected record is no longer eligible or already exists in cloud. Refresh the preview and review again.');
+    }
+    const reviewed = reviewedCandidates.find(candidate => candidate.collection === item.collection && candidate.id === item.id);
+    const current = preview.candidates.find(candidate => candidate.collection === item.collection && candidate.id === item.id);
+    if (!reviewed || !current || reviewed.fingerprint !== current.fingerprint) {
+      throw new Error('A selected record changed after review. Refresh the preview, inspect the latest values and select it again.');
     }
   }
 
