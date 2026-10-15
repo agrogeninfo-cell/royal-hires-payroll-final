@@ -73,6 +73,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         const upd = await supabase.from('factories').update({ code: f.code, name: f.name, is_active: !!f.active }).eq('company_id', access.companyId).eq('id', id);
         if (upd.error) { out.failedCount++; out.errors.push('Factory metadata for ' + f.name + ': ' + upd.error.message); continue; }
       }
+      if (!id) { out.failedCount++; out.errors.push('Factory mapping unavailable for ' + f.name); continue; }
       localToCloud.set(f.id, id); cloudToLocal.set(id, f.id);
     }
   } else {
@@ -150,7 +151,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
       .eq('collection_name', 'attendance').eq('record_id', local.id).maybeSingle();
     if (!check.error && check.data && equal(local, check.data.payload)) {
       await dbService.removeOfflineItem(item.id);
-      local.syncStatus = 'synced'; delete local.conflictReason; await dbService.put('attendance', local);
+      local.syncStatus = 'synced'; local.conflictReason = undefined; await dbService.put('attendance', local);
     }
   }
   return out;
