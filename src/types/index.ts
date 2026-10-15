@@ -53,6 +53,8 @@ export interface Factory {
   updatedAt: string;
   /** True only after an explicit local create/edit approved for cloud synchronization. */
   cloudSyncReady?: boolean;
+  /** True only after the cloud accepted the factory configuration payload. */
+  cloudSyncConfirmed?: boolean;
 }
 
 export type WageArrangement = 'daily' | 'weekly' | 'monthly';
