@@ -12,7 +12,8 @@ This branch adds the client-side authentication foundation and the server-side a
    - the exact HTTPS origin used by the hosted PWA
    - `http://localhost:3000` for local development only
 5. For Android Google OAuth, configure the Android OAuth client with the SHA-1 certificate fingerprint for each signing certificate used. Debug and release fingerprints are different.
-6. Deploy the `admin-user-access` Edge Function from `supabase/functions/admin-user-access/index.ts` with JWT verification enabled. Supabase Edge Functions must have their normal `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` runtime secrets available. Never expose the service-role key to the client.
+6. If invitation links should open a hosted PWA instead of the Android app, set the Edge Function secret `AUTH_INVITE_REDIRECT_URL` to that exact HTTPS origin and allowlist it in Supabase. The default invite redirect is the Android callback scheme.
+7. Deploy the `admin-user-access` Edge Function from `supabase/functions/admin-user-access/index.ts` with JWT verification enabled. Supabase Edge Functions must have their normal `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` runtime secrets available. Never expose the service-role key to the client.
 
 ## First administrator bootstrap
 
