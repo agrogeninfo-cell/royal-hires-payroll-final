@@ -1,0 +1,270 @@
+/* Royal Pay full-interface design layer.
+   Visual-only adaptation of the supplied payroll UI kit: preserve existing React
+   views, business rules, navigation, roles, local storage and financial data. */
+:root {
+  --rp-forest: #073f2d;
+  --rp-forest-deep: #052f22;
+  --rp-emerald: #08764e;
+  --rp-emerald-strong: #066541;
+  --rp-emerald-soft: #eaf5ed;
+  --rp-champagne: #c8ad73;
+  --rp-champagne-soft: #f7f1e4;
+  --rp-canvas: #f5f7f3;
+  --rp-surface: #ffffff;
+  --rp-ink: #18382a;
+  --rp-muted: #6b7d71;
+  --rp-line: #e1e9e1;
+  --rp-card-shadow: 0 8px 24px rgba(20, 55, 35, .055);
+  --rp-card-shadow-hover: 0 14px 32px rgba(20, 55, 35, .10);
+}
+html, body { background: var(--rp-canvas); }
+body { color: var(--rp-ink); }
+.rh-app-shell { background: var(--rp-canvas); }
+
+/* Brand frame and navigation */
+.rh-topbar {
+  background: linear-gradient(112deg, var(--rp-forest-deep) 0%, var(--rp-forest) 58%, #0a6242 100%);
+  box-shadow: 0 5px 22px rgba(5, 47, 34, .16);
+}
+.rh-topbar-inner { min-height: 70px; padding-inline: clamp(14px, 2.4vw, 28px); }
+.rh-brand-logo { max-height: 46px; }
+.rh-topbar-back, .rh-topbar-icon {
+  border-color: rgba(225, 205, 156, .22);
+  background: rgba(255,255,255,.075);
+  border-radius: 14px;
+}
+.rh-topbar-back:hover, .rh-topbar-icon:hover {
+  background: rgba(200,173,115,.18);
+  border-color: rgba(225,205,156,.55);
+}
+.rh-desktop-nav {
+  top: 70px;
+  background: rgba(255,255,255,.94);
+  border-bottom-color: #e4eae1;
+  box-shadow: 0 5px 18px rgba(26, 52, 35, .035);
+  backdrop-filter: blur(16px);
+}
+.rh-desktop-nav-inner { padding: 9px clamp(12px, 2vw, 24px); }
+.rh-desktop-tab { border-radius: 12px; padding: 10px 12px; color: #627568; }
+.rh-desktop-tab:hover { color: var(--rp-forest); background: #f2f7f1; }
+.rh-desktop-tab.active {
+  color: var(--rp-forest);
+  background: var(--rp-emerald-soft);
+  box-shadow: inset 0 0 0 1px #d1e5d5;
+}
+.rh-verify-button { border-color: #dfd1ae; background: #fbf7ed; color: #705b2f; }
+.rh-main-content {
+  max-width: 1440px;
+  padding: clamp(16px, 2.4vw, 30px) clamp(14px, 2.4vw, 30px) 40px;
+}
+.rh-screen-content { color: var(--rp-ink); }
+.rh-screen-content > * { min-width: 0; }
+
+/* Consistent surfaces across every existing module */
+.rh-screen-content [class~="bg-white"][class~="rounded-xl"],
+.rh-screen-content [class~="bg-white"][class~="rounded-2xl"],
+.rh-screen-content [class~="bg-white"][class~="rounded-lg"] {
+  border-color: var(--rp-line);
+  box-shadow: var(--rp-card-shadow);
+}
+.rh-screen-content [class~="border-slate-200"],
+.rh-screen-content [class~="border-slate-300"],
+.rh-screen-content [class~="border-gray-200"] { border-color: var(--rp-line); }
+.rh-screen-content [class~="bg-slate-50"] { background-color: #f7faf6; }
+.rh-screen-content [class~="bg-slate-100"] { background-color: #eef4ee; }
+.rh-screen-content [class~="text-slate-900"],
+.rh-screen-content [class~="text-slate-800"],
+.rh-screen-content [class~="text-gray-900"],
+.rh-screen-content [class~="text-gray-800"] { color: var(--rp-ink); }
+.rh-screen-content [class~="text-slate-600"],
+.rh-screen-content [class~="text-slate-500"],
+.rh-screen-content [class~="text-gray-600"],
+.rh-screen-content [class~="text-gray-500"] { color: var(--rp-muted); }
+.rh-screen-content [class~="rounded-xl"] { border-radius: 18px; }
+.rh-screen-content [class~="rounded-2xl"] { border-radius: 22px; }
+.rh-screen-content [class~="rounded-lg"] { border-radius: 13px; }
+
+/* Action hierarchy — emerald primary actions and restrained champagne accents */
+.rh-screen-content [class~="bg-emerald-600"],
+.rh-screen-content [class~="bg-emerald-700"],
+.rh-screen-content [class~="bg-green-600"] {
+  background-color: var(--rp-emerald);
+}
+.rh-screen-content [class~="bg-emerald-600"]:hover,
+.rh-screen-content [class~="bg-emerald-700"]:hover,
+.rh-screen-content [class~="bg-green-600"]:hover { background-color: var(--rp-emerald-strong); }
+.rh-screen-content [class~="text-emerald-600"],
+.rh-screen-content [class~="text-emerald-700"],
+.rh-screen-content [class~="text-green-600"] { color: var(--rp-emerald); }
+.rh-screen-content [class~="border-emerald-200"],
+.rh-screen-content [class~="border-emerald-300"] { border-color: #cfe3d3; }
+.rh-screen-content [class~="bg-emerald-50"],
+.rh-screen-content [class~="bg-green-50"] { background-color: var(--rp-emerald-soft); }
+.rh-screen-content button:not([class~="rh-hover-card"]) {
+  transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.rh-screen-content button:focus-visible,
+.rh-screen-content a:focus-visible {
+  outline: 3px solid rgba(200,173,115,.78);
+  outline-offset: 3px;
+}
+
+/* Forms: clear labels, generous touch targets, and consistent focus states */
+.rh-screen-content input:not([type="checkbox"]):not([type="radio"]),
+.rh-screen-content select,
+.rh-screen-content textarea {
+  min-height: 42px;
+  border-color: #dce6dc;
+  border-radius: 12px;
+  background-color: #fff;
+  color: var(--rp-ink);
+  box-shadow: inset 0 1px 1px rgba(20,55,35,.025);
+}
+.rh-screen-content textarea { min-height: 88px; }
+.rh-screen-content input:not([type="checkbox"]):not([type="radio"]):focus,
+.rh-screen-content select:focus,
+.rh-screen-content textarea:focus {
+  border-color: #6da987;
+  outline: 3px solid rgba(8,118,78,.13);
+  outline-offset: 0;
+}
+.rh-screen-content label { color: #50675a; }
+.rh-screen-content input[type="checkbox"],
+.rh-screen-content input[type="radio"] { accent-color: var(--rp-emerald); }
+
+/* Data tables and dense operational screens */
+.rh-screen-content table { border-collapse: separate; border-spacing: 0; }
+.rh-screen-content thead th {
+  background: #f0f5ef;
+  color: #456052;
+  border-bottom: 1px solid #dce6dc;
+  font-weight: 800;
+  letter-spacing: .015em;
+}
+.rh-screen-content tbody tr { transition: background-color .14s ease; }
+.rh-screen-content tbody tr:hover { background-color: #f7faf6; }
+.rh-screen-content tbody td { border-bottom-color: #e8eee7; }
+.rh-screen-content table th:first-child { border-top-left-radius: 9px; }
+.rh-screen-content table th:last-child { border-top-right-radius: 9px; }
+
+
+/* Touch-first dashboard card feedback. Hover-only transforms are not reliable
+   on Android, so cards also animate on initial entry and while pressed. */
+@keyframes rp-dashboard-card-enter {
+  /* Animate the individual translate property so the filled entrance animation
+     does not override :hover/:active transforms on the card itself. */
+  from { opacity: 0; translate: 0 9px; }
+  to { opacity: 1; translate: 0 0; }
+}
+.rh-hover-card {
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.rh-card-interaction-group > .rh-hover-card {
+  animation: rp-dashboard-card-enter .38s cubic-bezier(.2,.7,.25,1) both;
+}
+.rh-card-interaction-group > .rh-hover-card:nth-child(2) { animation-delay: 35ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(3) { animation-delay: 70ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(4) { animation-delay: 105ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(5) { animation-delay: 140ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(6) { animation-delay: 175ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(7) { animation-delay: 210ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(8) { animation-delay: 245ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(9) { animation-delay: 280ms; }
+.rh-hover-card:active {
+  transform: translateY(1px) scale(.978);
+  border-color: var(--rp-champagne);
+  box-shadow: 0 3px 10px rgba(20,55,35,.12);
+}
+.rh-hover-card:focus-visible {
+  outline: 3px solid var(--rp-champagne);
+  outline-offset: 3px;
+}
+
+/* Dashboard retains its bespoke hero and cards while matching the new surfaces */
+.rh-dashboard { gap: 25px; }
+.rh-welcome-panel {
+  border: 1px solid rgba(200,173,115,.28);
+  box-shadow: 0 16px 34px rgba(5,47,34,.15);
+}
+.rh-stat-card, .rh-module-tile { border-radius: 20px; }
+.rh-section-heading h2 { letter-spacing: -.025em; }
+.rh-hover-card:focus-visible { outline-color: var(--rp-champagne); }
+
+/* Dark mode remains available and uses equivalent contrast */
+.rh-theme-dark { background: #08150f; color: #e5f1e9; }
+.rh-theme-dark .rh-desktop-nav { background: rgba(13,31,22,.96); border-bottom-color: #294536; }
+.rh-theme-dark .rh-desktop-tab { color: #afc2b4; }
+.rh-theme-dark .rh-desktop-tab:hover { color: #e2f2e7; background: #183729; }
+.rh-theme-dark .rh-desktop-tab.active { color: #d8f3e0; background: #1a3c2a; box-shadow: inset 0 0 0 1px #315a40; }
+.rh-theme-dark .rh-screen-content { color: #e5f1e9; }
+.rh-theme-dark .rh-screen-content [class~="bg-white"] {
+  background-color: #10251b;
+  border-color: #294638;
+  color: #e5f1e9;
+}
+.rh-theme-dark .rh-screen-content [class~="bg-slate-50"],
+.rh-theme-dark .rh-screen-content [class~="bg-slate-100"] { background-color: #142c20; }
+.rh-theme-dark .rh-screen-content [class~="text-slate-900"],
+.rh-theme-dark .rh-screen-content [class~="text-slate-800"],
+.rh-theme-dark .rh-screen-content [class~="text-gray-900"],
+.rh-theme-dark .rh-screen-content [class~="text-gray-800"] { color: #e5f1e9; }
+.rh-theme-dark .rh-screen-content [class~="text-slate-600"],
+.rh-theme-dark .rh-screen-content [class~="text-slate-500"],
+.rh-theme-dark .rh-screen-content [class~="text-gray-600"],
+.rh-theme-dark .rh-screen-content [class~="text-gray-500"] { color: #a8bdb0; }
+.rh-theme-dark .rh-screen-content input:not([type="checkbox"]):not([type="radio"]),
+.rh-theme-dark .rh-screen-content select,
+.rh-theme-dark .rh-screen-content textarea { background-color: #0c1d14; color: #e5f1e9; border-color: #315340; }
+.rh-theme-dark .rh-screen-content thead th { background: #173426; color: #d8e8dc; border-bottom-color: #315340; }
+.rh-theme-dark .rh-screen-content tbody tr:hover { background-color: #173426; }
+.rh-theme-dark .rh-screen-content tbody td { border-bottom-color: #294638; }
+.rh-theme-dark .rh-screen-content [class~="bg-emerald-50"],
+.rh-theme-dark .rh-screen-content [class~="bg-green-50"] { background-color: #183729; }
+
+/* Responsive Android-first layout; keep table access and bottom-nav safe area */
+@media (max-width: 760px) {
+  .rh-topbar-inner { min-height: 62px; gap: 8px; padding-inline: 12px; }
+  .rh-brand-logo { width: clamp(112px, 37vw, 152px); max-height: 39px; }
+  .rh-topbar-actions { gap: 5px; }
+  .rh-header-connection { height: 29px; padding-inline: 7px; font-size: 9px; }
+  .rh-topbar-icon { width: 35px; height: 35px; border-radius: 12px; }
+  .rh-main-content { padding: 14px 12px calc(100px + var(--rh-safe-bottom, 0px)); }
+  .rh-screen-content [class~="bg-white"][class~="rounded-xl"],
+  .rh-screen-content [class~="bg-white"][class~="rounded-2xl"],
+  .rh-screen-content [class~="bg-white"][class~="rounded-lg"] { border-radius: 16px; }
+  .rh-screen-content .p-5 { padding: 14px; }
+  .rh-screen-content .p-4 { padding: 12px; }
+  .rh-screen-content table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .rh-screen-content th, .rh-screen-content td { white-space: nowrap; }
+  .rh-screen-content button { min-height: 38px; }
+  .rh-welcome-panel { padding: 20px 18px; border-radius: 22px; }
+  .rh-dashboard { gap: 19px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rh-app-shell *, .rh-app-shell *::before, .rh-app-shell *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+
+/* Animated dashboard headline from the supplied ContainerTextFlip pattern */
+.rh-dashboard-tagline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.rh-dashboard-flip {
+  vertical-align: baseline;
+  line-height: 1.45;
+}
+@media (max-width: 480px) {
+  .rh-dashboard-tagline { gap: 4px; }
+  .rh-dashboard-flip { padding-inline: 6px; font-size: .94em; }
+}
