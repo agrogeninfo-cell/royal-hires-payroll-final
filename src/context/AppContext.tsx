@@ -74,7 +74,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
   const [language, setLanguage] = useState<Language>('en');
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [mobileFrameMode, setMobileFrameMode] = useState<boolean>(false);
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isOnline, setIsOnline] = useState<boolean>(() => typeof navigator !== 'undefined' && navigator.onLine);
   const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
   const [lastBackupTime, setLastBackupTime] = useState<string>(new Date().toLocaleTimeString());
 
@@ -194,10 +194,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     });
   }, []);
 
+  // Connection state follows the actual device network; users cannot force a false online state.
   const toggleOnlineStatus = () => {
-    const nextState = !isOnline;
-    setIsOnline(nextState);
-    if (nextState) {
+    const actuallyOnline = typeof navigator !== 'undefined' && navigator.onLine;
+    setIsOnline(actuallyOnline);
+    if (actuallyOnline) {
       void syncOfflineQueue().catch((error) => console.error('Cloud sync failed:', error));
     }
   };
