@@ -5,6 +5,7 @@ This branch includes Supabase authentication, approval-gated roles, company/fact
 ## Required configuration
 
 1. The client defaults to the authorized `royal-hires-dev` project using its public publishable key. These values are intentionally client-side and are not service-role credentials. You may override them with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local` or GitHub Actions Variables for another environment. Never put a Supabase service-role key in a Vite variable or in the Android app.
+2. Apply the tracked SQL migrations to the intended Supabase project using the repository's migration workflow. The `royal-hires-dev` project has the current auth, RLS and realtime migrations applied; do not apply them to production without review.
 3. In Supabase Dashboard → Authentication → Providers, enable Email and Google. Configure Google OAuth with the OAuth Client ID/Secret from Google Cloud. The Google OAuth web client must allow the Supabase callback URL shown in the provider settings.
 4. Add these URLs to Supabase Authentication → URL Configuration → Redirect URLs:
    - `lk.royalhires.payroll://auth/callback` (Android)
