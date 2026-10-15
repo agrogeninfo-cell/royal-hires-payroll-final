@@ -175,6 +175,7 @@ export class DatabaseService {
       id: `AUDIT-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       timestamp: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      cloudSyncReady: true,
       actor,
       actorRole,
       action,
