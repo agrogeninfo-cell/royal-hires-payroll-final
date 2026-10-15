@@ -69,7 +69,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: React.ReactNode; authenticatedUser: User }> = ({ children, authenticatedUser }) => {
   const [language, setLanguage] = useState<Language>('en');
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [mobileFrameMode, setMobileFrameMode] = useState<boolean>(false);
@@ -78,13 +78,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [lastBackupTime, setLastBackupTime] = useState<string>(new Date().toLocaleTimeString());
 
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: 'usr-admin',
-    name: 'Royal Hires Admin',
-    email: 'royalhiresinfo@gmail.com',
-    role: 'admin',
-    active: true,
-  });
+  // The authenticated Supabase profile is the only source of the active user's role.
+  const [currentUser, setCurrentUser] = useState<User>(authenticatedUser);
 
   const [factories, setFactories] = useState<Factory[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
