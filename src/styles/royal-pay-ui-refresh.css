@@ -147,6 +147,40 @@ body { color: var(--rp-ink); }
 .rh-screen-content table th:first-child { border-top-left-radius: 9px; }
 .rh-screen-content table th:last-child { border-top-right-radius: 9px; }
 
+
+/* Touch-first dashboard card feedback. Hover-only transforms are not reliable
+   on Android, so cards also animate on initial entry and while pressed. */
+@keyframes rp-dashboard-card-enter {
+  from { opacity: 0; transform: translateY(9px) scale(.992); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.rh-hover-card {
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.rh-card-interaction-group > .rh-hover-card {
+  animation: rp-dashboard-card-enter .38s cubic-bezier(.2,.7,.25,1) both;
+}
+.rh-card-interaction-group > .rh-hover-card:nth-child(2) { animation-delay: 35ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(3) { animation-delay: 70ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(4) { animation-delay: 105ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(5) { animation-delay: 140ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(6) { animation-delay: 175ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(7) { animation-delay: 210ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(8) { animation-delay: 245ms; }
+.rh-card-interaction-group > .rh-hover-card:nth-child(9) { animation-delay: 280ms; }
+.rh-hover-card:active {
+  transform: translateY(1px) scale(.978);
+  border-color: var(--rp-champagne);
+  box-shadow: 0 3px 10px rgba(20,55,35,.12);
+}
+.rh-hover-card:focus-visible {
+  outline: 3px solid var(--rp-champagne);
+  outline-offset: 3px;
+}
+
 /* Dashboard retains its bespoke hero and cards while matching the new surfaces */
 .rh-dashboard { gap: 25px; }
 .rh-welcome-panel {
