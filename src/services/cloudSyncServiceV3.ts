@@ -174,6 +174,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         } else if (r.factory_id && !cloudToLocal.has(r.factory_id)) {
           out.conflictCount++; out.errors.push('Remote ' + store + '/' + r.record_id + ' has no local factory mapping.'); continue;
         }
+        if (!allowedRecord(store, payload)) continue;
         await dbService.put(store, payload); out.pulledCount++; out.syncedCount++;
       }
     } catch (e: any) { out.failedCount++; out.errors.push(store + ' sync failed: ' + (e?.message || 'unknown error')); }
