@@ -256,6 +256,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     }
     factory.updatedAt = new Date().toISOString();
     factory.cloudSyncReady = true;
+    factory.cloudSyncConfirmed = false;
     await dbService.put('factories', factory);
     await dbService.logAudit(
       currentUser.name,
@@ -391,6 +392,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot access or process payroll.');
     }
+    const unconfirmedFactories = Array.from(new Set(run.items.map((item) => item.factoryId)))
+      .filter((factoryId) => !factories.some((factory) => factory.id === factoryId && factory.cloudSyncConfirmed === true));
+    if (unconfirmedFactories.length > 0) {
+      throw new Error('Payroll is blocked until the relevant factory rates are reviewed, saved, and confirmed in cloud storage.');
+    }
     run.updatedAt = new Date().toISOString();
     run.cloudSyncReady = true;
     await dbService.put('payroll_runs', run);
@@ -429,6 +435,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
   const saveInvoice = async (invoice: FactoryInvoice) => {
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot manage factory invoices.');
+    }
+    if (!factories.some((factory) => factory.id === invoice.factoryId && factory.cloudSyncConfirmed === true)) {
+      throw new Error('Invoice creation is blocked until this factory configuration has been reviewed, saved, and confirmed in cloud storage.');
     }
     invoice.updatedAt = new Date().toISOString();
     invoice.cloudSyncReady = true;
