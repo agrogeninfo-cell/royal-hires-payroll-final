@@ -56,7 +56,7 @@ export const TestSuiteModal: React.FC<TestSuiteModalProps> = ({ isOpen, onClose 
             </div>
             <div>
               <h3 className="font-bold text-base sm:text-lg text-slate-900">
-                System Verification Test Suite ({results.length || SystemTestSuite.runAllTests().length} Automated Tests)
+                System Verification Test Suite
               </h3>
               <p className="text-xs text-slate-500">
                 Mandatory operational assertions verifying Billing, Payroll, Invoicing, Role Isolation &amp; Sync
