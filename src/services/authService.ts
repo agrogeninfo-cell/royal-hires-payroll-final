@@ -33,7 +33,7 @@ export function getSupabaseClient(): SupabaseClient {
 export interface AccessProfile {
   user: User;
   companyId: string;
-  approvalStatus: 'pending' | 'approved' | 'rejected';
+  approvalStatus: 'pending' | 'approved' | 'rejected' | 'unlinked';
 }
 
 const isUserRole = (role: unknown): role is UserRole =>
@@ -58,11 +58,30 @@ export async function loadAccessProfile(userId: string): Promise<AccessProfile |
 
   if (assignmentError) throw assignmentError;
 
-  const approvalStatus = profile.approval_status === 'approved'
+  const assignedCloudFactoryIds = (assignments || []).map((item: { factory_id: string }) => item.factory_id);
+  let assignedLocalFactoryIds: string[] = [];
+  if (assignedCloudFactoryIds.length > 0) {
+    const { data: mappings, error: mappingError } = await supabase
+      .from('factories')
+      .select('id, legacy_id')
+      .eq('company_id', profile.company_id)
+      .in('id', assignedCloudFactoryIds);
+    if (mappingError) throw mappingError;
+    assignedLocalFactoryIds = (mappings || [])
+      .filter((item: { id: string; legacy_id: string | null }) => Boolean(item.legacy_id))
+      .map((item: { id: string; legacy_id: string | null }) => item.legacy_id as string);
+  }
+
+  const baseApprovalStatus = profile.approval_status === 'approved'
     ? 'approved'
     : profile.approval_status === 'rejected'
       ? 'rejected'
       : 'pending';
+  // Supervisors must have an explicit cloud-to-local factory mapping before any
+  // local records can be displayed. UUIDs alone are not assumed to match legacy IDs.
+  const scopeReady = profile.role !== 'supervisor'
+    || (assignedCloudFactoryIds.length > 0 && assignedLocalFactoryIds.length === assignedCloudFactoryIds.length);
+  const approvalStatus = baseApprovalStatus === 'approved' && !scopeReady ? 'unlinked' : baseApprovalStatus;
 
   return {
     companyId: profile.company_id,
@@ -73,7 +92,7 @@ export async function loadAccessProfile(userId: string): Promise<AccessProfile |
       email: '',
       role: profile.role,
       active: Boolean(profile.is_active) && approvalStatus === 'approved',
-      assignedFactoryIds: (assignments || []).map((item: { factory_id: string }) => item.factory_id),
+      assignedFactoryIds: assignedLocalFactoryIds,
     },
   };
 }
