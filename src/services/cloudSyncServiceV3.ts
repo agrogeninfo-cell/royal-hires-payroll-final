@@ -70,7 +70,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
 
   if (!supervisor) {
     for (const f of locals) {
-      const isRequiredFactory = ['Empire Teas', 'Millennium Teas'].includes(String(f.name || '').trim());
+      const isRequiredFactory = ['empire teas', 'millennium teas'].includes(String(f.name || '').trim().toLowerCase());
       // Only the two approved target factories may bootstrap from legacy local data.
       // Other factory rows require a fresh, explicit admin edit (updatedAt) before cloud creation.
       if (!isRequiredFactory) continue;
