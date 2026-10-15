@@ -220,6 +220,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       throw new Error('Unauthorized: Only Administrators can create or update factory configurations.');
     }
     factory.updatedAt = new Date().toISOString();
+    factory.cloudSyncReady = true;
     await dbService.put('factories', factory);
     await dbService.logAudit(
       currentUser.name,
@@ -241,6 +242,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     // Hard enforce Helper designation
     employee.designation = 'Helper';
     employee.updatedAt = new Date().toISOString();
+    employee.cloudSyncReady = true;
 
     await dbService.put('employees', employee);
     await dbService.logAudit(
@@ -261,6 +263,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       throw new Error('Unauthorized: this supervisor is not assigned to the selected factory.');
     }
     record.updatedAt = new Date().toISOString();
+    record.cloudSyncReady = true;
     if (!isOnline) {
       // Save locally to offline queue
       record.syncStatus = 'pending';
@@ -295,6 +298,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     }
     for (const record of records) {
       record.updatedAt = new Date().toISOString();
+      record.cloudSyncReady = true;
       if (!isOnline) {
         record.syncStatus = 'pending';
         record.isOfflineCreated = true;
@@ -332,6 +336,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     record.approvedBy = currentUser.name;
     record.approvedAt = new Date().toISOString();
     record.updatedAt = new Date().toISOString();
+    record.cloudSyncReady = true;
 
     await dbService.put('attendance', record);
     await dbService.logAudit(
@@ -352,6 +357,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       throw new Error('Unauthorized: Supervisors cannot access or process payroll.');
     }
     run.updatedAt = new Date().toISOString();
+    run.cloudSyncReady = true;
     await dbService.put('payroll_runs', run);
     await dbService.logAudit(
       currentUser.name,
@@ -370,6 +376,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       throw new Error('Unauthorized: Supervisors cannot record payments or advances.');
     }
     payment.updatedAt = new Date().toISOString();
+    payment.cloudSyncReady = true;
     await dbService.put('employee_payments', payment);
     await dbService.logAudit(
       currentUser.name,
@@ -389,6 +396,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       throw new Error('Unauthorized: Supervisors cannot manage factory invoices.');
     }
     invoice.updatedAt = new Date().toISOString();
+    invoice.cloudSyncReady = true;
     await dbService.put('invoices', invoice);
     await dbService.logAudit(
       currentUser.name,
@@ -408,6 +416,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       throw new Error('Unauthorized: Supervisors cannot record factory receipts.');
     }
     receipt.updatedAt = new Date().toISOString();
+    receipt.cloudSyncReady = true;
     await dbService.put('receipts', receipt);
     await dbService.logAudit(
       currentUser.name,
@@ -428,6 +437,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       throw new Error('Unauthorized: Only Administrators can configure boarding locations.');
     }
     location.updatedAt = new Date().toISOString();
+    location.cloudSyncReady = true;
     await dbService.put('boarding_locations', location);
     await dbService.logAudit(
       currentUser.name,
