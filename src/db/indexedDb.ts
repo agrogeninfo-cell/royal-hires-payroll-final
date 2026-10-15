@@ -18,6 +18,18 @@ import { ForeverStorageService, SystemBackupPayload } from './foreverStorage';
 const DB_NAME = 'LankaManpowerDB_v2';
 const DB_VERSION = 1;
 
+/**
+ * Return only required factory defaults that are absent from saved data.
+ * This helper deliberately never mutates saved factory records or their settings.
+ */
+export function getMissingRequiredFactories(existing: Factory[], defaults: Factory[]): Factory[] {
+  return defaults.filter(
+    (base) => !existing.some(
+      (item) => item.id === base.id || item.name.trim().toLowerCase() === base.name.trim().toLowerCase()
+    )
+  );
+}
+
 export class DatabaseService {
   private db: IDBDatabase | null = null;
   private isInitialized = false;
@@ -233,15 +245,10 @@ export class DatabaseService {
       },
     ];
     const existing = await this.getAll<Factory>('factories');
-    for (const base of defaults) {
-      const saved = existing.find(
-        (item) => item.id === base.id || item.name.trim().toLowerCase() === base.name.toLowerCase()
-      );
-      // Add only missing required factories. Existing configuration may contain
-      // administrator-approved rates and must never be overwritten during startup.
-      if (!saved) {
-        await this.put('factories', base);
-      }
+    // Add only missing required factories. Existing configuration may contain
+    // administrator-approved rates and must never be overwritten during startup.
+    for (const missing of getMissingRequiredFactories(existing, defaults)) {
+      await this.put('factories', missing);
     }
   }
 
