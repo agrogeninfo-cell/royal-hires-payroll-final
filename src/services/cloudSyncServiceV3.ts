@@ -146,7 +146,9 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         }
         if (store === 'attendance' && l.syncStatus !== 'synced' && r.payload.syncStatus === 'synced') {
           const stripSyncMetadata = (record: LocalRecord) => {
-            const { syncStatus: _syncStatus, isOfflineCreated: _isOfflineCreated, ...businessFields } = record;
+            const businessFields = { ...record };
+            delete businessFields.syncStatus;
+            delete businessFields.isOfflineCreated;
             return businessFields;
           };
           if (equal(stripSyncMetadata(l), stripSyncMetadata(r.payload))) {
