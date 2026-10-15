@@ -4,8 +4,11 @@ import { Capacitor } from '@capacitor/core';
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import type { User, UserRole } from '../types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+// Safe client-side defaults for the authorized development project. Supabase publishable
+// keys are designed for browser/mobile use; database RLS remains the security boundary.
+// Override both values at build time when targeting a different environment.
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() || 'https://dgoibyoxpuvmvscpdamz.supabase.co';
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || 'sb_publishable_vjf07PPacjxuRWAjgNqksQ_XtHNwGM8';
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
 export const AUTH_CALLBACK_URL = 'lk.royalhires.payroll://auth/callback';
