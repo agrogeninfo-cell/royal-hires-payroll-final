@@ -63,7 +63,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
       setAccessState(null);
       window.setTimeout(() => {
         if (!mounted) return;
-        if (session?.user) void refresh(session.user.id, session.user.email || '');
+        if (session?.user) void refresh(session.user.id, session.user.email || '', session.user.user_metadata?.must_set_password === true);
         else {
           setLoading(false);
           setRequiresPasswordSetup(false);
