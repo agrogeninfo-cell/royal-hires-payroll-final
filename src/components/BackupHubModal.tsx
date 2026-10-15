@@ -118,7 +118,7 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
     setIsProcessing(true);
     setErrorMsg('');
     try {
-      const result = await migrateSelectedLegacyRecords(selectedMigration as Partial<Record<MigrationCollection, string[]>>);
+      const result = await migrateSelectedLegacyRecords(selectedMigration as Partial<Record<MigrationCollection, string[]>>, migrationPreview?.candidates || []);
       if (result.failedCount > 0) {
         setErrorMsg('Migration partially completed. ' + result.pushedCount + ' records were uploaded; ' + result.failedCount + ' sync failures occurred. Local records are preserved. ' + result.errors.slice(0, 3).join(' '));
       } else {
