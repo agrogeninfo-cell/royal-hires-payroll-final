@@ -239,7 +239,7 @@ export const AuthGate: React.FC<{ children: (user: User) => ReactNode }> = ({ ch
     return <div className="min-h-screen grid place-items-center bg-[#071B14] text-white"><div className="flex items-center gap-3"><span className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-transparent" /><span>Verifying secure access…</span></div></div>;
   }
 
-  if (gate.status === 'approved') {
+  if (gate.status === 'approved' && !passwordRecovery) {
     return <AuthContext.Provider value={{ signOut }}>{children(gate.user)}</AuthContext.Provider>;
   }
 
