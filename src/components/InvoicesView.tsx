@@ -249,8 +249,21 @@ export const InvoicesView: React.FC = () => {
       </body></html>`;
 
     try {
-      await Printer.printHtml({ name: `Invoice-${safeInvoiceNumber}`, html });
-      setFeedback(`Invoice ${inv.invoiceNumber}: print dialog opened. Choose “Save as PDF” to export.`);
+      if (Capacitor.isNativePlatform()) {
+        await Printer.printHtml({ name: `Invoice-${safeInvoiceNumber}`, html });
+      } else {
+        // Keep the existing browser/PWA workflow as well as the Android native printer.
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) throw new Error('The browser blocked the invoice print window.');
+        printWindow.addEventListener('load', () => {
+          printWindow.focus();
+          printWindow.print();
+        }, { once: true });
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+      }
+      setFeedback('Invoice print dialog opened. Choose “Save as PDF” to export the PDF.');
       window.setTimeout(() => setFeedback(''), 5000);
     } catch (error) {
       console.error('Invoice PDF export failed', error);
