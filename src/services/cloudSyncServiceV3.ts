@@ -51,9 +51,9 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
 
   // Discover existing cloud mappings for office staff; only admins may create/update factory master rows.
   if (!supervisor) {
-    const cloudFactories = await supabase.from('factories').select('id,legacy_id').eq('company_id', access.companyId);
+    const cloudFactories = await supabase.from('factories').select('id,legacy_id,name').eq('company_id', access.companyId);
     if (cloudFactories.error) { out.failedCount++; out.errors.push('Factory mapping list: ' + cloudFactories.error.message); return out; }
-    for (const cf of cloudFactories.data || []) if (cf.legacy_id) { cloudToLocal.set(cf.id, cf.legacy_id); localToCloud.set(cf.legacy_id, cf.id); }
+    for (const cf of cloudFactories.data || []) if (cf.legacy_id && ['empire teas', 'millennium teas'].includes(String(cf.name || '').trim().toLowerCase())) { cloudToLocal.set(cf.id, cf.legacy_id); localToCloud.set(cf.legacy_id, cf.id); }
   }
 
   if (!supervisor) {
@@ -61,7 +61,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
       const isRequiredFactory = ['Empire Teas', 'Millennium Teas'].includes(String(f.name || '').trim());
       // Only the two approved target factories may bootstrap from legacy local data.
       // Other factory rows require a fresh, explicit admin edit (updatedAt) before cloud creation.
-      if (!isRequiredFactory && !f.cloudSyncReady) continue;
+      if (!isRequiredFactory) continue;
       let q = await supabase.from('factories').select('id,code,name,is_active').eq('company_id', access.companyId).eq('legacy_id', f.id).maybeSingle();
       if (q.error) { out.failedCount++; out.errors.push('Factory mapping: ' + q.error.message); continue; }
       if (access.user.role !== 'admin') {
