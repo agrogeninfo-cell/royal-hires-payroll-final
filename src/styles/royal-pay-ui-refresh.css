@@ -215,3 +215,20 @@ body { color: var(--rp-ink); }
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Animated dashboard headline from the supplied ContainerTextFlip pattern */
+.rh-dashboard-tagline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.rh-dashboard-flip {
+  vertical-align: baseline;
+  line-height: 1.45;
+}
+@media (max-width: 480px) {
+  .rh-dashboard-tagline { gap: 4px; }
+  .rh-dashboard-flip { padding-inline: 6px; font-size: .94em; }
+}
