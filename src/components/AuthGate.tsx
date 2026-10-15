@@ -6,7 +6,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { ArrowRight, CheckCircle2, CircleAlert, KeyRound, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import type { User, UserRole } from '../types';
 import type { Session } from '@supabase/supabase-js';
-import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
+import { supabase } from '../services/supabaseClient';
 
 type AuthContextValue = { signOut: () => Promise<void> };
 const AuthContext = createContext<AuthContextValue | null>(null);
