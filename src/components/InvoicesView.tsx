@@ -486,7 +486,7 @@ export const InvoicesView: React.FC = () => {
                   className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 flex items-center space-x-1 cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download CSV</span>
+                  <span>Save / Share CSV</span>
                 </button>
                 {selectedInvoice.status === 'draft' && (
                   <button
