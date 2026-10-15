@@ -127,7 +127,11 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
             continue;
           }
           const cfid = fid ? localToCloud.get(fid) : null;
-          if (fid && !cfid) { out.conflictCount++; out.errors.push('Local ' + store + '/' + l.id + ' is not assigned to an approved cloud factory; preserved locally.'); continue; }
+          if (fid && !cfid) {
+            if (l.cloudSyncReady) { out.failedCount++; out.errors.push('Cloud write blocked: no authorized factory mapping for ' + store + '/' + l.id + '.'); }
+            else { out.conflictCount++; out.errors.push('Local ' + store + '/' + l.id + ' is not assigned to an approved cloud factory; preserved locally.'); }
+            continue;
+          }
           const payload = store === 'attendance' ? { ...l, syncStatus: 'synced', isOfflineCreated: false } : l;
           const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
           if (put.error) throw put.error;
@@ -152,6 +156,7 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         }
         if (lt !== null && (rt === null || lt > rt)) {
           const cfid = fid ? localToCloud.get(fid) : null;
+          if (fid && !cfid) { out.failedCount++; out.errors.push('Cloud update blocked: no authorized factory mapping for ' + store + '/' + l.id + '.'); continue; }
           const payload = store === 'attendance' ? { ...l, syncStatus: 'synced', isOfflineCreated: false } : l;
           const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
           if (put.error) throw put.error;
