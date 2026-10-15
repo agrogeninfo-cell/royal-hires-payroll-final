@@ -12,7 +12,7 @@ const COLLECTIONS = [
 
 const stamp = (r: LocalRecord | undefined): number | null => {
   if (!r) return null;
-  for (const k of ['updatedAt', 'createdAt', 'timestamp', 'generatedAt']) {
+  for (const k of ['updatedAt']) {
     const n = typeof r[k] === 'string' ? Date.parse(r[k]) : NaN;
     if (Number.isFinite(n)) return n;
   }
@@ -102,10 +102,19 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         const r = remoteById.get(l.id);
         if (!r) {
           if (supervisor && store === 'employees') continue;
+          // Existing local-only records are not automatically migrated on first sign-in.
+          // This prevents legacy demo/history data from being silently uploaded.
+          if (!l.updatedAt) {
+            out.conflictCount++;
+            out.errors.push('Local legacy record pending admin-reviewed migration: ' + store + '/' + l.id);
+            continue;
+          }
           const cfid = fid ? localToCloud.get(fid) : null;
           if (fid && !cfid) { out.failedCount++; out.errors.push('Missing factory mapping for ' + store + '/' + l.id); continue; }
-          const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload: l, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
+          const payload = store === 'attendance' ? { ...l, syncStatus: 'synced', isOfflineCreated: false } : l;
+          const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
           if (put.error) throw put.error;
+          if (store === 'attendance') await dbService.put(store, payload);
           out.pushedCount++; out.syncedCount++; continue;
         }
         if (equal(l, r.payload)) continue;
@@ -117,8 +126,10 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
         }
         if (lt !== null && (rt === null || lt > rt)) {
           const cfid = fid ? localToCloud.get(fid) : null;
-          const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload: l, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
+          const payload = store === 'attendance' ? { ...l, syncStatus: 'synced', isOfflineCreated: false } : l;
+          const put = await supabase.from('app_records').upsert({ company_id: access.companyId, collection_name: cloudName, record_id: l.id, factory_id: cfid || null, payload, updated_by: session.user.id }, { onConflict: 'company_id,collection_name,record_id' });
           if (put.error) throw put.error;
+          if (store === 'attendance') await dbService.put(store, payload);
           out.pushedCount++; out.syncedCount++;
         } else if (rt !== null && (lt === null || rt > lt)) {
           await dbService.put(store, r.payload); out.pulledCount++; out.syncedCount++;
