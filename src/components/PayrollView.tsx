@@ -60,7 +60,7 @@ export const PayrollView: React.FC = () => {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[char] || char));
 
-  const printPayslips = (items: PayrollItem[]) => {
+  const printPayslips = async (items: PayrollItem[]) => {
     if (!previewRun || items.length === 0) return;
     const money = (amount: number) => `LKR ${Number(amount || 0).toLocaleString('en-LK')}`;
     const slipMarkup = items.map((item, index) => `
@@ -373,7 +373,7 @@ export const PayrollView: React.FC = () => {
             {previewRun && (
               <>
               <button onClick={() => void printPayslips(previewRun.items)} className="px-3 py-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg border border-emerald-200 flex items-center space-x-1 transition cursor-pointer">
-                <Download className="w-3.5 h-3.5" /><span>Print All Payslips</span>
+                <Download className="w-3.5 h-3.5" /><span>Print / Save All PDFs</span>
               </button>
               <button
                 onClick={() => void exportPayrollCsv()}
@@ -539,7 +539,7 @@ export const PayrollView: React.FC = () => {
                         LKR {item.remainingBalance.toLocaleString()}
                       </td>
                       <td className="p-3 text-right space-x-1">
-                        <button onClick={() => void printPayslips([item])} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold">Payslip</button>
+                        <button onClick={() => void printPayslips([item])} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold">Print PDF</button>
                         {item.remainingBalance > 0 ? (
                           <button
                             onClick={() => {
