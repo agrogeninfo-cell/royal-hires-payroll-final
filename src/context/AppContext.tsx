@@ -154,7 +154,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
   };
 
   useEffect(() => {
-    void reloadData();
+    void reloadData().then(() => {
+      if (navigator.onLine) void syncOfflineQueue();
+    });
   }, []);
 
   const toggleOnlineStatus = () => {
@@ -169,11 +171,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     try {
       const report = await SyncService.processQueue();
       await reloadData();
-      if (report.syncedCount > 0) {
-        console.log(`Synced ${report.syncedCount} offline operations successfully.`);
+      if (report.syncedCount > 0) console.info(`Cloud sync reconciled ${report.syncedCount} records (pushed ${report.pushedCount || 0}, pulled ${report.pulledCount || 0}).`);
+      if (report.conflictCount > 0 || report.failedCount > 0) {
+        console.warn('Cloud sync needs attention:', report.errors);
       }
     } catch (err) {
-      console.error('Sync failed:', err);
+      console.error('Cloud sync failed:', err);
     }
   };
 
