@@ -118,33 +118,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
 
       const isSupervisor = currentUser.role === 'supervisor';
       const assignedFactories = new Set(currentUser.assignedFactoryIds || []);
-      const fData = await dbService.getAll<Factory>('factories');
-      setFactories(isSupervisor ? fData.filter((factory) => assignedFactories.has(factory.id)) : fData);
+      // Royal Pay is currently scoped to these two approved factories. Other local
+      // factory data is preserved in backup but excluded from operational views/sync.
+      const approvedFactoryNames = new Set(['empire teas', 'millennium teas']);
+      const allFactories = await dbService.getAll<Factory>('factories');
+      const fData = allFactories.filter((factory) => approvedFactoryNames.has(factory.name.trim().toLowerCase()));
+      const targetFactoryIds = new Set(fData.map((factory) => factory.id));
+      const visibleFactories = isSupervisor ? fData.filter((factory) => assignedFactories.has(factory.id)) : fData;
+      setFactories(visibleFactories);
 
-      const eData = await dbService.getAll<Employee>('employees');
-      setEmployees(isSupervisor ? eData.filter((employee) => assignedFactories.has(employee.currentFactoryId)) : eData);
+      const allEmployees = await dbService.getAll<Employee>('employees');
+      const eData = allEmployees.filter((employee) => targetFactoryIds.has(employee.currentFactoryId));
+      const visibleEmployees = isSupervisor ? eData.filter((employee) => assignedFactories.has(employee.currentFactoryId)) : eData;
+      setEmployees(visibleEmployees);
+      const targetEmployeeIds = new Set(eData.map((employee) => employee.id));
 
-      const aData = await dbService.getAll<AttendanceRecord>('attendance');
-      // Supervisors only receive in-memory records for explicitly assigned local factories.
+      const allAttendance = await dbService.getAll<AttendanceRecord>('attendance');
+      const aData = allAttendance.filter((record) => targetFactoryIds.has(record.factoryId));
       setAttendance((isSupervisor ? aData.filter((record) => assignedFactories.has(record.factoryId)) : aData)
         .sort((a, b) => b.date.localeCompare(a.date)));
 
-      const pData = await dbService.getAll<PayrollRun>('payroll_runs');
+      const allPayrollRuns = await dbService.getAll<PayrollRun>('payroll_runs');
+      const pData = allPayrollRuns.filter((run) =>
+        Array.isArray(run.items) && run.items.length > 0 && run.items.every((item) => targetFactoryIds.has(item.factoryId))
+      );
       setPayrollRuns(isSupervisor ? [] : pData.sort((a, b) => b.generatedAt.localeCompare(a.generatedAt)));
 
-      const payData = await dbService.getAll<EmployeePayment>('employee_payments');
+      const allPayments = await dbService.getAll<EmployeePayment>('employee_payments');
+      const payData = allPayments.filter((payment) => targetEmployeeIds.has(payment.employeeId));
       setPayments(isSupervisor ? [] : payData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
-      const invData = await dbService.getAll<FactoryInvoice>('invoices');
+      const allInvoices = await dbService.getAll<FactoryInvoice>('invoices');
+      const invData = allInvoices.filter((invoice) => targetFactoryIds.has(invoice.factoryId));
       setInvoices(isSupervisor ? [] : invData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
-      const recData = await dbService.getAll<FactoryReceipt>('receipts');
+      const allReceipts = await dbService.getAll<FactoryReceipt>('receipts');
+      const recData = allReceipts.filter((receipt) => targetFactoryIds.has(receipt.factoryId));
       setReceipts(isSupervisor ? [] : recData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
-      const bData = await dbService.getAll<BoardingLocation>('boarding_locations');
+      const allBoarding = await dbService.getAll<BoardingLocation>('boarding_locations');
+      const targetBoardingIds = new Set(eData.map((employee) => employee.boardingLocationId).filter(Boolean));
+      const bData = allBoarding.filter((location) => targetBoardingIds.has(location.id));
       setBoardingLocations(isSupervisor ? [] : bData);
 
-      const auditData = await dbService.getAll<AuditLog>('audit_logs');
+      const allAuditLogs = await dbService.getAll<AuditLog>('audit_logs');
+      const visibleEntityIds = new Set<string>([
+        ...targetFactoryIds,
+        ...targetEmployeeIds,
+        ...aData.map((record) => record.id),
+        ...pData.map((run) => run.id),
+        ...payData.map((payment) => payment.id),
+        ...invData.map((invoice) => invoice.id),
+        ...recData.map((receipt) => receipt.id),
+        ...bData.map((location) => location.id),
+      ]);
+      const auditData = allAuditLogs.filter((log) => visibleEntityIds.has(log.entityId));
       setAuditLogs(isSupervisor ? [] : auditData.sort((a, b) => b.timestamp.localeCompare(a.timestamp)));
 
       const queue = await dbService.getOfflineQueue();
