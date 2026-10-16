@@ -105,6 +105,12 @@ export async function signInWithPassword(email: string, password: string): Promi
   if (error) throw error;
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+  const redirectTo = Capacitor.isNativePlatform() ? AUTH_CALLBACK_URL : `${window.location.origin}/`;
+  const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email.trim(), { redirectTo });
+  if (error) throw error;
+}
+
 export async function signUpWithPassword(fullName: string, email: string, password: string): Promise<void> {
   const { error } = await getSupabaseClient().auth.signUp({
     email: email.trim(),
