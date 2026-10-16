@@ -201,7 +201,7 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
       <InstallAppModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />
 
       {/* Server-authorized user invitation and approval */}
-      <AdminAccessPanel isOpen={isAccessPanelOpen} onClose={() => setIsAccessPanelOpen(false)} />
+      {!PUBLIC_DEMO_MODE && <AdminAccessPanel isOpen={isAccessPanelOpen} onClose={() => setIsAccessPanelOpen(false)} />}
     </div>
   );
 };
