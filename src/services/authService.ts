@@ -105,6 +105,29 @@ export async function signInWithPassword(email: string, password: string): Promi
   if (error) throw error;
 }
 
+export async function signInWithUsername(username: string, password: string): Promise<void> {
+  const { data, error } = await getSupabaseClient().functions.invoke('royal-pay-username-auth', {
+    body: { action: 'sign-in', username: username.trim(), password },
+  });
+  if (error) throw error;
+  const session = data?.session;
+  if (!session?.access_token || !session?.refresh_token) {
+    throw new Error('Sign-in could not be completed. Check your username and password or contact the administrator.');
+  }
+  const { error: sessionError } = await getSupabaseClient().auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+  if (sessionError) throw sessionError;
+}
+
+export async function requestPasswordResetByUsername(username: string): Promise<void> {
+  const { error } = await getSupabaseClient().functions.invoke('royal-pay-username-auth', {
+    body: { action: 'reset-password', username: username.trim() },
+  });
+  if (error) throw error;
+}
+
 function getWebAuthRedirectUrl(): string {
   // Respect Vite's configured base path (for example, the GitHub Pages repository path).
   return new URL(import.meta.env.BASE_URL, window.location.origin).toString();
