@@ -105,8 +105,13 @@ export async function signInWithPassword(email: string, password: string): Promi
   if (error) throw error;
 }
 
+function getWebAuthRedirectUrl(): string {
+  // Respect Vite's configured base path (for example, the GitHub Pages repository path).
+  return new URL(import.meta.env.BASE_URL, window.location.origin).toString();
+}
+
 export async function requestPasswordReset(email: string): Promise<void> {
-  const redirectTo = Capacitor.isNativePlatform() ? AUTH_CALLBACK_URL : `${window.location.origin}/`;
+  const redirectTo = Capacitor.isNativePlatform() ? AUTH_CALLBACK_URL : getWebAuthRedirectUrl();
   const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email.trim(), { redirectTo });
   if (error) throw error;
 }
@@ -122,7 +127,7 @@ export async function signUpWithPassword(fullName: string, email: string, passwo
 
 export async function signInWithGoogle(): Promise<void> {
   const native = Capacitor.isNativePlatform();
-  const redirectTo = native ? AUTH_CALLBACK_URL : `${window.location.origin}/`;
+  const redirectTo = native ? AUTH_CALLBACK_URL : getWebAuthRedirectUrl();
   const { data, error } = await getSupabaseClient().auth.signInWithOAuth({
     provider: 'google',
     options: {
