@@ -94,7 +94,7 @@ export const AuthScreen: React.FC = () => {
             {mode !== 'recovery' && <label className="block text-sm font-medium text-slate-200">Password
               <span className="relative mt-1.5 block">
                 <KeyRound size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input required={mode !== 'recovery'} minLength={8} type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-10 pr-11 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400" placeholder="At least 8 characters" />
+                <input required minLength={8} type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-10 pr-11 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400" placeholder="At least 8 characters" />
                 <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button>
               </span>
             </label>}
