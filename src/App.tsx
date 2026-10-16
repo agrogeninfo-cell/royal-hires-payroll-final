@@ -206,8 +206,31 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
   );
 };
 
+const PUBLIC_DEMO_MODE = import.meta.env.VITE_PUBLIC_DEMO_MODE === 'true';
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+
+  // Public preview uses a local-only demo identity. Cloud authentication is not bypassed
+  // for production records: AppContext disables cloud sync and realtime in this mode.
+  if (PUBLIC_DEMO_MODE) {
+    const demoUser = {
+      id: 'royal-pay-public-demo',
+      name: 'Public Demo',
+      email: '',
+      role: 'admin' as const,
+      active: true,
+      assignedFactoryIds: [],
+    };
+    return (
+      <>
+        <AppProvider key={demoUser.id} initialUser={demoUser}>
+          <MainLayout onSignOut={async () => { window.location.reload(); }} />
+        </AppProvider>
+        {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      </>
+    );
+  }
 
   return (
     <AuthGate>
