@@ -15,6 +15,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { ForeverStorageService } from '../db/foreverStorage';
+import { previewLegacyCloudMigration, migrateSelectedLegacyRecords, type LegacyMigrationPreview, type MigrationCollection } from '../services/legacyCloudMigration';
 
 interface BackupHubModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
   onOpenInstall,
 }) => {
   const {
+    currentUser,
     factories,
     employees,
     attendance,
@@ -46,6 +48,11 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
   const [feedback, setFeedback] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [migrationPreview, setMigrationPreview] = useState<LegacyMigrationPreview | null>(null);
+  const [selectedMigration, setSelectedMigration] = useState<Record<string, string[]>>({});
+  const [migrationConfirmed, setMigrationConfirmed] = useState(false);
+  const [backupReady, setBackupReady] = useState(false);
+  const [migrationFilter, setMigrationFilter] = useState('');
 
   if (!isOpen) return null;
 
@@ -70,6 +77,60 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
       setTimeout(() => setFeedback(''), 4000);
     } catch (err: any) {
       setErrorMsg(err.message || 'Download failed');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePrepareCloudMigration = async () => {
+    setIsProcessing(true);
+    setErrorMsg('');
+    try {
+      await downloadForeverBackup();
+      const preview = await previewLegacyCloudMigration();
+      setMigrationPreview(preview);
+      setSelectedMigration({});
+      setMigrationConfirmed(false);
+      setBackupReady(true);
+      setFeedback('Backup downloaded. Review each candidate record before authorizing cloud migration.');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Could not prepare cloud migration.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const toggleMigrationCandidate = (collection: MigrationCollection, id: string) => {
+    setSelectedMigration((current) => {
+      const ids = new Set(current[collection] || []);
+      if (ids.has(id)) ids.delete(id); else ids.add(id);
+      return { ...current, [collection]: Array.from(ids) };
+    });
+  };
+
+  const handleMigrateSelected = async () => {
+    const selectedCount = Object.values(selectedMigration).reduce((sum, ids) => sum + (ids?.length || 0), 0);
+    if (!backupReady || !migrationConfirmed || selectedCount === 0) {
+      setErrorMsg('Download a backup, select the records to migrate, and confirm that you reviewed them.');
+      return;
+    }
+    if (!window.confirm('Upload only the selected historical records for Empire Teas and Millennium Teas? Local records will not be deleted.')) return;
+    setIsProcessing(true);
+    setErrorMsg('');
+    try {
+      const result = await migrateSelectedLegacyRecords(selectedMigration as Partial<Record<MigrationCollection, string[]>>, migrationPreview?.candidates || []);
+      if (result.failedCount > 0) {
+        setErrorMsg('Migration partially completed. ' + result.pushedCount + ' records were uploaded; ' + result.failedCount + ' sync failures occurred. Local records are preserved. ' + result.errors.slice(0, 3).join(' '));
+      } else {
+        setFeedback('Migration finished: ' + result.pushedCount + ' records uploaded, ' + result.pulledCount + ' pulled, ' + result.conflictCount + ' conflicts retained. Local records were not deleted.');
+      }
+      const nextPreview = await previewLegacyCloudMigration();
+      setMigrationPreview(nextPreview);
+      setSelectedMigration({});
+      setMigrationConfirmed(false);
+      setBackupReady(false);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Cloud migration failed. Local records were preserved.');
     } finally {
       setIsProcessing(false);
     }
@@ -225,6 +286,72 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Admin-reviewed legacy cloud migration */}
+        {currentUser.role === 'admin' && (
+          <section className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-emerald-700 p-2 text-white"><Database className="h-5 w-5" /></div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-bold text-sm text-emerald-950">Move existing records to cloud</h4>
+                <p className="mt-1 text-xs leading-5 text-emerald-900">
+                  Manual, record-by-record migration. Only records linked to Empire Teas or Millennium Teas are considered. Missing records can be uploaded without deleting local data. Factory rate configuration and old audit logs are excluded for separate review.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => void handlePrepareCloudMigration()}
+              disabled={isProcessing}
+              className="w-full rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-600 disabled:opacity-50"
+            >
+              {isProcessing ? 'Preparing…' : 'Download backup & preview cloud migration'}
+            </button>
+            {migrationPreview && (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-emerald-200 bg-white p-3 text-xs text-slate-700">
+                  <p className="font-bold text-slate-900">Factories in scope: {migrationPreview.factoryNames.join(', ') || 'No matching factory records found'}</p>
+                  <p className="mt-1">Inspect the names, dates and amounts before selecting. Do not select demo or incorrect records. Records already present in cloud are skipped.</p>
+                  <p className="mt-1">All local records remain on this device after upload.</p>
+                </div>
+                <input
+                  value={migrationFilter}
+                  onChange={(event) => setMigrationFilter(event.target.value)}
+                  placeholder="Filter by record name, ID, date or amount…"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-600"
+                />
+                <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white divide-y divide-slate-100">
+                  {migrationPreview.candidates.filter((item) => (item.label + ' ' + item.details + ' ' + item.id + ' ' + item.collection).toLowerCase().includes(migrationFilter.toLowerCase())).map((item) => {
+                    const checked = (selectedMigration[item.collection] || []).includes(item.id);
+                    return (
+                      <label key={item.collection + ':' + item.id} className="flex cursor-pointer items-start gap-2.5 p-3 hover:bg-emerald-50">
+                        <input type="checkbox" checked={checked} onChange={() => toggleMigrationCandidate(item.collection, item.id)} className="mt-0.5 accent-emerald-700" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-xs font-bold text-slate-900">{item.label}</span>
+                          <span className="mt-0.5 block text-[11px] text-slate-600">{item.collection.replaceAll('_', ' ')} · {item.details}</span>
+                          <span className="block break-all font-mono text-[10px] text-slate-400">{item.id}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                  {migrationPreview.candidates.length === 0 && (
+                    <p className="p-4 text-xs text-slate-600">No missing eligible records found for these factories.</p>
+                  )}
+                </div>
+                <label className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-950">
+                  <input type="checkbox" checked={migrationConfirmed} onChange={(event) => setMigrationConfirmed(event.target.checked)} className="mt-1 accent-emerald-700" />
+                  <span>I reviewed the selected records and confirm they are legitimate Royal Hires records, not demo/test data. I authorize uploading them to the development cloud database.</span>
+                </label>
+                <button
+                  onClick={() => void handleMigrateSelected()}
+                  disabled={isProcessing || !backupReady || !migrationConfirmed || Object.values(selectedMigration).reduce((sum, ids) => sum + (ids?.length || 0), 0) === 0}
+                  className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-40"
+                >
+                  {isProcessing ? 'Uploading reviewed records…' : 'Upload selected records to cloud'}
+                </button>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Backup & Recovery Actions */}
         <div className="space-y-3">

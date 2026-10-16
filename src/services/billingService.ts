@@ -15,7 +15,8 @@ export class BillingService {
   public static getApplicableDailyBillingRate(
     factory: Factory,
     gender: 'male' | 'female',
-    attendanceDate?: string
+    attendanceDate?: string,
+    shift?: string
   ): RateResult {
     if (!factory) {
       throw new Error('Factory record is required to calculate billing rate.');
@@ -39,6 +40,21 @@ export class BillingService {
       }
     }
 
+    const factoryKey = `${factory.id} ${factory.name}`.toLowerCase();
+    if (factoryKey.includes('empire-teas') || factoryKey.includes('empire teas')) {
+      const date = attendanceDate ? new Date(`${attendanceDate}T12:00:00`) : null;
+      const isSaturday = date?.getDay() === 6;
+      const isSunday = date?.getDay() === 0;
+      const isConfiguredPoya = Boolean(attendanceDate && factory.specialBillingDates?.includes(attendanceDate));
+      const isNight = /night/i.test(shift || '');
+      const baseRate = factory.sameRate && factory.sameRate > 0 ? factory.sameRate : 1525;
+      let rate = baseRate;
+      if (isSunday || isConfiguredPoya) rate = 3600 + (gender === 'female' ? 100 : 0);
+      else if (isSaturday && !isNight) rate = 1875;
+      else if (isNight && gender === 'female') rate = baseRate + 100;
+      return { rate, method: 'SAME_RATE_FOR_ALL', factoryId: factory.id, factoryName: factory.name };
+    }
+
     if (factory.billingMethod === 'SAME_RATE_FOR_ALL') {
       if (factory.sameRate === undefined || factory.sameRate === null || isNaN(factory.sameRate)) {
         throw new Error(
@@ -55,6 +71,16 @@ export class BillingService {
         factoryId: factory.id,
         factoryName: factory.name,
       };
+    }
+
+    if (factoryKey.includes('millennium-teas') || factoryKey.includes('millennium teas')) {
+      const isNight = /night|20:30/i.test(shift || '');
+      const configuredNightRate = gender === 'male' ? factory.nightMaleRate : factory.nightFemaleRate;
+      if (isNight && (!configuredNightRate || configuredNightRate <= 0)) {
+        throw new Error(`Millennium Teas night-shift ${gender} billing rate is not configured. Add the approved rate in Factory Management before generating an invoice.`);
+      }
+      const rate = isNight ? configuredNightRate! : gender === 'male' ? (factory.maleRate || 3000) : (factory.femaleRate || 2500);
+      return { rate, method: 'SEPARATE_MALE_FEMALE_RATES', factoryId: factory.id, factoryName: factory.name };
     }
 
     if (factory.billingMethod === 'SEPARATE_MALE_FEMALE_RATES') {

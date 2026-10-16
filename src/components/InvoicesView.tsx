@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { FactoryInvoice, InvoiceLineItem } from '../types';
+import { ROYAL_HIRES_LETTERHEAD_DATA_URI } from '../assets/royalHiresLetterhead';
 import { InvoicingService } from '../services/invoicingService';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
@@ -33,7 +34,7 @@ export const InvoicesView: React.FC = () => {
 
   // Generation parameters
   const [targetFactoryId, setTargetFactoryId] = useState<string>(factories[0]?.id || '');
-  const [periodStart, setPeriodStart] = useState<string>('2026-01-01');
+  const [periodStart, setPeriodStart] = useState<string>(() => `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`);
   const [periodEnd, setPeriodEnd] = useState<string>(new Date().toISOString().split('T')[0]);
   const [invoiceNumber, setInvoiceNumber] = useState<string>(`INV-2026-00${invoices.length + 1}`);
   const [feedback, setFeedback] = useState<string>('');
@@ -174,6 +175,60 @@ export const InvoicesView: React.FC = () => {
       console.error('Invoice CSV export failed', error);
       alert('Could not export the invoice CSV. Please try again or check Android sharing permissions.');
     }
+  };
+
+  const htmlEscape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
+
+  const exportInvoiceLetterheadPdf = (inv: FactoryInvoice) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) { alert('Allow pop-ups to export the invoice as a PDF.'); return; }
+    const lineRows = inv.lineItems.map((line) => `<tr><td>${htmlEscape(line.date)}</td><td>${htmlEscape(line.employeeName)} (${line.employeeGender === 'male' ? 'M' : 'F'})</td><td>${htmlEscape(line.shift)}</td><td class="num">${line.billableDays}</td><td class="num">${line.snapshotBillingRate.toLocaleString('en-LK')}</td><td class="num">${line.dayBillingTotal.toLocaleString('en-LK')}</td><td class="num">${line.approvedOtHours}</td><td class="num">${line.otBillingTotal.toLocaleString('en-LK')}</td><td class="num">${line.lineTotal.toLocaleString('en-LK')}</td></tr>`).join('');
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${htmlEscape(inv.invoiceNumber)}</title><style>
+      @page{size:A4;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;font-family:Arial,sans-serif;color:#1f2937;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .letterhead{position:fixed;left:0;top:0;width:210mm;height:297mm;z-index:-1}main{padding:48mm 14mm 24mm;min-height:297mm;font-size:10px}.meta{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.meta h1{font-size:19px;margin:0 0 6px;color:#0f3d2e}.meta p{margin:3px 0}.invoice-label{font-size:10px;letter-spacing:1.5px;color:#8b6b32;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:9px}th{background:#0f3d2e;color:#fff;text-align:left;padding:7px 5px}td{border-bottom:1px solid #d1d5db;padding:6px 5px;vertical-align:top}.num{text-align:right;white-space:nowrap}.totals{margin:16px 0 0 auto;width:68mm;border-top:2px solid #0f3d2e;padding-top:8px}.total{font-size:14px;font-weight:bold;color:#0f3d2e;display:flex;justify-content:space-between;margin-top:8px}.notes{margin-top:18px;font-size:9px;color:#4b5563}.signature{display:flex;justify-content:space-between;margin-top:28mm;font-size:9px}.signature span{border-top:1px solid #64748b;padding-top:5px;width:58mm}@media screen{body{background:#e5e7eb}.letterhead{opacity:.95}main{background:transparent;max-width:210mm;margin:auto}}
+      </style></head><body><img class="letterhead" src="${ROYAL_HIRES_LETTERHEAD_DATA_URI}" alt="Royal Hires letterhead"><main><div class="invoice-label">SERVICE INVOICE</div><div class="meta"><div><h1>INVOICE</h1><p><b>Invoice No:</b> ${htmlEscape(inv.invoiceNumber)}</p><p><b>Invoice Date:</b> ${htmlEscape(inv.invoiceDate)}</p><p><b>Status:</b> ${htmlEscape(inv.status.toUpperCase())}</p></div><div><p><b>Billed To:</b> ${htmlEscape(inv.factoryName)}</p><p><b>Billing Period:</b> ${htmlEscape(inv.periodStart)} to ${htmlEscape(inv.periodEnd)}</p><p><b>Due Date:</b> ${htmlEscape(inv.dueDate)}</p></div></div><table><thead><tr><th>Date</th><th>Employee</th><th>Shift</th><th class="num">Days</th><th class="num">Rate (LKR)</th><th class="num">Day Total</th><th class="num">OT Hours</th><th class="num">OT Total</th><th class="num">Line Total</th></tr></thead><tbody>${lineRows}</tbody></table><div class="totals"><div><b>Subtotal:</b> <span style="float:right">LKR ${inv.subtotal.toLocaleString('en-LK')}</span></div><div><b>Adjustments:</b> <span style="float:right">LKR ${inv.adjustments.toLocaleString('en-LK')}</span></div><div class="total"><span>TOTAL</span><span>LKR ${inv.totalAmount.toLocaleString('en-LK')}</span></div><div style="margin-top:8px"><b>Received:</b> <span style="float:right">LKR ${inv.amountReceived.toLocaleString('en-LK')}</span></div><div><b>Outstanding:</b> <span style="float:right">LKR ${inv.outstandingBalance.toLocaleString('en-LK')}</span></div></div><div class="notes">Rates are the invoice-time snapshots. Please quote the invoice number when making payment.${inv.notes ? `<br>${htmlEscape(inv.notes)}` : ''}</div><div class="signature"><span>Prepared by / Authorized Signature</span><span>Factory Acknowledgement</span></div></main><script>window.onload=()=>setTimeout(()=>window.print(),500);</script></body></html>`);
+    printWindow.document.close();
+  };
+
+  const exportMillenniumSummaryCsv = async (inv: Pick<FactoryInvoice, 'factoryId' | 'periodStart' | 'periodEnd' | 'invoiceNumber'>) => {
+    const records = (await Promise.resolve(attendance)).filter((record) => record.factoryId === inv.factoryId && record.date >= inv.periodStart && record.date <= inv.periodEnd && record.submissionStatus === 'approved' && (record.status === 'present' || record.status === 'half_day'));
+    const escapeCell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const csvRows: unknown[][] = [['Invoice No:', inv.invoiceNumber], [], ['Labour catagery : Male'], [], ['Date', 'Day Shift Count', 'Rate (7.00-19.00)', 'Day Shift Total', 'Night Shift Count', 'Rate (20:30-8:00)', 'Night Shift Total', 'OT Hours', 'Total OT Rs 225 (Per Hours)', 'Late Rs 150 (Per Hours)', 'Total']];
+    const factory = factories.find((item) => item.id === inv.factoryId);
+    const categories: Array<{ key: 'male' | 'female'; label: string; rate: number; nightRate?: number }> = [{ key: 'male', label: 'Male', rate: factory?.maleRate || 3000, nightRate: factory?.nightMaleRate }, { key: 'female', label: 'Female', rate: factory?.femaleRate || 2500, nightRate: factory?.nightFemaleRate }];
+    const dates = [...new Set(records.map((record) => record.date))].sort();
+    for (const category of categories) {
+      if (category.key === 'female') csvRows.push([], [`Labour catagery : ${category.label}`], [], ['Date', 'Day Shift Count', 'Rate (7.00-19.00)', 'Day Shift Total', 'Night Shift Count', 'Rate (20:30-8:00)', 'Night Shift Total', 'OT Hours', 'Total OT Rs 225 (Per Hours)', 'Late Rs 150 (Per Hours)', 'Total']);
+      for (const date of dates) {
+        const daily = records.filter((record) => record.date === date && record.employeeGender === category.key);
+        if (!daily.length) continue;
+        const dayRecords = daily.filter((record) => /day|07:00|7\.00/i.test(record.shift) && !/night/i.test(record.shift));
+        const nightRecords = daily.filter((record) => /night|20:30/i.test(record.shift));
+        const dayCount = dayRecords.length;
+        const nightCount = nightRecords.length;
+        const dayTotal = dayCount * category.rate;
+        const otHours = daily.reduce((sum, record) => sum + (record.totalOtHours || 0), 0);
+        const otTotal = Math.round(otHours * 225);
+        const lateHours = daily.reduce((sum, record) => sum + (record.lateHours || 0), 0);
+        const lateTotal = Math.round(lateHours * 150);
+        const nightTotal = nightCount && category.nightRate ? nightCount * category.nightRate : '';
+        const total = nightCount > 0 && !category.nightRate ? '' : dayTotal + (typeof nightTotal === 'number' ? nightTotal : 0) + otTotal - lateTotal;
+        csvRows.push([date.replace(/-/g, ','), dayCount || '', dayCount ? category.rate : '', dayCount ? dayTotal : '', nightCount || '', nightCount && category.nightRate ? category.nightRate : '', nightTotal, otHours || '', otHours ? otTotal : '', lateHours ? lateTotal : '', total]);
+      }
+    }
+    csvRows.push([], ['Note:', 'Night-shift rate is blank unless an Admin configures it in Factory Management. Rows with night attendance and no configured night rate have a blank Total; do not bill them until the rate is approved.']);
+    const csv = `\uFEFF${csvRows.map((row) => row.map(escapeCell).join(',')).join('\r\n')}`;
+    const fileName = `Millennium_Teas_Summary_${inv.invoiceNumber.replace(/[^a-zA-Z0-9._-]/g, '_')}.csv`;
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const saved = await Filesystem.writeFile({ path: fileName, data: csv, directory: Directory.Cache, recursive: true });
+        await Share.share({ title: `Millennium Teas Summary ${inv.invoiceNumber}`, text: 'Millennium Teas daily labour summary CSV', url: saved.uri, dialogTitle: 'Save or share summary CSV' });
+      } else {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url);
+      }
+      setFeedback(`Millennium Teas summary exported: ${fileName}`);
+    } catch (error) { console.error('Millennium summary export failed', error); alert('Could not export the Millennium Teas summary CSV.'); }
   };
 
   return (
@@ -350,7 +405,16 @@ export const InvoicesView: React.FC = () => {
                 Notice: Invoices compile only approved, billable attendance and overtime. Rates are locked immutably into invoice lines.
               </p>
 
-              <div className="flex justify-end space-x-2 pt-3 border-t">
+              <div className="flex justify-end flex-wrap gap-2 pt-3 border-t">
+                {factories.find((factory) => factory.id === targetFactoryId)?.name.trim().toLowerCase() === 'millennium teas' && (
+                  <button
+                    type="button"
+                    onClick={() => void exportMillenniumSummaryCsv({ factoryId: targetFactoryId, periodStart, periodEnd, invoiceNumber })}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold cursor-pointer"
+                  >
+                    Export Millennium Summary CSV
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsGenerateModalOpen(false)}
@@ -391,7 +455,9 @@ export const InvoicesView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-wrap justify-end gap-2">
+                <button onClick={() => exportInvoiceLetterheadPdf(selectedInvoice)} className="px-3 py-1.5 text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg flex items-center space-x-1 cursor-pointer"><Download className="w-3.5 h-3.5" /><span>Export Letterhead PDF</span></button>
+                {selectedInvoice.factoryName.trim().toLowerCase() === 'millennium teas' && <button onClick={() => void exportMillenniumSummaryCsv(selectedInvoice)} className="px-3 py-1.5 text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white rounded-lg flex items-center space-x-1 cursor-pointer"><Download className="w-3.5 h-3.5" /><span>Millennium Summary CSV</span></button>}
                 <button
                   onClick={() => exportInvoiceCsv(selectedInvoice)}
                   className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 flex items-center space-x-1 cursor-pointer"
@@ -420,9 +486,9 @@ export const InvoicesView: React.FC = () => {
             {/* Invoice Printable Layout Header */}
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">LankaManpower Agency Ltd</h4>
-                <p className="text-slate-500">Industrial Manpower Supply Division</p>
-                <p className="text-slate-500">Colombo, Sri Lanka • Tel: +94 11 291 0000</p>
+                <h4 className="font-bold text-slate-900 text-sm">Royal Hires Private Limited</h4>
+                <p className="text-slate-500">Manpower & Workforce Solutions</p>
+                <p className="text-slate-500">No.235/S Artigala Road, Meegoda • Tel: 071 144 244 5</p>
               </div>
               <div className="text-right space-y-1">
                 <p>

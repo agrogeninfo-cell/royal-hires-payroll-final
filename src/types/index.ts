@@ -39,14 +39,22 @@ export interface Factory {
   sameRate?: number; // Standard daily billing rate for all Helpers in LKR
   maleRate?: number; // Male Helper daily rate in LKR
   femaleRate?: number; // Female Helper daily rate in LKR
+  nightMaleRate?: number; // Optional Millennium Teas night-shift billing rate; blank until confirmed
+  nightFemaleRate?: number; // Optional Millennium Teas night-shift billing rate; blank until confirmed
   billingEffectiveFrom: string; // YYYY-MM-DD
   billingEffectiveTo?: string; // YYYY-MM-DD
   breakfastRate: number; // LKR
   lunchRate: number; // LKR
   dinnerRate: number; // LKR
   supervisorIds: string[];
+  /** Admin-maintained dates billed using the factory's Sunday/Poya special-day rule. */
+  specialBillingDates?: string[];
   createdAt: string;
   updatedAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
+  /** True only after the cloud accepted the factory configuration payload. */
+  cloudSyncConfirmed?: boolean;
 }
 
 export type WageArrangement = 'daily' | 'weekly' | 'monthly';
@@ -71,6 +79,8 @@ export interface Employee {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface EmployeeAssignmentHistory {
@@ -97,6 +107,9 @@ export interface FactoryBillingRateHistory {
   active: boolean;
   createdBy: string;
   createdAt: string;
+  updatedAt?: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface BoardingLocation {
@@ -106,6 +119,9 @@ export interface BoardingLocation {
   contactPhone: string;
   dailyRate: number; // LKR per day
   active: boolean;
+  updatedAt?: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export type AttendanceStatus = 'present' | 'absent' | 'leave' | 'half_day';
@@ -128,6 +144,7 @@ export interface AttendanceRecord {
   otHours: number; // integer hours
   otMinutes: number; // 0, 15, 30, 45, etc.
   totalOtHours: number; // otHours + (otMinutes / 60)
+  lateHours?: number; // Millennium Teas late-time deduction hours, when recorded
   hadBreakfast: boolean;
   hadLunch: boolean;
   hadDinner: boolean;
@@ -144,6 +161,8 @@ export interface AttendanceRecord {
   conflictReason?: string;
   createdAt: string;
   updatedAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface OvertimeSubmission {
@@ -164,6 +183,9 @@ export interface OvertimeSubmission {
   approvedBy?: string;
   approvedAt?: string;
   notes?: string;
+  updatedAt?: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface PayrollItem {
@@ -217,6 +239,9 @@ export interface PayrollRun {
   totalBalance: number;
   items: PayrollItem[];
   notes?: string;
+  updatedAt?: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export type PaymentType = 'advance' | 'salary_payment' | 'partial_payment';
@@ -235,6 +260,9 @@ export interface EmployeePayment {
   notes?: string;
   recordedBy: string;
   createdAt: string;
+  updatedAt?: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface InvoiceLineItem {
@@ -275,6 +303,8 @@ export interface FactoryInvoice {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface ReceiptAllocation {
@@ -301,6 +331,9 @@ export interface FactoryReceipt {
   allocations: ReceiptAllocation[];
   recordedBy: string;
   createdAt: string;
+  updatedAt?: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface AuditLog {
@@ -314,6 +347,9 @@ export interface AuditLog {
   details: string;
   beforeValues?: any;
   afterValues?: any;
+  updatedAt?: string;
+  /** True only after an explicit local create/edit approved for cloud synchronization. */
+  cloudSyncReady?: boolean;
 }
 
 export interface OfflineQueueItem {

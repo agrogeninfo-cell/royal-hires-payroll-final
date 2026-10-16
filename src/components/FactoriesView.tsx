@@ -16,6 +16,7 @@ import {
 export const FactoriesView: React.FC = () => {
   const { currentUser, factories, saveFactory, allUsers, t } = useApp();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [rateReviewConfirmed, setRateReviewConfirmed] = useState(false);
   const [editingFactory, setEditingFactory] = useState<Factory | null>(null);
 
   // Form State
@@ -35,8 +36,11 @@ export const FactoriesView: React.FC = () => {
   const [sameRate, setSameRate] = useState<number>(3000);
   const [maleRate, setMaleRate] = useState<number>(3200);
   const [femaleRate, setFemaleRate] = useState<number>(2900);
+  const [nightMaleRateText, setNightMaleRateText] = useState('');
+  const [nightFemaleRateText, setNightFemaleRateText] = useState('');
   const [billingEffectiveFrom, setBillingEffectiveFrom] = useState('2026-01-01');
   const [billingEffectiveTo, setBillingEffectiveTo] = useState('');
+  const [specialBillingDatesText, setSpecialBillingDatesText] = useState('');
 
   // Meal rates
   const [breakfastRate, setBreakfastRate] = useState(150);
@@ -50,6 +54,7 @@ export const FactoriesView: React.FC = () => {
   const supervisors = allUsers.filter((u) => u.role === 'supervisor');
 
   const openCreateModal = () => {
+    setRateReviewConfirmed(false);
     setEditingFactory(null);
     setName('');
     setCode(`FAC-0${factories.length + 1}`);
@@ -65,8 +70,11 @@ export const FactoriesView: React.FC = () => {
     setSameRate(3000);
     setMaleRate(3200);
     setFemaleRate(2900);
+    setNightMaleRateText('');
+    setNightFemaleRateText('');
     setBillingEffectiveFrom(new Date().toISOString().split('T')[0]);
     setBillingEffectiveTo('');
+    setSpecialBillingDatesText('');
     setBreakfastRate(150);
     setLunchRate(250);
     setDinnerRate(200);
@@ -76,6 +84,7 @@ export const FactoriesView: React.FC = () => {
   };
 
   const openEditModal = (fac: Factory) => {
+    setRateReviewConfirmed(false);
     setEditingFactory(fac);
     setName(fac.name);
     setCode(fac.code);
@@ -91,8 +100,11 @@ export const FactoriesView: React.FC = () => {
     setSameRate(fac.sameRate ?? 3000);
     setMaleRate(fac.maleRate ?? 3200);
     setFemaleRate(fac.femaleRate ?? 2900);
+    setNightMaleRateText(fac.nightMaleRate == null ? '' : String(fac.nightMaleRate));
+    setNightFemaleRateText(fac.nightFemaleRate == null ? '' : String(fac.nightFemaleRate));
     setBillingEffectiveFrom(fac.billingEffectiveFrom || '2026-01-01');
     setBillingEffectiveTo(fac.billingEffectiveTo || '');
+    setSpecialBillingDatesText((fac.specialBillingDates || []).join(', '));
     setBreakfastRate(fac.breakfastRate);
     setLunchRate(fac.lunchRate);
     setDinnerRate(fac.dinnerRate);
@@ -107,6 +119,10 @@ export const FactoriesView: React.FC = () => {
 
     if (!name.trim() || !code.trim()) {
       setErrorMsg('Factory name and code are required.');
+      return;
+    }
+    if (!rateReviewConfirmed) {
+      setErrorMsg('Confirm that rates, shifts, overtime, meal charges and effective dates match the approved factory rate sheet before saving to cloud.');
       return;
     }
 
@@ -153,7 +169,10 @@ export const FactoriesView: React.FC = () => {
         sameRate: billingMethod === 'SAME_RATE_FOR_ALL' ? Number(sameRate) : undefined,
         maleRate: billingMethod === 'SEPARATE_MALE_FEMALE_RATES' ? Number(maleRate) : undefined,
         femaleRate: billingMethod === 'SEPARATE_MALE_FEMALE_RATES' ? Number(femaleRate) : undefined,
+        nightMaleRate: name.trim().toLowerCase() === 'millennium teas' && nightMaleRateText !== '' ? Number(nightMaleRateText) : undefined,
+        nightFemaleRate: name.trim().toLowerCase() === 'millennium teas' && nightFemaleRateText !== '' ? Number(nightFemaleRateText) : undefined,
         billingEffectiveFrom,
+        specialBillingDates: specialBillingDatesText.split(',').map((date) => date.trim()).filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)),
         billingEffectiveTo: billingEffectiveTo || undefined,
         breakfastRate: Number(breakfastRate),
         lunchRate: Number(lunchRate),
@@ -496,6 +515,14 @@ export const FactoriesView: React.FC = () => {
                   </div>
                 )}
 
+                {name.trim().toLowerCase() === 'millennium teas' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
+                    <div><label className="block font-semibold text-slate-700 mb-1">Night Shift Male Rate (LKR, optional)</label><input type="number" min="1" value={nightMaleRateText} onChange={(e) => setNightMaleRateText(e.target.value)} placeholder="Not in supplied reference" className="w-full bg-white border border-slate-300 rounded-lg p-2" /></div>
+                    <div><label className="block font-semibold text-slate-700 mb-1">Night Shift Female Rate (LKR, optional)</label><input type="number" min="1" value={nightFemaleRateText} onChange={(e) => setNightFemaleRateText(e.target.value)} placeholder="Not in supplied reference" className="w-full bg-white border border-slate-300 rounded-lg p-2" /></div>
+                    <p className="sm:col-span-2 text-[11px] text-amber-800">The uploaded summary reference does not provide night-shift rates. Enter approved rates here before invoicing night-shift attendance.</p>
+                  </div>
+                )}
+
                 {/* Effective Dates */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div>
@@ -522,6 +549,12 @@ export const FactoriesView: React.FC = () => {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-2">
+                <label className="block font-semibold text-slate-700 mb-1">Special Billing Dates (Poya / approved holidays)</label>
+                <input value={specialBillingDatesText} onChange={(e) => setSpecialBillingDatesText(e.target.value)} placeholder="YYYY-MM-DD, YYYY-MM-DD" className="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm" />
+                <p className="text-[11px] text-slate-600">Empire Teas: add confirmed Poya/holiday dates as YYYY-MM-DD, separated by commas. These dates use the Sunday/Poya special billing rate.</p>
               </div>
 
               {/* Overtime Configuration */}
@@ -611,6 +644,10 @@ export const FactoriesView: React.FC = () => {
                 </div>
               </div>
 
+              <label className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-950">
+                <input type="checkbox" checked={rateReviewConfirmed} onChange={(event) => setRateReviewConfirmed(event.target.checked)} className="mt-1 accent-emerald-700" />
+                <span>I verified the daily rates, OT rates, shifts, special-day rules, meal charges and effective dates against the approved rate sheet. Saving sends this configuration to cloud and enables payroll/invoicing for this factory once the server confirms it.</span>
+              </label>
               <div className="flex justify-end space-x-2 pt-3 border-t">
                 <button
                   type="button"

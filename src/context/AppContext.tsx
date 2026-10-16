@@ -16,6 +16,7 @@ import {
 } from '../types';
 import { dbService } from '../db/indexedDb';
 import { SyncService } from '../services/syncService';
+import { getCurrentSession, getSupabaseClient, loadAccessProfile } from '../services/authService';
 import { translations } from '../i18n/translations';
 
 interface AppContextType {
@@ -69,22 +70,16 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: User }> = ({ children, initialUser }) => {
   const [language, setLanguage] = useState<Language>('en');
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [mobileFrameMode, setMobileFrameMode] = useState<boolean>(false);
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isOnline, setIsOnline] = useState<boolean>(() => typeof navigator !== 'undefined' && navigator.onLine);
   const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
   const [lastBackupTime, setLastBackupTime] = useState<string>(new Date().toLocaleTimeString());
 
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: 'usr-admin',
-    name: 'Pradeep Silva',
-    email: 'admin@lankamanpower.lk',
-    role: 'admin',
-    active: true,
-  });
+  const [currentUser, setCurrentUser] = useState<User>(initialUser);
 
   const [factories, setFactories] = useState<Factory[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -100,7 +95,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      void syncOfflineQueue();
+      void syncOfflineQueue().catch((error) => console.error('Cloud sync after reconnect failed:', error));
     };
     const handleOffline = () => {
       setIsOnline(false);
@@ -121,50 +116,90 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const usersData = await dbService.getAll<User>('users');
       setAllUsers(usersData);
 
-      const fData = await dbService.getAll<Factory>('factories');
-      setFactories(fData);
+      const isSupervisor = currentUser.role === 'supervisor';
+      const assignedFactories = new Set(currentUser.assignedFactoryIds || []);
+      // Royal Pay is currently scoped to these two approved factories. Other local
+      // factory data is preserved in backup but excluded from operational views/sync.
+      const approvedFactoryNames = new Set(['empire teas', 'millennium teas']);
+      const allFactories = await dbService.getAll<Factory>('factories');
+      const fData = allFactories.filter((factory) => approvedFactoryNames.has(factory.name.trim().toLowerCase()));
+      const targetFactoryIds = new Set(fData.map((factory) => factory.id));
+      const visibleFactories = isSupervisor ? fData.filter((factory) => assignedFactories.has(factory.id)) : fData;
+      setFactories(visibleFactories);
 
-      const eData = await dbService.getAll<Employee>('employees');
-      setEmployees(eData);
+      const allEmployees = await dbService.getAll<Employee>('employees');
+      const eData = allEmployees.filter((employee) => targetFactoryIds.has(employee.currentFactoryId));
+      const visibleEmployees = isSupervisor ? eData.filter((employee) => assignedFactories.has(employee.currentFactoryId)) : eData;
+      setEmployees(visibleEmployees);
+      const targetEmployeeIds = new Set(eData.map((employee) => employee.id));
 
-      const aData = await dbService.getAll<AttendanceRecord>('attendance');
-      // Sort attendance by date desc
-      setAttendance(aData.sort((a, b) => b.date.localeCompare(a.date)));
+      const allAttendance = await dbService.getAll<AttendanceRecord>('attendance');
+      const aData = allAttendance.filter((record) => targetFactoryIds.has(record.factoryId));
+      setAttendance((isSupervisor ? aData.filter((record) => assignedFactories.has(record.factoryId)) : aData)
+        .sort((a, b) => b.date.localeCompare(a.date)));
 
-      const pData = await dbService.getAll<PayrollRun>('payroll_runs');
-      setPayrollRuns(pData.sort((a, b) => b.generatedAt.localeCompare(a.generatedAt)));
+      const allPayrollRuns = await dbService.getAll<PayrollRun>('payroll_runs');
+      const pData = allPayrollRuns.filter((run) =>
+        Array.isArray(run.items) && run.items.length > 0 && run.items.every((item) => targetFactoryIds.has(item.factoryId))
+      );
+      setPayrollRuns(isSupervisor ? [] : pData.sort((a, b) => b.generatedAt.localeCompare(a.generatedAt)));
 
-      const payData = await dbService.getAll<EmployeePayment>('employee_payments');
-      setPayments(payData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      const allPayments = await dbService.getAll<EmployeePayment>('employee_payments');
+      const payData = allPayments.filter((payment) => targetEmployeeIds.has(payment.employeeId));
+      setPayments(isSupervisor ? [] : payData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
-      const invData = await dbService.getAll<FactoryInvoice>('invoices');
-      setInvoices(invData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      const allInvoices = await dbService.getAll<FactoryInvoice>('invoices');
+      const invData = allInvoices.filter((invoice) => targetFactoryIds.has(invoice.factoryId));
+      setInvoices(isSupervisor ? [] : invData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
-      const recData = await dbService.getAll<FactoryReceipt>('receipts');
-      setReceipts(recData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      const allReceipts = await dbService.getAll<FactoryReceipt>('receipts');
+      const recData = allReceipts.filter((receipt) => targetFactoryIds.has(receipt.factoryId));
+      setReceipts(isSupervisor ? [] : recData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
-      const bData = await dbService.getAll<BoardingLocation>('boarding_locations');
-      setBoardingLocations(bData);
+      const allBoarding = await dbService.getAll<BoardingLocation>('boarding_locations');
+      const targetBoardingIds = new Set(eData.map((employee) => employee.boardingLocationId).filter(Boolean));
+      const bData = allBoarding.filter((location) => targetBoardingIds.has(location.id));
+      setBoardingLocations(isSupervisor ? [] : bData);
 
-      const auditData = await dbService.getAll<AuditLog>('audit_logs');
-      setAuditLogs(auditData.sort((a, b) => b.timestamp.localeCompare(a.timestamp)));
+      const allAuditLogs = await dbService.getAll<AuditLog>('audit_logs');
+      const visibleEntityIds = new Set<string>([
+        ...targetFactoryIds,
+        ...targetEmployeeIds,
+        ...aData.map((record) => record.id),
+        ...pData.map((run) => run.id),
+        ...payData.map((payment) => payment.id),
+        ...invData.map((invoice) => invoice.id),
+        ...recData.map((receipt) => receipt.id),
+        ...bData.map((location) => location.id),
+      ]);
+      const auditData = allAuditLogs.filter((log) => visibleEntityIds.has(log.entityId));
+      setAuditLogs(isSupervisor ? [] : auditData.sort((a, b) => b.timestamp.localeCompare(a.timestamp)));
 
       const queue = await dbService.getOfflineQueue();
-      setPendingSyncCount(queue.filter((q) => q.status === 'pending').length);
+      const pendingQueue = queue.filter((q) => q.status === 'pending');
+      const queuedAttendanceIds = new Set(pendingQueue.map((q) => q.payload?.id).filter(Boolean));
+      const unsyncedAttendance = await dbService.getAll<AttendanceRecord>('attendance');
+      const pendingAttendanceNotQueued = unsyncedAttendance.filter((record) =>
+        record.syncStatus === 'pending' && !queuedAttendanceIds.has(record.id)
+      ).length;
+      setPendingSyncCount(pendingQueue.length + pendingAttendanceNotQueued);
     } catch (err) {
       console.error('Error loading data from IndexedDB:', err);
     }
   };
 
   useEffect(() => {
-    void reloadData();
+    void reloadData().then(() => {
+      if (navigator.onLine) void syncOfflineQueue().catch((error) => console.error('Initial cloud sync failed:', error));
+    });
   }, []);
 
+  // Connection state follows the actual device network; users cannot force a false online state.
   const toggleOnlineStatus = () => {
-    const nextState = !isOnline;
-    setIsOnline(nextState);
-    if (nextState) {
-      void syncOfflineQueue();
+    const actuallyOnline = typeof navigator !== 'undefined' && navigator.onLine;
+    setIsOnline(actuallyOnline);
+    if (actuallyOnline) {
+      void syncOfflineQueue().catch((error) => console.error('Cloud sync failed:', error));
     }
   };
 
@@ -172,19 +207,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const report = await SyncService.processQueue();
       await reloadData();
-      if (report.syncedCount > 0) {
-        console.log(`Synced ${report.syncedCount} offline operations successfully.`);
+      if (report.syncedCount > 0) console.info(`Cloud sync reconciled ${report.syncedCount} records (pushed ${report.pushedCount || 0}, pulled ${report.pulledCount || 0}).`);
+      if (report.conflictCount > 0 || report.failedCount > 0) {
+        console.warn('Cloud sync needs attention:', report.errors);
+      }
+      if (report.failedCount > 0) {
+        throw new Error('Some records were not confirmed in cloud storage. Local data is preserved. ' + report.errors.slice(0, 3).join(' '));
       }
     } catch (err) {
-      console.error('Sync failed:', err);
+      console.error('Cloud sync failed:', err);
+      throw err;
     }
   };
+
+  // Keep open sessions updated when another approved user changes cloud records.
+  useEffect(() => {
+    let active = true;
+    let channel: ReturnType<ReturnType<typeof getSupabaseClient>['channel']> | undefined;
+    void (async () => {
+      try {
+        const session = await getCurrentSession();
+        if (!active || !session?.user?.id) return;
+        const access = await loadAccessProfile(session.user.id);
+        if (!active || !access || access.approvalStatus !== 'approved' || !access.user.active) return;
+        channel = getSupabaseClient()
+          .channel('royal-pay-company-' + access.companyId)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'app_records', filter: 'company_id=eq.' + access.companyId }, () => {
+            void syncOfflineQueue().catch((error) => console.error('Realtime cloud refresh failed:', error));
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'factories', filter: 'company_id=eq.' + access.companyId }, () => {
+            void syncOfflineQueue().catch((error) => console.error('Realtime factory refresh failed:', error));
+          })
+          .subscribe();
+      } catch (error) {
+        console.error('Could not start cloud realtime subscription:', error);
+      }
+    })();
+    return () => {
+      active = false;
+      if (channel) void getSupabaseClient().removeChannel(channel);
+    };
+  }, [currentUser.id]);
 
   // Factory Operations
   const saveFactory = async (factory: Factory) => {
     if (currentUser.role !== 'admin') {
       throw new Error('Unauthorized: Only Administrators can create or update factory configurations.');
     }
+    factory.updatedAt = new Date().toISOString();
+    factory.cloudSyncReady = true;
+    factory.cloudSyncConfirmed = false;
     await dbService.put('factories', factory);
     await dbService.logAudit(
       currentUser.name,
@@ -195,6 +267,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `Saved factory "${factory.name}" with rate method ${factory.billingMethod}`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Employee Operations
@@ -204,6 +277,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     // Hard enforce Helper designation
     employee.designation = 'Helper';
+    employee.updatedAt = new Date().toISOString();
+    employee.cloudSyncReady = true;
 
     await dbService.put('employees', employee);
     await dbService.logAudit(
@@ -215,10 +290,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `Saved helper "${employee.fullName}" (NIC: ${employee.nic}) assigned to factory ${employee.currentFactoryId}`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Attendance Operations (Supports Offline Queueing!)
   const saveAttendance = async (record: AttendanceRecord) => {
+    if (currentUser.role === 'supervisor' && !(currentUser.assignedFactoryIds || []).includes(record.factoryId)) {
+      throw new Error('Unauthorized: this supervisor is not assigned to the selected factory.');
+    }
+    record.updatedAt = new Date().toISOString();
+    record.cloudSyncReady = true;
     if (!isOnline) {
       // Save locally to offline queue
       record.syncStatus = 'pending';
@@ -230,7 +311,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     // Online save
-    record.syncStatus = 'synced';
+    record.syncStatus = 'pending';
     await dbService.put('attendance', record);
     await dbService.logAudit(
       currentUser.name,
@@ -241,17 +322,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `Recorded attendance for ${record.employeeName} (${record.date}, Status: ${record.status}, OT: ${record.totalOtHours}h)`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   const batchSaveAttendance = async (records: AttendanceRecord[]) => {
+    if (currentUser.role === 'supervisor') {
+      const assignedFactories = new Set(currentUser.assignedFactoryIds || []);
+      if (records.some((record) => !assignedFactories.has(record.factoryId))) {
+        throw new Error('Unauthorized: attendance batch contains a factory not assigned to this supervisor.');
+      }
+    }
     for (const record of records) {
+      record.updatedAt = new Date().toISOString();
+      record.cloudSyncReady = true;
       if (!isOnline) {
         record.syncStatus = 'pending';
         record.isOfflineCreated = true;
         await dbService.put('attendance', record);
         await dbService.enqueueOffline('CREATE_ATTENDANCE', record);
       } else {
-        record.syncStatus = 'synced';
+        record.syncStatus = 'pending';
         await dbService.put('attendance', record);
       }
     }
@@ -266,6 +356,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       );
     }
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   const approveAttendanceOT = async (attendanceId: string, approve: boolean) => {
@@ -281,6 +372,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     record.approvedBy = currentUser.name;
     record.approvedAt = new Date().toISOString();
     record.updatedAt = new Date().toISOString();
+    record.cloudSyncReady = true;
 
     await dbService.put('attendance', record);
     await dbService.logAudit(
@@ -292,6 +384,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `${approve ? 'Approved' : 'Rejected'} attendance & overtime (${record.totalOtHours} hrs) for ${record.employeeName}`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Payroll Operations
@@ -299,6 +392,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot access or process payroll.');
     }
+    const unconfirmedFactories = Array.from(new Set(run.items.map((item) => item.factoryId)))
+      .filter((factoryId) => !factories.some((factory) => factory.id === factoryId && factory.cloudSyncConfirmed === true));
+    if (unconfirmedFactories.length > 0) {
+      throw new Error('Payroll is blocked until the relevant factory rates are reviewed, saved, and confirmed in cloud storage.');
+    }
+    run.updatedAt = new Date().toISOString();
+    run.cloudSyncReady = true;
     await dbService.put('payroll_runs', run);
     await dbService.logAudit(
       currentUser.name,
@@ -309,12 +409,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `Processed payroll run #${run.payrollNumber} for period ${run.periodStart} to ${run.periodEnd} (Net: LKR ${run.totalNet})`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   const savePayment = async (payment: EmployeePayment) => {
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot record payments or advances.');
     }
+    payment.updatedAt = new Date().toISOString();
+    payment.cloudSyncReady = true;
     await dbService.put('employee_payments', payment);
     await dbService.logAudit(
       currentUser.name,
@@ -325,6 +428,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `Recorded ${payment.paymentType} of LKR ${payment.amount} for ${payment.employeeName}`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Invoice Operations
@@ -332,6 +436,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot manage factory invoices.');
     }
+    if (!factories.some((factory) => factory.id === invoice.factoryId && factory.cloudSyncConfirmed === true)) {
+      throw new Error('Invoice creation is blocked until this factory configuration has been reviewed, saved, and confirmed in cloud storage.');
+    }
+    invoice.updatedAt = new Date().toISOString();
+    invoice.cloudSyncReady = true;
     await dbService.put('invoices', invoice);
     await dbService.logAudit(
       currentUser.name,
@@ -342,6 +451,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `Saved factory invoice #${invoice.invoiceNumber} for ${invoice.factoryName} (Amount: LKR ${invoice.totalAmount})`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
   };
 
   // Receipt Operations
@@ -349,6 +459,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser.role === 'supervisor') {
       throw new Error('Unauthorized: Supervisors cannot record factory receipts.');
     }
+    receipt.updatedAt = new Date().toISOString();
+    receipt.cloudSyncReady = true;
     await dbService.put('receipts', receipt);
     await dbService.logAudit(
       currentUser.name,
@@ -359,6 +471,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `Recorded factory receipt #${receipt.receiptNumber} for ${receipt.factoryName} (Amount: LKR ${receipt.amount})`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
     await dbService.triggerMirrorBackup();
     setLastBackupTime(new Date().toLocaleTimeString());
   };
@@ -367,6 +480,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser.role !== 'admin') {
       throw new Error('Unauthorized: Only Administrators can configure boarding locations.');
     }
+    location.updatedAt = new Date().toISOString();
+    location.cloudSyncReady = true;
     await dbService.put('boarding_locations', location);
     await dbService.logAudit(
       currentUser.name,
@@ -377,6 +492,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `Saved boarding location "${location.name}" (Rate: LKR ${location.dailyRate}/day)`
     );
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
     await dbService.triggerMirrorBackup();
     setLastBackupTime(new Date().toLocaleTimeString());
   };
@@ -419,6 +535,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!mirror || !mirror.data) return false;
     await dbService.restoreFromPayload(mirror);
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
     setLastBackupTime(new Date().toLocaleTimeString());
     return true;
   };
@@ -452,6 +569,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
     await reloadData();
+    if (isOnline) await syncOfflineQueue();
     await dbService.triggerMirrorBackup();
     setLastBackupTime(new Date().toLocaleTimeString());
   };

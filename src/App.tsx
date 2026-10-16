@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { AuthGate } from './components/AuthGate';
+import { AdminAccessPanel } from './components/AdminAccessPanel';
 import { Navbar } from './components/Navbar';
 import { NavigationTabs, TabType } from './components/NavigationTabs';
 import { DashboardView } from './components/DashboardView';
@@ -21,12 +23,13 @@ import { InstallAppModal } from './components/InstallAppModal';
 import { Wifi, Battery } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 
-const MainLayout: React.FC = () => {
+const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut }) => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isTestsOpen, setIsTestsOpen] = useState<boolean>(false);
   const [isBackupHubOpen, setIsBackupHubOpen] = useState<boolean>(false);
   const [isQuickActionOpen, setIsQuickActionOpen] = useState<boolean>(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
+  const [isAccessPanelOpen, setIsAccessPanelOpen] = useState<boolean>(false);
 
   const { theme, mobileFrameMode, setMobileFrameMode } = useApp();
   const isDark = theme === 'dark';
@@ -132,6 +135,8 @@ const MainLayout: React.FC = () => {
           onOpenProfile={() => handleNavigateTab('profile')}
           activeTab={activeTab}
           onBackToDashboard={() => handleNavigateTab('dashboard')}
+          onManageAccess={() => setIsAccessPanelOpen(true)}
+          onSignOut={() => { void onSignOut(); }}
         />
 
         {/* Navigation Tabs (Desktop Top Bar + Floating Bottom Dock) */}
@@ -194,6 +199,9 @@ const MainLayout: React.FC = () => {
 
       {/* Android Native Install & APK Modal */}
       <InstallAppModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />
+
+      {/* Server-authorized user invitation and approval */}
+      <AdminAccessPanel isOpen={isAccessPanelOpen} onClose={() => setIsAccessPanelOpen(false)} />
     </div>
   );
 };
@@ -202,11 +210,15 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <>
-      <AppProvider>
-        <MainLayout />
-      </AppProvider>
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
-    </>
+    <AuthGate>
+      {(user, onSignOut) => (
+        <>
+          <AppProvider key={user.id} initialUser={user}>
+            <MainLayout onSignOut={onSignOut} />
+          </AppProvider>
+          {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+        </>
+      )}
+    </AuthGate>
   );
 }

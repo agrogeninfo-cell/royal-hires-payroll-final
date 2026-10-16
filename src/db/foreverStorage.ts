@@ -13,6 +13,8 @@ export interface SystemBackupPayload {
     factories: number;
     employees: number;
     attendance: number;
+    overtime: number;
+    offlineQueue: number;
     payrollRuns: number;
     payments: number;
     invoices: number;
@@ -25,6 +27,8 @@ export interface SystemBackupPayload {
     factories: any[];
     employees: any[];
     attendance: any[];
+    overtime?: any[];
+    offline_queue?: any[];
     payroll_runs: any[];
     employee_payments: any[];
     invoices: any[];
