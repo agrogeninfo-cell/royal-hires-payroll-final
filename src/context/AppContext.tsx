@@ -19,6 +19,8 @@ import { SyncService } from '../services/syncService';
 import { getCurrentSession, getSupabaseClient, loadAccessProfile } from '../services/authService';
 import { translations } from '../i18n/translations';
 
+const PUBLIC_DEMO_MODE = import.meta.env.VITE_PUBLIC_DEMO_MODE === 'true';
+
 interface AppContextType {
   currentUser: User;
   allUsers: User[];
@@ -190,7 +192,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
 
   useEffect(() => {
     void reloadData().then(() => {
-      if (navigator.onLine) void syncOfflineQueue().catch((error) => console.error('Initial cloud sync failed:', error));
+      if (!PUBLIC_DEMO_MODE && navigator.onLine) void syncOfflineQueue().catch((error) => console.error('Initial cloud sync failed:', error));
     });
   }, []);
 
@@ -204,6 +206,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
   };
 
   const syncOfflineQueue = async () => {
+    // Public demo data is browser-local only; never push or pull production cloud records.
+    if (PUBLIC_DEMO_MODE) return;
     try {
       const report = await SyncService.processQueue();
       await reloadData();
@@ -222,6 +226,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
 
   // Keep open sessions updated when another approved user changes cloud records.
   useEffect(() => {
+    if (PUBLIC_DEMO_MODE) return;
     let active = true;
     let channel: ReturnType<ReturnType<typeof getSupabaseClient>['channel']> | undefined;
     void (async () => {
