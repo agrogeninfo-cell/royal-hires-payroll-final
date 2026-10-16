@@ -15,6 +15,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
   const [accessState, setAccessState] = useState<'approved' | 'pending' | 'rejected' | 'unlinked' | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [requiresPasswordSetup, setRequiresPasswordSetup] = useState(false);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -57,7 +58,8 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
         }
       });
 
-    const subscription = getSupabaseClient().auth.onAuthStateChange((_event, session) => {
+    const subscription = getSupabaseClient().auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') { setPasswordRecovery(true); setLoading(false); return; }
       setLoading(true);
       setUser(null);
       setAccessState(null);
@@ -112,6 +114,10 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
 
   if (errorMessage && !user) {
     return <main className="min-h-screen bg-[#071D17] text-white flex items-center justify-center p-5"><section className="max-w-md rounded-2xl border border-rose-300/20 bg-white/[0.06] p-6"><h1 className="text-xl font-bold">Unable to verify access</h1><p role="alert" className="mt-3 text-sm text-rose-200">{errorMessage}</p><button onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-emerald-600 px-4 py-2.5 font-semibold">Try again</button></section></main>;
+  }
+
+  if (passwordRecovery) {
+    return <SetPasswordScreen onComplete={() => { setPasswordRecovery(false); setRequiresPasswordSetup(false); }} />;
   }
 
   if (user && accessState === 'approved' && user.active && requiresPasswordSetup) {
