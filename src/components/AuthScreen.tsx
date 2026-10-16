@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { ArrowRight, CheckCircle2, Eye, EyeOff, KeyRound, Mail, ShieldCheck } from 'lucide-react';
-import { isSupabaseConfigured, signInWithGoogle, signInWithPassword, signUpWithPassword } from '../services/authService';
+import { isSupabaseConfigured, signInWithGoogle, signInWithPassword, signUpWithPassword, requestPasswordReset } from '../services/authService';
 
 export const AuthScreen: React.FC = () => {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'recovery'>('signin');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,7 +64,12 @@ export const AuthScreen: React.FC = () => {
 
           <form onSubmit={(event) => {
             event.preventDefault();
-            if (mode === 'signup') {
+            if (mode === 'recovery') {
+              void run(async () => {
+                await requestPasswordReset(email);
+                setNotice('If an account exists for this email, a password reset link has been sent.');
+              });
+            } else if (mode === 'signup') {
               void run(async () => {
                 await signUpWithPassword(fullName, email, password);
                 setNotice('Account request submitted. Verify your email if prompted. An administrator must approve access before payroll data becomes available.');
@@ -86,13 +91,13 @@ export const AuthScreen: React.FC = () => {
                 <input required type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className="w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-10 pr-4 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400" placeholder="name@company.com" />
               </span>
             </label>
-            <label className="block text-sm font-medium text-slate-200">Password
+            {mode !== 'recovery' && <label className="block text-sm font-medium text-slate-200">Password
               <span className="relative mt-1.5 block">
                 <KeyRound size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input required minLength={8} type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-10 pr-11 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400" placeholder="At least 8 characters" />
+                <input required={mode !== 'recovery'} minLength={8} type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-10 pr-11 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400" placeholder="At least 8 characters" />
                 <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button>
               </span>
-            </label>
+            </label>}
 
             {errorMessage && <p role="alert" className="rounded-xl border border-rose-400/20 bg-rose-400/10 px-3 py-2.5 text-sm text-rose-200">{errorMessage}</p>}
             {notice && <p role="status" className="flex gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 text-sm leading-5 text-emerald-100"><CheckCircle2 size={18} className="mt-0.5 shrink-0" />{notice}</p>}
@@ -100,6 +105,8 @@ export const AuthScreen: React.FC = () => {
             <button type="submit" disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3.5 font-semibold text-white shadow-lg shadow-emerald-950/40 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">
               {busy ? 'Please wait…' : mode === 'signup' ? 'Request account access' : 'Sign in securely'} {!busy && <ArrowRight size={17} />}
             </button>
+            {mode === 'signin' && <button type="button" onClick={() => { setMode('recovery'); setErrorMessage(''); setNotice(''); }} className="mt-3 w-full text-sm text-emerald-300">Forgot password?</button>}
+            {mode === 'recovery' && <button type="button" onClick={() => { setMode('signin'); setErrorMessage(''); setNotice(''); }} className="mt-3 w-full text-sm text-slate-300">Back to sign in</button>}
           </form>
           <p className="mt-5 text-center text-xs leading-5 text-slate-400">Access is limited to approved Royal Hires staff. Creating an account does not automatically grant payroll access.</p>
         </div>
