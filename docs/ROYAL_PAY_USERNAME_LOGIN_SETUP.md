@@ -10,7 +10,7 @@ The Edge Function `royal-pay-username-auth` requires these server-side secrets:
 - `ROYAL_PAY_ADMIN_EMAIL` — that account's existing Supabase Auth email
 - `ROYAL_PAY_SUPERVISOR_USERNAME` — username for the existing approved Supervisor account
 - `ROYAL_PAY_SUPERVISOR_EMAIL` — that account's existing Supabase Auth email
-- `AUTH_RECOVERY_REDIRECT_URL` — optional; defaults to the Royal Pay GitHub Pages URL
+- `AUTH_RECOVERY_REDIRECT_URL` — optional web fallback; defaults to the Royal Pay GitHub Pages URL. Native Android recovery uses `lk.royalhires.payroll://auth/callback?flow=recovery`.
 
 Set these values in the Supabase project secrets / Edge Function environment. Example CLI shape (replace email placeholders with the real emails for the existing accounts; do not put passwords here):
 
@@ -33,11 +33,12 @@ The function uses the configured account email only on the server, authenticates
 
 ## Before enabling
 
-1. Confirm both mapped emails belong to the intended existing Supabase Auth users.
-2. Confirm the Admin profile role is `admin`, and the Supervisor profile role is `supervisor`; both must be active and approved.
-3. Ensure the Supervisor has the intended factory assignment and existing cloud-to-local factory mapping. Existing `AuthGate` checks remain in place.
-4. Keep Supabase RLS enabled and review every policy that grants access to payroll, attendance, employees, and invoices. Removing login options from the UI alone is not a database security boundary; any other previously approved account must be blocked by server-side policies or account administration before claiming that the entire backend is limited to these two identities.
-5. Deploy the Edge Function and set its secrets before testing the new login UI. Until then, username sign-in intentionally returns a setup error.
-6. Test correct and incorrect credentials, role mismatch, unapproved/inactive profiles, supervisor factory isolation, password recovery, sign-out, and session refresh. Do not test against or rewrite historical payroll records.
+1. In Supabase Dashboard → Authentication → URL Configuration → Redirect URLs, allow the exact native callback `lk.royalhires.payroll://auth/callback?flow=recovery` (or the callback pattern accepted by the current dashboard). Keep the existing web redirect allowlist entries.
+2. Confirm both mapped emails belong to the intended existing Supabase Auth users.
+3. Confirm the Admin profile role is `admin`, and the Supervisor profile role is `supervisor`; both must be active and approved.
+4. Ensure the Supervisor has the intended factory assignment and existing cloud-to-local factory mapping. Existing `AuthGate` checks remain in place.
+5. Keep Supabase RLS enabled and review every policy that grants access to payroll, attendance, employees, and invoices. Removing login options from the UI alone is not a database security boundary; any other previously approved account must be blocked by server-side policies or account administration before claiming that the entire backend is limited to these two identities.
+6. Deploy the updated Edge Function and set its secrets before testing the new login UI. Until then, username sign-in intentionally returns a setup error.
+7. Test correct and incorrect credentials, role mismatch, unapproved/inactive profiles, supervisor factory isolation, password recovery on Android, sign-out, and session refresh. Do not test against or rewrite historical payroll records.
 
 No payroll calculations, historical records, table schemas, or existing data are changed by this UI/function addition.
