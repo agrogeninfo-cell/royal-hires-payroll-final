@@ -7,6 +7,8 @@ const allowedOrigins = new Set([
   'https://localhost',
 ]);
 
+const NATIVE_AUTH_CALLBACK_URL = 'lk.royalhires.payroll://auth/callback';
+
 function corsHeaders(origin: string | null) {
   const allowedOrigin = origin && allowedOrigins.has(origin) ? origin : 'https://agrogeninfo-cell.github.io';
   return {
@@ -76,8 +78,13 @@ Deno.serve(async (request: Request) => {
   if (action === 'reset-password') {
     // Use the same public response for unknown usernames to avoid account enumeration.
     if (!account) return json({ success: true, message: 'If the account is eligible, a reset email will be sent.' }, 200, origin);
-    const redirectTo = Deno.env.get('AUTH_RECOVERY_REDIRECT_URL')
-      || 'https://agrogeninfo-cell.github.io/royal-hires-payroll-final/';
+    // Native requests need the registered app scheme and an explicit recovery marker.
+    // Web requests keep the existing public GitHub Pages redirect.
+    const isNativeAppOrigin = origin === 'capacitor://localhost' || origin === 'https://localhost' || origin === 'http://localhost';
+    const redirectTo = isNativeAppOrigin
+      ? `${NATIVE_AUTH_CALLBACK_URL}?flow=recovery`
+      : Deno.env.get('AUTH_RECOVERY_REDIRECT_URL')
+        || 'https://agrogeninfo-cell.github.io/royal-hires-payroll-final/';
     const { error } = await authClient.auth.resetPasswordForEmail(account.email, { redirectTo });
     if (error) {
       const rateLimited = /rate limit|too many requests/i.test(error.message);

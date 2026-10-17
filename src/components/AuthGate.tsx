@@ -3,7 +3,7 @@ import { App } from '@capacitor/app';
 import type { User } from '../types';
 import { AuthScreen } from './AuthScreen';
 import { SetPasswordScreen } from './SetPasswordScreen';
-import { getCurrentSession, getSupabaseClient, handleNativeAuthCallback, isSupabaseConfigured, loadAccessProfile, signOut } from '../services/authService';
+import { getCurrentSession, getSupabaseClient, handleNativeAuthCallback, isSupabaseConfigured, loadAccessProfile, signOut, AUTH_CALLBACK_URL } from '../services/authService';
 
 interface AuthGateProps {
   children: (user: User, onSignOut: () => Promise<void>) => React.ReactNode;
@@ -74,10 +74,19 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
       }, 0);
     }).data.subscription;
 
+    const processedCallbacks = new Set<string>();
     const processAuthCallback = (url: string) => {
-      if (!mounted || !url.startsWith('lk.royalhires.payroll://auth/callback')) return;
-      void handleNativeAuthCallback(url).catch((error) => {
-        if (mounted) setErrorMessage(error instanceof Error ? error.message : 'Google sign-in callback failed.');
+      if (!mounted || !url.startsWith(AUTH_CALLBACK_URL) || processedCallbacks.has(url)) return;
+      processedCallbacks.add(url);
+      void handleNativeAuthCallback(url).then((result) => {
+        if (!mounted) return;
+        if (result === 'recovery') {
+          setPasswordRecovery(true);
+          setLoading(false);
+          setErrorMessage('');
+        }
+      }).catch((error) => {
+        if (mounted) setErrorMessage(error instanceof Error ? error.message : 'Authentication callback failed.');
       });
     };
 
