@@ -80,7 +80,8 @@ Deno.serve(async (request: Request) => {
     if (!account) return json({ success: true, message: 'If the account is eligible, a reset email will be sent.' }, 200, origin);
     // Native requests need the registered app scheme and an explicit recovery marker.
     // Web requests keep the existing public GitHub Pages redirect.
-    const redirectTo = origin === 'capacitor://localhost'
+    const isNativeAppOrigin = origin === 'capacitor://localhost' || origin === 'https://localhost' || origin === 'http://localhost';
+    const redirectTo = isNativeAppOrigin
       ? `${NATIVE_AUTH_CALLBACK_URL}?flow=recovery`
       : Deno.env.get('AUTH_RECOVERY_REDIRECT_URL')
         || 'https://agrogeninfo-cell.github.io/royal-hires-payroll-final/';
