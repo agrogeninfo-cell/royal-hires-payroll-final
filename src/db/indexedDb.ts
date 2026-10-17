@@ -15,7 +15,7 @@ import {
 } from '../types';
 import { ForeverStorageService, SystemBackupPayload } from './foreverStorage';
 
-const DB_NAME = 'LankaManpowerDB_v2';
+const DB_NAME = import.meta.env?.VITE_PUBLIC_DEMO_MODE === 'true' ? 'RoyalPay_PublicDemo_v1' : 'LankaManpowerDB_v2';
 const DB_VERSION = 1;
 
 /**

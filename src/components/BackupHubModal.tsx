@@ -288,7 +288,7 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
         </div>
 
         {/* Admin-reviewed legacy cloud migration */}
-        {currentUser.role === 'admin' && (
+        {import.meta.env?.VITE_PUBLIC_DEMO_MODE !== 'true' && currentUser.role === 'admin' && (
           <section className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-3">
             <div className="flex items-start gap-3">
               <div className="rounded-xl bg-emerald-700 p-2 text-white"><Database className="h-5 w-5" /></div>

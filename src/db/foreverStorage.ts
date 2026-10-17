@@ -39,8 +39,8 @@ export interface SystemBackupPayload {
   };
 }
 
-const MIRROR_STORAGE_KEY = 'lanka_manpower_forever_mirror_v2';
-const SNAPSHOT_HISTORY_KEY = 'lanka_manpower_snapshot_history_v2';
+const MIRROR_STORAGE_KEY = import.meta.env?.VITE_PUBLIC_DEMO_MODE === 'true' ? 'royal_pay_public_demo_mirror_v1' : 'lanka_manpower_forever_mirror_v2';
+const SNAPSHOT_HISTORY_KEY = import.meta.env?.VITE_PUBLIC_DEMO_MODE === 'true' ? 'royal_pay_public_demo_snapshot_history_v1' : 'lanka_manpower_snapshot_history_v2';
 
 export class ForeverStorageService {
   /**
