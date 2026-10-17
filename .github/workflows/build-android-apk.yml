@@ -36,6 +36,8 @@ jobs:
         run: if [ -f android/gradlew ]; then echo "Android project exists; reusing it."; else echo "Incomplete Android project; regenerating in CI."; rm -rf android; npx cap add android; fi
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Register Royal Pay auth callback deep link
+        run: python3 scripts/configure-android-auth-deep-link.py android/app/src/main/AndroidManifest.xml
       - name: Apply Royal Hires launcher branding
         run: bash apply-android-brand-icons.sh
       - name: Set up Java
