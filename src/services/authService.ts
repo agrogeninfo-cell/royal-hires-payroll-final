@@ -163,11 +163,19 @@ export async function signInWithGoogle(): Promise<void> {
   if (native && data.url) await Browser.open({ url: data.url });
 }
 
-export async function handleNativeAuthCallback(url: string): Promise<void> {
-  if (!url.startsWith(AUTH_CALLBACK_URL)) return;
+/**
+ * Exchanges a native auth callback code. Recovery callbacks carry an explicit
+ * flow marker so PKCE callbacks still open the password form even when Supabase
+ * emits SIGNED_IN rather than PASSWORD_RECOVERY for the code exchange.
+ */
+export async function handleNativeAuthCallback(url: string): Promise<'recovery' | 'auth' | 'ignored'> {
+  if (!url.startsWith(AUTH_CALLBACK_URL)) return 'ignored';
+  const callbackUrl = new URL(url);
+  const flow = callbackUrl.searchParams.get('flow');
   const { error } = await getSupabaseClient().auth.exchangeCodeForSession(url);
   await Browser.close().catch(() => undefined);
   if (error) throw error;
+  return flow === 'recovery' ? 'recovery' : 'auth';
 }
 
 export async function signOut(): Promise<void> {
