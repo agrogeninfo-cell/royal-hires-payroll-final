@@ -27,17 +27,20 @@ function json(body: unknown, status = 200, origin: string | null = null) {
 type Account = { username: string; email: string; role: 'admin' | 'supervisor' };
 
 function configuredAccounts(): Account[] {
+  const accounts: Account[] = [];
   const adminUsername = Deno.env.get('ROYAL_PAY_ADMIN_USERNAME')?.trim();
   const adminEmail = Deno.env.get('ROYAL_PAY_ADMIN_EMAIL')?.trim().toLowerCase();
   const supervisorUsername = Deno.env.get('ROYAL_PAY_SUPERVISOR_USERNAME')?.trim();
   const supervisorEmail = Deno.env.get('ROYAL_PAY_SUPERVISOR_EMAIL')?.trim().toLowerCase();
-  if (!adminUsername || !adminEmail || !supervisorUsername || !supervisorEmail) {
-    throw new Error('Username authentication is not fully configured on the server.');
+
+  // Each role is configured independently; a missing Supervisor mapping must not block Admin login.
+  if (adminUsername && adminEmail) {
+    accounts.push({ username: adminUsername.toLowerCase(), email: adminEmail, role: 'admin' });
   }
-  return [
-    { username: adminUsername.toLowerCase(), email: adminEmail, role: 'admin' },
-    { username: supervisorUsername.toLowerCase(), email: supervisorEmail, role: 'supervisor' },
-  ];
+  if (supervisorUsername && supervisorEmail) {
+    accounts.push({ username: supervisorUsername.toLowerCase(), email: supervisorEmail, role: 'supervisor' });
+  }
+  return accounts;
 }
 
 Deno.serve(async (request: Request) => {
@@ -59,14 +62,16 @@ Deno.serve(async (request: Request) => {
     return json({ error: 'Request body must be valid JSON.' }, 400, origin);
   }
 
-  let accounts: Account[];
-  try {
-    accounts = configuredAccounts();
-  } catch {
+  const action = body.action;
+  if (action !== 'sign-in' && action !== 'reset-password') {
+    return json({ error: 'Unsupported authentication action.' }, 400, origin);
+  }
+
+  const accounts = configuredAccounts();
+  if (accounts.length === 0) {
     return json({ error: 'Username sign-in is not configured yet. Contact the Royal Pay administrator.' }, 503, origin);
   }
 
-  const action = body.action;
   const username = typeof body.username === 'string' ? body.username.trim().toLowerCase() : '';
   if (!username || username.length > 80) return json({ error: 'Enter a valid username.' }, 400, origin);
   const account = accounts.find((item) => item.username === username);
@@ -78,8 +83,6 @@ Deno.serve(async (request: Request) => {
   if (action === 'reset-password') {
     // Use the same public response for unknown usernames to avoid account enumeration.
     if (!account) return json({ success: true, message: 'If the account is eligible, a reset email will be sent.' }, 200, origin);
-    // Native requests need the registered app scheme and an explicit recovery marker.
-    // Web requests keep the existing public GitHub Pages redirect.
     const isNativeAppOrigin = origin === 'capacitor://localhost' || origin === 'https://localhost' || origin === 'http://localhost';
     const redirectTo = isNativeAppOrigin
       ? `${NATIVE_AUTH_CALLBACK_URL}?flow=recovery`
@@ -93,7 +96,6 @@ Deno.serve(async (request: Request) => {
     return json({ success: true, message: 'If the account is eligible, a reset email will be sent.' }, 200, origin);
   }
 
-  if (action !== 'sign-in') return json({ error: 'Unsupported authentication action.' }, 400, origin);
   if (!account || typeof body.password !== 'string' || body.password.length < 1 || body.password.length > 256) {
     return json({ error: 'Invalid username or password.' }, 401, origin);
   }
