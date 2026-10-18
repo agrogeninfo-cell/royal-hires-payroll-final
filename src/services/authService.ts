@@ -12,6 +12,7 @@ const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.tr
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
 export const AUTH_CALLBACK_URL = 'lk.royalhires.payroll://auth/callback';
+const USERNAME_AUTH_FUNCTION = 'royal-pay-login-v2';
 
 let client: SupabaseClient | null = null;
 
@@ -19,7 +20,6 @@ export function getSupabaseClient(): SupabaseClient {
   if (!supabaseUrl || !supabasePublishableKey) {
     throw new Error('Royal Pay authentication is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY, then rebuild the app.');
   }
-
   if (!client) {
     client = createClient(supabaseUrl, supabasePublishableKey, {
       auth: {
@@ -49,7 +49,6 @@ export async function loadAccessProfile(userId: string): Promise<AccessProfile |
     .select('user_id, company_id, full_name, role, is_active, approval_status')
     .eq('user_id', userId)
     .maybeSingle();
-
   if (error) throw error;
   if (!profile || !profile.company_id || !isUserRole(profile.role)) return null;
 
@@ -58,7 +57,6 @@ export async function loadAccessProfile(userId: string): Promise<AccessProfile |
     .select('factory_id')
     .eq('user_id', userId)
     .eq('company_id', profile.company_id);
-
   if (assignmentError) throw assignmentError;
 
   const assignedCloudFactoryIds = (assignments || []).map((item: { factory_id: string }) => item.factory_id);
@@ -77,11 +75,7 @@ export async function loadAccessProfile(userId: string): Promise<AccessProfile |
 
   const baseApprovalStatus = profile.approval_status === 'approved'
     ? 'approved'
-    : profile.approval_status === 'rejected'
-      ? 'rejected'
-      : 'pending';
-  // Supervisors must have an explicit cloud-to-local factory mapping before any
-  // local records can be displayed. UUIDs alone are not assumed to match legacy IDs.
+    : profile.approval_status === 'rejected' ? 'rejected' : 'pending';
   const scopeReady = profile.role !== 'supervisor'
     || (assignedCloudFactoryIds.length > 0 && assignedLocalFactoryIds.length === assignedCloudFactoryIds.length);
   const approvalStatus = baseApprovalStatus === 'approved' && !scopeReady ? 'unlinked' : baseApprovalStatus;
@@ -106,42 +100,43 @@ export async function signInWithPassword(email: string, password: string): Promi
 }
 
 export async function signInWithUsername(username: string, password: string): Promise<void> {
-  const { data, error } = await getSupabaseClient().functions.invoke('royal-pay-username-auth', {
-    body: { action: 'sign-in', username: username.trim(), password },
+  const normalizedUsername = username.trim();
+  if (!normalizedUsername || normalizedUsername.length > 80 || !password || password.length > 256) {
+    throw new Error('Enter your username and password.');
+  }
+  const { data, error } = await getSupabaseClient().functions.invoke(USERNAME_AUTH_FUNCTION, {
+    body: { action: 'sign-in', username: normalizedUsername, password },
   });
-  if (error) throw error;
+  if (error) throw new Error('Unable to reach Royal Pay sign-in service. Check your connection and try again.');
   const session = data?.session;
   if (!session?.access_token || !session?.refresh_token) {
-    throw new Error('Sign-in could not be completed. Check your username and password or contact the administrator.');
+    throw new Error(typeof data?.error === 'string' ? data.error : 'Sign-in failed. Check your username and password or contact the administrator.');
   }
   const { error: sessionError } = await getSupabaseClient().auth.setSession({
     access_token: session.access_token,
     refresh_token: session.refresh_token,
   });
-  if (sessionError) throw sessionError;
+  if (sessionError) throw new Error('Your credentials were accepted but the session could not be saved. Please sign in again.');
 }
 
 export async function requestPasswordResetByUsername(username: string, email: string): Promise<void> {
+  const normalizedUsername = username.trim();
   const normalizedEmail = email.trim().toLowerCase();
-  const { data, error } = await getSupabaseClient().functions.invoke('royal-pay-username-auth', {
-    body: { action: 'verify-reset-identity', username: username.trim(), email: normalizedEmail },
+  const { data, error } = await getSupabaseClient().functions.invoke(USERNAME_AUTH_FUNCTION, {
+    body: { action: 'verify-reset-identity', username: normalizedUsername, email: normalizedEmail },
   });
-  if (error) throw error;
+  if (error) throw new Error('Unable to reach the password recovery service. Please try again.');
   if (data?.eligible !== true) {
     throw new Error('The username and email could not be verified. Check both details or contact the administrator.');
   }
-
-  // Initiate recovery from the Android/web client so Supabase stores the PKCE verifier
-  // in the same client storage that will exchange the recovery callback code.
   const redirectTo = Capacitor.isNativePlatform()
     ? `${AUTH_CALLBACK_URL}?flow=recovery`
     : getWebAuthRedirectUrl();
   const { error: resetError } = await getSupabaseClient().auth.resetPasswordForEmail(normalizedEmail, { redirectTo });
-  if (resetError) throw resetError;
+  if (resetError) throw new Error('Could not send the password reset email. Please try again later.');
 }
 
 function getWebAuthRedirectUrl(): string {
-  // Respect Vite's configured base path (for example, the GitHub Pages repository path).
   return new URL(import.meta.env.BASE_URL, window.location.origin).toString();
 }
 
@@ -165,21 +160,13 @@ export async function signInWithGoogle(): Promise<void> {
   const redirectTo = native ? AUTH_CALLBACK_URL : getWebAuthRedirectUrl();
   const { data, error } = await getSupabaseClient().auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo,
-      skipBrowserRedirect: native,
-      queryParams: { prompt: 'select_account' },
-    },
+    options: { redirectTo, skipBrowserRedirect: native, queryParams: { prompt: 'select_account' } },
   });
   if (error) throw error;
   if (native && data.url) await Browser.open({ url: data.url });
 }
 
-/**
- * Exchanges a native auth callback code. Recovery callbacks carry an explicit
- * flow marker so PKCE callbacks still open the password form even when Supabase
- * emits SIGNED_IN rather than PASSWORD_RECOVERY for the code exchange.
- */
+/** Exchanges a native auth callback code. Recovery callbacks carry an explicit flow marker. */
 export async function handleNativeAuthCallback(url: string): Promise<'recovery' | 'auth' | 'ignored'> {
   if (!url.startsWith(AUTH_CALLBACK_URL)) return 'ignored';
   const callbackUrl = new URL(url);
