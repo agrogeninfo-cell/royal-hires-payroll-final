@@ -85,7 +85,7 @@ export const FactoriesView: React.FC = () => {
 
   const openEditModal = (fac: Factory) => {
     // Re-confirm only when editing rates; preserve the existing explicit safety gate.
-    setRateReviewConfirmed(fac.cloudSyncConfirmed === true);
+    setRateReviewConfirmed(false);
     setEditingFactory(fac);
     setName(fac.name);
     setCode(fac.code);
@@ -184,12 +184,7 @@ export const FactoriesView: React.FC = () => {
       };
 
       await saveFactory(factoryToSave);
-      // A local save alone does not mark cloud confirmation. The sync service must
-      // successfully write the configuration and reconcile its confirmation status.
-      setErrorMsg('Factory rates saved locally. Sync is being requested; wait for the cloud confirmation status before processing payroll or invoices.');
-      window.setTimeout(() => {
-        setIsModalOpen(false);
-      }, 1200);
+      setIsModalOpen(false);
     } catch (err: any) {
       setErrorMsg(err.message);
     }
