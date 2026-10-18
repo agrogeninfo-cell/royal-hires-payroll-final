@@ -2,16 +2,17 @@
 
 ## Intended setup
 
-Use the authorized Admin account on the Admin phone and the authorized Supervisor account on the Supervisor phone (or the same approved account on both phones where operationally intended). Supabase is the shared source of truth; IndexedDB and LocalStorage are per-device offline caches/backups, not a shared database.
+Only the authorized Admin account signs in. The same Admin account can be used on both authorized phones. Supervisors do not need separate logins; use the Admin workflow to manage attendance and payroll. Supabase is the shared source of truth; IndexedDB and LocalStorage are per-device offline caches/backups, not a shared database.
 
 ## Authentication update
 
-- The app now calls the separate Supabase Edge Function `royal-pay-login-v2` for username/password sign-in and recovery-identity verification.
-- The function reads the server-side allowlist for Admin `mdthusithd9` and Supervisor `royalhirespo9`; passwords and service-role credentials must never be committed to the repository or shipped to the client.
-- Each login is checked against Supabase Auth and the user's profile role, active state, and approval status before a session is returned.
-- The existing database inspection found one active/approved Admin profile and no Supervisor profile. The Supervisor login will remain blocked until the intended Supervisor Auth user has a correct profile and factory assignment/mapping. Do not create a guessed profile or assign a guessed factory.
-- Configure/verify these server-side secrets in Supabase project `dgoibyoxpuvmvscpdamz`: `ROYAL_PAY_ADMIN_USERNAME`, `ROYAL_PAY_ADMIN_EMAIL`, `ROYAL_PAY_SUPERVISOR_USERNAME`, and `ROYAL_PAY_SUPERVISOR_EMAIL`. The mapped emails must belong to the intended existing Auth users. Never place passwords in secrets or source code.
-- The public login endpoint requires `verify_jwt = false` because users have no session before signing in; the function itself verifies the password and checks the role server-side.
+- The app calls the separate Supabase Edge Function `royal-pay-login-v2` for username/password sign-in and recovery-identity verification.
+- Username login is restricted server-side to the configured Admin username `mdthusithd9` and its mapped email. Supervisor username configuration is not required or accepted.
+- Passwords and service-role credentials must never be committed to the repository or shipped to the client.
+- The function checks Supabase Auth and the user's profile role, active state, and approval status before returning a session.
+- The database inspection found one active/approved Admin profile. Verify that `ROYAL_PAY_ADMIN_EMAIL` maps to that intended existing Supabase Auth user. Do not create a guessed profile or change role assignments.
+- Configure/verify these server-side secrets in Supabase project `dgoibyoxpuvmvscpdamz`: `ROYAL_PAY_ADMIN_USERNAME` and `ROYAL_PAY_ADMIN_EMAIL`. Never place passwords in secrets or source code.
+- The public login endpoint requires `verify_jwt = false` because users have no session before signing in; the function itself verifies the password and checks the Admin role server-side.
 
 ## Deployment modes
 
@@ -30,8 +31,8 @@ Use the authorized Admin account on the Admin phone and the authorized Superviso
 ## Two-device acceptance test
 
 1. Install the same production-mode APK on both Android phones.
-2. Sign in using the intended authorized account on each device.
-3. Confirm each account sees only its permitted role and factory scope.
+2. Sign in with the authorized Admin account on both devices.
+3. Confirm both devices connect to the same company data.
 4. Create a clearly marked test attendance record on Phone A and wait for successful sync.
 5. Reopen/refresh Phone B and confirm the record appears exactly once.
 6. Update the test record and confirm the change appears on Phone A.
