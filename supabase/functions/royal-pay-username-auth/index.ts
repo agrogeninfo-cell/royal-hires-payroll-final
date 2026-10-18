@@ -63,7 +63,7 @@ Deno.serve(async (request: Request) => {
   }
 
   const action = body.action;
-  if (action !== 'sign-in' && action !== 'reset-password') {
+  if (action !== 'sign-in' && action !== 'reset-password' && action !== 'verify-reset-identity') {
     return json({ error: 'Unsupported authentication action.' }, 400, origin);
   }
 
@@ -73,6 +73,12 @@ Deno.serve(async (request: Request) => {
   }
 
   const username = typeof body.username === 'string' ? body.username.trim().toLowerCase() : '';
+  if (action === 'verify-reset-identity') {
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const eligible = Boolean(username && username.length <= 80 && email && email.length <= 254
+      && accounts.some((item) => item.username === username && item.email === email));
+    return json({ eligible }, 200, origin);
+  }
   if (!username || username.length > 80) return json({ error: 'Enter a valid username.' }, 400, origin);
   const account = accounts.find((item) => item.username === username);
 
