@@ -186,7 +186,6 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
       <BackupHubModal
         isOpen={isBackupHubOpen}
         onClose={() => setIsBackupHubOpen(false)}
-        onOpenInstall={() => setIsInstallModalOpen(true)}
       />
 
       {/* Server-authorized user invitation and approval */}
