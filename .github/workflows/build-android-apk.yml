@@ -27,10 +27,11 @@ jobs:
         run: npm run lint
       - name: Payroll, billing and invoicing unit checks
         run: npm run test:unit
-      - name: Build web app
+      - name: Build production web app (cloud authentication enabled)
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_PUBLIC_DEMO_MODE: 'false'
         run: npm run build
       - name: Generate Android project
         run: if [ -f android/gradlew ]; then echo "Android project exists; reusing it."; else echo "Incomplete Android project; regenerating in CI."; rm -rf android; npx cap add android; fi
@@ -54,7 +55,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: royal-hires-payroll-debug-apk
+          name: royal-hires-payroll-production-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
