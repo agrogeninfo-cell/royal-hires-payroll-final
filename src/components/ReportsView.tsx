@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { createExcelXmlWorkbook, type ExcelCell } from '../utils/excelXml';
+import { exportFile } from '../utils/exportFile';
 import {
   BarChart3,
   Download,
@@ -98,62 +100,99 @@ export const ReportsView: React.FC = () => {
   const grandTotalLabor = pnlData.reduce((s, p) => s + p.totalLaborCost, 0);
   const grandTotalProfit = pnlData.reduce((s, p) => s + p.estimatedGrossProfit, 0);
 
-  const exportCurrentReport = () => {
-    let csvContent = '';
+  const exportCurrentReport = async () => {
+    let headers: string[] = [];
+    let rows: ExcelCell[][] = [];
+    let sheetName = 'Report';
+
     if (activeReport === 'pnl') {
-      const headers = [
-        'Factory Name',
-        'Billing Method',
-        'Invoiced Revenue (LKR)',
-        'Collected Receipts (LKR)',
-        'Outstanding Due (LKR)',
-        'Days Supplied',
-        'Approved OT Hours',
-        'Helper Wages Cost (LKR)',
-        'Helper OT Cost (LKR)',
-        'Total Labor Cost (LKR)',
-        'Estimated Profit (LKR)',
-        'Margin %',
+      sheetName = 'Profit and Loss';
+      headers = [
+        'Factory Name', 'Billing Method', 'Invoiced Revenue (LKR)',
+        'Collected Receipts (LKR)', 'Outstanding Due (LKR)', 'Days Supplied',
+        'Approved OT Hours', 'Helper Wages Cost (LKR)', 'Helper OT Cost (LKR)',
+        'Total Labor Cost (LKR)', 'Estimated Profit (LKR)', 'Margin %',
       ];
-      const rows = pnlData.map((d) => [
-        `"${d.factory.name}"`,
-        d.factory.billingMethod,
-        d.invoicedRevenue,
-        d.collectedCash,
-        d.outstandingInvoiceDue,
-        d.totalDaysWorked,
-        d.approvedOtHours,
-        d.helperWageCost,
-        d.helperOtCost,
-        d.totalLaborCost,
-        d.estimatedGrossProfit,
-        `${d.marginPct}%`,
+      rows = pnlData.map((d) => [
+        d.factory.name, d.factory.billingMethod, d.invoicedRevenue, d.collectedCash,
+        d.outstandingInvoiceDue, d.totalDaysWorked, d.approvedOtHours,
+        d.helperWageCost, d.helperOtCost, d.totalLaborCost, d.estimatedGrossProfit,
+        d.marginPct,
       ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     } else if (activeReport === 'attendance') {
-      const headers = ['Date', 'Factory', 'Helper ID', 'Helper Name', 'Status', 'Days', 'OT Hours', 'Supervisor'];
-      const rows = attendance
+      sheetName = 'Attendance';
+      headers = ['Date', 'Factory', 'Helper ID', 'Helper Name', 'Status', 'Payable Days', 'OT Hours', 'Meals', 'Supervisor', 'Approval Status'];
+      rows = attendance
         .filter((a) => (filterFactory === 'all' || a.factoryId === filterFactory) && a.date >= startDate && a.date <= endDate)
         .map((a) => [
-          a.date,
-          `"${a.factoryName}"`,
-          a.employeeId,
-          `"${a.employeeName}"`,
-          a.status,
-          a.payableUnits,
+          a.date, a.factoryName, a.employeeId, a.employeeName, a.status, a.payableUnits,
           a.totalOtHours,
-          `"${a.supervisorName}"`,
+          [a.hadBreakfast ? 'Breakfast' : '', a.hadLunch ? 'Lunch' : '', a.hadDinner ? 'Dinner' : ''].filter(Boolean).join(', '),
+          a.supervisorName, a.submissionStatus,
         ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    } else if (activeReport === 'invoices') {
+      sheetName = 'Invoices';
+      headers = ['Invoice Number', 'Factory', 'Invoice Date', 'Due Date', 'Period Start', 'Period End', 'Total Amount (LKR)', 'Amount Received (LKR)', 'Outstanding Balance (LKR)', 'Status'];
+      rows = invoices
+        .filter((inv) => (filterFactory === 'all' || inv.factoryId === filterFactory) && inv.invoiceDate >= startDate && inv.invoiceDate <= endDate)
+        .map((inv) => [
+          inv.invoiceNumber, inv.factoryName, inv.invoiceDate, inv.dueDate, inv.periodStart, inv.periodEnd,
+          inv.totalAmount, inv.amountReceived, inv.outstandingBalance, inv.status,
+        ]);
+    } else if (activeReport === 'advances') {
+      sheetName = 'Advances Ledger';
+      headers = ['Date', 'Factory', 'Helper ID', 'Helper Name', 'Amount (LKR)', 'Payment Method', 'Reference', 'Notes', 'Recorded By'];
+      rows = payments
+        .filter((p) => {
+          if (p.paymentType !== 'advance' || p.paymentDate < startDate || p.paymentDate > endDate) return false;
+          if (filterFactory === 'all') return true;
+          return employees.find((employee) => employee.id === p.employeeId)?.currentFactoryId === filterFactory;
+        })
+        .map((p) => [
+          p.paymentDate,
+          factories.find((factory) => factory.id === employees.find((employee) => employee.id === p.employeeId)?.currentFactoryId)?.name || '',
+          p.employeeId, p.employeeName, p.amount, p.paymentMethod, p.referenceNumber || '', p.notes || '', p.recordedBy,
+        ]);
+    } else {
+      sheetName = 'Payroll Summary';
+      headers = [
+        'Payroll Number', 'Period Start', 'Period End', 'Payroll Status',
+        'Helper ID', 'Full Name', 'Gender', 'Factory', 'Wage Arrangement',
+        'Wage Rate (LKR)', 'Days Worked', 'Normal Wages (LKR)',
+        'Approved OT Hours', 'OT Wages (LKR)', 'Gross Earnings (LKR)',
+        'Meal Deductions (LKR)', 'Boarding Deductions (LKR)',
+        'Advances Deducted (LKR)', 'Total Deductions (LKR)',
+        'Net Payable (LKR)', 'Amount Paid (LKR)', 'Remaining Balance (LKR)',
+      ];
+      rows = payrollRuns
+        .filter((run) => run.periodEnd >= startDate && run.periodStart <= endDate)
+        .flatMap((run) => run.items
+          .filter((item) => filterFactory === 'all' || item.factoryId === filterFactory)
+          .map((item) => [
+            run.payrollNumber, run.periodStart, run.periodEnd, run.status,
+            item.employeeId, item.employeeName, item.employeeGender, item.factoryName, item.wageArrangement,
+            item.snapshotWageRate, item.daysWorked, item.normalWage, item.approvedOtHours,
+            item.otWage, item.grossEarnings, item.totalMealDeductions,
+            item.totalBoardingDeductions, item.advancesDeducted, item.totalDeductions,
+            item.netPayable, item.amountPaid, item.remainingBalance,
+          ]));
     }
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.href = encodedUri;
-    link.download = `Report_${activeReport}_${startDate}_${endDate}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const workbook = createExcelXmlWorkbook(sheetName, headers, rows);
+    const safeReport = activeReport.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `Royal_Hires_${safeReport}_${startDate}_${endDate}.xls`;
+    try {
+      await exportFile({
+        fileName,
+        data: workbook,
+        mimeType: 'application/vnd.ms-excel',
+        title: `Royal Hires ${sheetName} summary`,
+        dialogTitle: 'Save or share Excel report',
+      });
+    } catch (error) {
+      console.error('Excel report export failed:', error);
+      alert(error instanceof Error ? `Excel export failed: ${error.message}` : 'Excel export failed. Please try again.');
+    }
   };
 
   return (
@@ -175,7 +214,7 @@ export const ReportsView: React.FC = () => {
           className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg shadow-xs flex items-center space-x-1.5 transition cursor-pointer"
         >
           <Download className="w-3.5 h-3.5" />
-          <span>Export Current Report (CSV)</span>
+          <span>Export Current Report (Excel)</span>
         </button>
       </div>
 
@@ -186,6 +225,7 @@ export const ReportsView: React.FC = () => {
             { id: 'pnl', label: 'Factory Profit & Loss (P&L)' },
             { id: 'attendance', label: 'Attendance Audit Register' },
             { id: 'invoices', label: 'Invoices & Receivables' },
+            { id: 'payroll_summary', label: 'Payroll Summary' },
             { id: 'advances', label: 'Employee Advances Ledger' },
           ].map((tab) => (
             <button
