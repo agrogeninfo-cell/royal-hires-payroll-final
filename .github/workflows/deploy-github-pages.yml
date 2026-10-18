@@ -31,8 +31,11 @@ jobs:
         run: npm install
 
       - name: Build Vite app for GitHub Pages
+        # Production site must use real Supabase authentication, not the public demo identity.
+        # This flag only changes app authentication/demo behavior and local demo storage namespace;
+        # it does not delete or migrate existing payroll records.
         env:
-          VITE_PUBLIC_DEMO_MODE: 'true'
+          VITE_PUBLIC_DEMO_MODE: 'false'
         run: npm run build -- --base=/royal-hires-payroll-final/
 
       - name: Add SPA fallback for client-side routes
