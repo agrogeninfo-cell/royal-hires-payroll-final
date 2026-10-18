@@ -5,6 +5,7 @@ import { isSupabaseConfigured, signInWithUsername, requestPasswordResetByUsernam
 export const AuthScreen: React.FC = () => {
   const [mode, setMode] = useState<'signin' | 'recovery'>('signin');
   const [username, setUsername] = useState('');
+  const [recoveryEmail, setRecoveryEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -59,7 +60,7 @@ export const AuthScreen: React.FC = () => {
             event.preventDefault();
             if (mode === 'recovery') {
               void run(async () => {
-                await requestPasswordResetByUsername(username);
+                await requestPasswordResetByUsername(username, recoveryEmail);
                 setNotice('If the account is eligible, a password reset email will be sent. Check your inbox and spam folder.');
               });
             } else {
@@ -72,6 +73,9 @@ export const AuthScreen: React.FC = () => {
                 <input required autoCapitalize="none" autoCorrect="off" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} className="w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-10 pr-4 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400" placeholder="Enter your username" />
               </span>
             </label>
+            {mode === 'recovery' && <label className="block text-sm font-medium text-slate-200">Account email
+              <input required type="email" autoCapitalize="none" autoComplete="email" value={recoveryEmail} onChange={(event) => setRecoveryEmail(event.target.value)} className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-emerald-400" placeholder="Email registered to your account" />
+            </label>}
             {mode === 'signin' && <label className="block text-sm font-medium text-slate-200">Password
               <span className="relative mt-1.5 block">
                 <KeyRound size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
