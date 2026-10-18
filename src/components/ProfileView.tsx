@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import mdGraduationPhoto from '../assets/images/md-profile-graduation.jpg';
+import mdExecutivePhoto from '../assets/images/md-profile-executive.jpg';
+import mdFullLengthPhoto from '../assets/images/md-profile-full-length.jpg';
 import { useApp } from '../context/AppContext';
 import {
   Award,
@@ -504,107 +507,27 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-7 sm:gap-9 text-center md:text-left">
-          {/* Executive Portrait Frame with Interactive Customizer */}
-          <div className="relative shrink-0 flex flex-col items-center group">
-            {/* Portrait Frame Container */}
-            <div
-              onClick={() => {
-                if (isAdmin) setIsPhotoModalOpen(true);
-              }}
-              title={isAdmin ? "Click to change your photograph / ඔබගේ සැබෑ ඡායාරූපය ඇතුළත් කිරීමට ක්ලික් කරන්න" : "Thusith Dissanayake - Managing Director & System Designer"}
-              className={`relative transition transform duration-300 ${isAdmin ? 'cursor-pointer group-hover:scale-103' : 'cursor-default'}`}
-            >
-              {/* Outer Glowing Gradient Ring */}
-              <div
-                className={`w-44 h-44 sm:w-52 sm:h-52 rounded-full p-1.5 bg-gradient-to-tr ${frameStyles[frameTheme].ring} shadow-2xl ${frameStyles[frameTheme].glow} transition-all duration-700 relative`}
-              >
-                {/* Micro-sparkle Orb Badge */}
-                <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-tr from-[#00E5C9] to-emerald-400 flex items-center justify-center text-slate-950 shadow-md">
-                  <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-                </div>
-
-                <div className="w-full h-full rounded-full overflow-hidden bg-slate-950 border-2 border-white/30 relative shadow-inner">
-                  <img
-                    src={currentPhoto}
-                    alt="Thusith Dissanayake - Managing Director & Developer"
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover object-top transition duration-700 group-hover:scale-108"
-                  />
-
-                  {/* Creative Interactive Hover & Mobile Overlay (Admin Only) */}
-                  {isAdmin && (
-                    <div className="absolute inset-0 bg-slate-950/75 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white text-[11px] font-bold space-y-1.5 p-3 text-center backdrop-blur-xs">
-                      <Camera className="w-8 h-8 text-[#00E5C9] animate-bounce" />
-                      <span className="text-[#00E5C9] font-extrabold text-xs">ඡායාරූපය මාරු කරන්න</span>
-                      <span className="text-[10px] text-slate-300 font-semibold">(Click to Upload Photo)</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Verified Executive Shield Badge */}
-              <div
-                className={`absolute bottom-0 right-2 px-3.5 py-1.5 rounded-full text-[10px] font-black flex items-center space-x-1.5 shadow-xl border backdrop-blur-md ${
-                  isDark
-                    ? 'bg-[#0E1720]/95 border-[#00E5C9]/60 text-[#00E5C9] shadow-[#00E5C9]/20'
-                    : 'bg-white/95 border-emerald-400 text-emerald-900 shadow-emerald-500/20'
-                }`}
-                title="Verified Managing Director & Systems Architect"
-              >
-                <ShieldCheck className="w-4 h-4 text-emerald-400 fill-emerald-500/20" />
-                <span className="tracking-wide">MD &amp; ARCHITECT</span>
-              </div>
+          {/* Fixed MD photo gallery: supplied photos, bundled with the app and not editable in the UI */}
+          <div className="w-full md:w-[48%] shrink-0">
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+              {[
+                { src: mdGraduationPhoto, title: 'Academic Profile', detail: 'Education & Achievement' },
+                { src: mdExecutivePhoto, title: 'Executive Profile', detail: 'Managing Director' },
+                { src: mdFullLengthPhoto, title: 'Founder Profile', detail: 'System Creator' },
+              ].map((photo) => (
+                <article key={photo.title} className={`min-w-0 overflow-hidden rounded-2xl sm:rounded-3xl border shadow-lg ${isDark ? 'bg-slate-900/80 border-emerald-400/25' : 'bg-white border-emerald-200'}`}>
+                  <div className="aspect-[3/4] overflow-hidden bg-slate-100">
+                    <img src={photo.src} alt={`Thusith Dissanayake — ${photo.title}`} className="h-full w-full object-cover object-top" loading="eager" draggable={false} />
+                  </div>
+                  <div className="p-2 sm:p-3 text-center">
+                    <p className={`text-[10px] sm:text-xs font-extrabold leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{photo.title}</p>
+                    <p className={`hidden sm:block text-[10px] mt-1 leading-snug ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{photo.detail}</p>
+                    <div className="mt-2 flex items-center justify-center gap-1 text-[9px] sm:text-[10px] font-bold text-emerald-600"><Lock className="w-3 h-3" /> Fixed</div>
+                  </div>
+                </article>
+              ))}
             </div>
-
-            {/* Frame Style Switcher & Photo Action (Admin Only Settings) */}
-            {isAdmin && (
-              <div className="mt-4 flex items-center space-x-2.5">
-                <button
-                  onClick={() => setIsPhotoModalOpen(true)}
-                  className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-[#00E5C9]/20 hover:bg-[#00E5C9]/30 text-[#00E5C9] border border-[#00E5C9]/40 transition cursor-pointer shadow-sm hover:shadow-[#00E5C9]/25"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>{isCustomPhoto ? 'ඡායාරූපය මාරු කරන්න' : 'Upload Real Photo'}</span>
-                </button>
-
-                {/* Color Frame Selector Palette */}
-                <div
-                  className={`flex items-center space-x-1.5 p-1 rounded-full border shadow-inner ${
-                    isDark ? 'bg-black/40 border-white/10' : 'bg-slate-100 border-slate-200'
-                  }`}
-                  title="Frame Glow Color (Admin Setting)"
-                >
-                  <button
-                    onClick={() => setFrameTheme('emerald')}
-                    className={`w-3.5 h-3.5 rounded-full bg-emerald-400 transition cursor-pointer ${
-                      frameTheme === 'emerald' ? 'ring-2 ring-white scale-125' : 'opacity-60 hover:opacity-100'
-                    }`}
-                    title="Royal Emerald Glow"
-                  />
-                  <button
-                    onClick={() => setFrameTheme('navy')}
-                    className={`w-3.5 h-3.5 rounded-full bg-blue-500 transition cursor-pointer ${
-                      frameTheme === 'navy' ? 'ring-2 ring-white scale-125' : 'opacity-60 hover:opacity-100'
-                    }`}
-                    title="Executive Navy Titanium"
-                  />
-                  <button
-                    onClick={() => setFrameTheme('cyber')}
-                    className={`w-3.5 h-3.5 rounded-full bg-purple-500 transition cursor-pointer ${
-                      frameTheme === 'cyber' ? 'ring-2 ring-white scale-125' : 'opacity-60 hover:opacity-100'
-                    }`}
-                    title="Cyber Systems Teal & Purple"
-                  />
-                  <button
-                    onClick={() => setFrameTheme('gold')}
-                    className={`w-3.5 h-3.5 rounded-full bg-amber-400 transition cursor-pointer ${
-                      frameTheme === 'gold' ? 'ring-2 ring-white scale-125' : 'opacity-60 hover:opacity-100'
-                    }`}
-                    title="Leadership Prestige Gold"
-                  />
-                </div>
-              </div>
-            )}
+            <p className={`mt-2.5 text-center text-[11px] sm:text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}><ShieldCheck className="inline w-3.5 h-3.5 mr-1 text-emerald-500" />Official MD photos • Admin-locked</p>
           </div>
 
           {/* Profile Details, Designations & Creative Badges */}
@@ -629,7 +552,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
 
               {/* Prominent Name with Multi-Tone Metallic Shimmer */}
               <div className="relative">
-                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-[#00E5C9] bg-clip-text text-transparent drop-shadow-sm">
+                <h1 className={`text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight drop-shadow-sm ${isDark ? "bg-gradient-to-r from-white via-slate-100 to-[#00E5C9] bg-clip-text text-transparent" : "text-emerald-900"}`}>
                   {developerName}
                 </h1>
                 <p className="text-[11px] font-bold tracking-widest uppercase text-emerald-400/80 mt-1">
