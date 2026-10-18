@@ -56,7 +56,7 @@ function makePage(item: PayrollItem, run: PayrollRun, frequency: 'weekly' | 'mon
     const font = isHeader ? 'F2' : 'F1';
     const size = index === 0 ? 15 : index === 1 ? 13 : index === 2 ? 10 : isHeader ? 11 : 9.5;
     const color = index <= 1 ? '0.02 0.37 0.27' : '0.10 0.15 0.18';
-    commands.push(`BT / ${font} ${size} Tf ${color} rg 45 ${y} Td (${ascii(line)}) Tj ET`);
+    commands.push(`BT /${font} ${size} Tf ${color} rg 45 ${y} Td (${ascii(line)}) Tj ET`);
     if (index === 0) commands.push('0.83 0.68 0.36 RG 1.5 w 42 752 m 553 752 l S');
     y -= index === 0 ? 26 : index === 1 ? 22 : index === 2 ? 22 : line === '' ? 10 : 18;
   });
