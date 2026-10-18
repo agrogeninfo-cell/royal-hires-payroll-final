@@ -121,11 +121,23 @@ export async function signInWithUsername(username: string, password: string): Pr
   if (sessionError) throw sessionError;
 }
 
-export async function requestPasswordResetByUsername(username: string): Promise<void> {
-  const { error } = await getSupabaseClient().functions.invoke('royal-pay-username-auth', {
-    body: { action: 'reset-password', username: username.trim() },
+export async function requestPasswordResetByUsername(username: string, email: string): Promise<void> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const { data, error } = await getSupabaseClient().functions.invoke('royal-pay-username-auth', {
+    body: { action: 'verify-reset-identity', username: username.trim(), email: normalizedEmail },
   });
   if (error) throw error;
+  if (data?.eligible !== true) {
+    throw new Error('The username and email could not be verified. Check both details or contact the administrator.');
+  }
+
+  // Initiate recovery from the Android/web client so Supabase stores the PKCE verifier
+  // in the same client storage that will exchange the recovery callback code.
+  const redirectTo = Capacitor.isNativePlatform()
+    ? `${AUTH_CALLBACK_URL}?flow=recovery`
+    : getWebAuthRedirectUrl();
+  const { error: resetError } = await getSupabaseClient().auth.resetPasswordForEmail(normalizedEmail, { redirectTo });
+  if (resetError) throw resetError;
 }
 
 function getWebAuthRedirectUrl(): string {
