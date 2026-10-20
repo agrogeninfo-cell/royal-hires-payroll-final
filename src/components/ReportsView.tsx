@@ -191,7 +191,7 @@ export const ReportsView: React.FC = () => {
           ${rows.map((row) => `<Row>${row.map((cell) => xmlCell(cell)).join('')}</Row>`).join('')}
         </Table></Worksheet>
       </Workbook>`;
-    const blob = new Blob(['\\uFEFF', workbook], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const blob = new Blob(['\uFEFF', workbook], { type: 'application/vnd.ms-excel;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
