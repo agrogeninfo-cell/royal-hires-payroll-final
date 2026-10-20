@@ -709,3 +709,79 @@ html, body, #root { min-height: 100%; min-height: 100dvh; }
     transition-duration: .01ms !important;
   }
 }
+
+/* Royal Pay UI refresh — premium emerald / champagne, consistent across existing screens. */
+:root {
+  --rh-forest: #0a3324;
+  --rh-forest-deep: #06271c;
+  --rh-green: #0f6b46;
+  --rh-green-bright: #16845a;
+  --rh-mint: #e8f5ed;
+  --rh-canvas: #f3f7f4;
+  --rh-surface: #ffffff;
+  --rh-ink: #172a20;
+  --rh-muted: #6c7d72;
+  --rh-border: #dce7df;
+  --rh-gold: #c9a45c;
+  --rh-shadow: 0 10px 28px rgba(9, 49, 31, .075);
+}
+.rh-app-shell { background: #f3f7f4; }
+.rh-topbar { background: linear-gradient(112deg, #06271c 0%, #0a3324 56%, #11563a 100%); }
+.rh-topbar-inner { min-height: 70px; }
+.rh-main-content { max-width: 1320px; }
+.rh-screen-content { max-width: 1180px; }
+.rh-screen-content h1 { font-size: clamp(23px, 2.8vw, 31px); line-height: 1.2; font-weight: 850; color: #102b1d; }
+.rh-screen-content h2 { font-size: clamp(17px, 2vw, 21px); }
+.rh-screen-content h3 { color: #193d2a; }
+.rh-screen-content .bg-white.rounded-xl,
+.rh-screen-content .bg-white.rounded-2xl,
+.rh-screen-content .bg-white.rounded-3xl,
+.rh-screen-content [class~="bg-white"][class*="rounded-"] {
+  border-color: #dce7df;
+  box-shadow: 0 8px 24px rgba(9, 49, 31, .055);
+}
+.rh-screen-content button:not(.rh-mobile-nav-item):not(.rh-topbar-icon):not(.rh-topbar-back) {
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+.rh-screen-content button:not(:disabled):active { transform: translateY(1px); }
+.rh-screen-content button[class*="bg-emerald-"],
+.rh-screen-content button[class*="bg-green-"],
+.rh-screen-content button[class*="bg-cyan-"] {
+  box-shadow: 0 5px 12px rgba(7, 92, 58, .13);
+}
+.rh-screen-content input:not([type="checkbox"]):not([type="radio"]),
+.rh-screen-content select,
+.rh-screen-content textarea {
+  border-color: #d6e2d9;
+  border-radius: 12px;
+  background-color: #fff;
+}
+.rh-screen-content input:not([type="checkbox"]):not([type="radio"]):focus,
+.rh-screen-content select:focus,
+.rh-screen-content textarea:focus {
+  border-color: #16845a;
+  box-shadow: 0 0 0 3px rgba(22, 132, 90, .11);
+}
+.rh-screen-content table { border-radius: 14px; }
+.rh-screen-content thead th { background: #eaf4ed; color: #355c45; }
+.rh-screen-content tbody tr:hover { background: #f5faf6; }
+.rh-stat-card { border-radius: 20px; box-shadow: 0 8px 22px rgba(9,49,31,.06); }
+.rh-stat-card:hover { border-color: #b6d5c0; box-shadow: 0 14px 28px rgba(9,49,31,.10); }
+.rh-stat-icon { background: #e4f3e9; color: #0f6b46; }
+.rh-mobile-nav { border-top-color: #dce7df; box-shadow: 0 -8px 28px rgba(9,49,31,.10); }
+.rh-mobile-nav-item.active { color: #0f6b46; }
+.rh-mobile-nav-item.active .rh-mobile-nav-icon { background: #e4f3e9; color: #0f6b46; }
+.rh-mobile-nav-item.active::after { background: #c9a45c; }
+.rh-director-card { border-color: #dce7df; box-shadow: var(--rh-shadow); }
+@media (min-width: 900px) {
+  .rh-main-content { padding-left: 26px; padding-right: 26px; }
+  .rh-dashboard { gap: 27px; }
+  .rh-stats-grid { gap: 14px; }
+}
+@media (max-width: 760px) {
+  .rh-topbar-inner { min-height: 60px; padding-left: 12px; padding-right: 12px; }
+  .rh-main-content { padding-left: 12px; padding-right: 12px; }
+  .rh-stat-card { border-radius: 17px; }
+  .rh-screen-content [class*="rounded-2xl"] { border-radius: 17px; }
+  .rh-screen-content [class*="rounded-3xl"] { border-radius: 20px; }
+}
