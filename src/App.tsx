@@ -4,7 +4,6 @@ import { AuthGate } from './components/AuthGate';
 import { AdminAccessPanel } from './components/AdminAccessPanel';
 import { Navbar } from './components/Navbar';
 import { NavigationTabs, TabType } from './components/NavigationTabs';
-import { DashboardView } from './components/DashboardView';
 import { PremiumDashboardView } from './components/PremiumDashboardView';
 import { AttendanceView } from './components/AttendanceView';
 import { OvertimeApprovalView } from './components/OvertimeApprovalView';
