@@ -109,17 +109,40 @@ export class ForeverStorageService {
   /**
    * Downloads JSON backup directly as a file to the user's device
    */
-  public static downloadBackupFile(payload: SystemBackupPayload): void {
-    const filename = `LankaManpower_Forever_Backup_${payload.timestamp.split('T')[0]}_${Date.now().toString().slice(-4)}.json`;
+  public static async downloadBackupFile(payload: SystemBackupPayload): Promise<void> {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      throw new Error('Backup download is available only in the app or browser.');
+    }
+
+    const datePart = (payload.timestamp || new Date().toISOString()).split('T')[0];
+    const filename = `RoyalPay_Forever_Backup_${datePart}_${Date.now().toString().slice(-4)}.json`;
     const jsonStr = JSON.stringify(payload, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
+    if (!jsonStr || jsonStr === '{}') {
+      throw new Error('Backup file could not be prepared. No JSON data was generated.');
+    }
+
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
+    link.style.display = 'none';
+    link.setAttribute('aria-label', 'Download Royal Pay JSON backup');
     document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+
+    try {
+      link.click();
+      // Android Chrome/WebView may need the Blob URL to remain alive until the
+      // download manager has started reading it. Revoke asynchronously instead
+      // of immediately after link.click().
+      window.setTimeout(() => {
+        URL.revokeObjectURL(url);
+        link.remove();
+      }, 1500);
+    } catch (error) {
+      URL.revokeObjectURL(url);
+      link.remove();
+      throw new Error('The browser could not start the backup download. Try opening Royal Pay in Chrome, or use Share / Save a copy.');
+    }
   }
 }

@@ -1,2 +1,5 @@
 [functions.royal-pay-username-auth]
 verify_jwt = false
+
+[functions.royal-pay-login-v2]
+verify_jwt = false

@@ -1276,7 +1276,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
               </div>
               <div>
                 <h3 className="text-base font-extrabold">ඔබගේ සැබෑ ඡායාරූපය යොදන්න</h3>
-                <p className="text-xs text-slate-400">Upload Thusith Dissanayake's Profile Photo</p>
+                <p className="text-xs text-slate-400">Upload Thusith Dissanayake's Profile Photo / සැබෑ ඡායාරූපය තෝරන්න</p>
               </div>
             </div>
 

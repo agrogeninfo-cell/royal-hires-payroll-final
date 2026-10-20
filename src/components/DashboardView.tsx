@@ -283,10 +283,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </section>
 
-      <section className="rh-director-card">
-        <img src={mdPhoto} alt="Thusith Dissanayake" />
-        <div className="rh-director-copy"><span>PRODUCT OWNER & SYSTEM DESIGNER</span><h3>Thusith Dissanayake</h3><p>Managing Director · Royal Hires (Pvt) Ltd</p></div>
-        <button aria-label="View developer profile" onClick={() => setActiveTab('profile')}><ArrowRight size={18} /></button>
+      <section className="rh-director-card" aria-label="Managing Director profile">
+        <img src={mdPhoto} alt="Thusith Dissanayake — Managing Director and System Designer" />
+        <div className="rh-director-copy">
+          <span>MANAGING DIRECTOR &amp; SYSTEM DESIGNER</span>
+          <h3>Thusith Dissanayake</h3>
+          <p>කළමනාකාර අධ්‍යක්ෂක · Royal Hires (Pvt) Ltd</p>
+          <p className="text-[11px] opacity-80">Product Owner • Payroll System Developer</p>
+        </div>
+        <button type="button" aria-label="View developer profile / නිල පැතිකඩ බලන්න" title="View profile / පැතිකඩ බලන්න" onClick={() => setActiveTab('profile')}><ArrowRight size={18} /></button>
       </section>
     </div>
   );

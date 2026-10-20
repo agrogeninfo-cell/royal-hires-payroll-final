@@ -71,12 +71,14 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
 
   const handleDownload = async () => {
     setIsProcessing(true);
+    setErrorMsg('');
+    setFeedback('');
     try {
       await downloadForeverBackup();
-      setFeedback('Forever Backup JSON downloaded successfully to your device!');
-      setTimeout(() => setFeedback(''), 4000);
+      setFeedback('Backup සකස් කළා. Download එක Notifications / Downloads තුළ තහවුරු කරන්න. | Backup prepared — check Downloads to confirm.');
+      setTimeout(() => setFeedback(''), 6500);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Download failed');
+      setErrorMsg((err?.message || 'Download failed') + ' | Download අසාර්ථකයි. Chrome හරහා නැවත උත්සාහ කරන්න.');
     } finally {
       setIsProcessing(false);
     }
@@ -203,14 +205,14 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
         </div>
 
         {feedback && (
-          <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs rounded-xl flex items-center space-x-2">
+          <div role="status" aria-live="polite" className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs rounded-xl flex items-start space-x-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="font-semibold">{feedback}</span>
           </div>
         )}
 
         {errorMsg && (
-          <div className="p-3 bg-rose-50 border border-rose-300 text-rose-800 text-xs rounded-xl flex items-center space-x-2">
+          <div role="alert" aria-live="assertive" className="p-3 bg-rose-50 border border-rose-300 text-rose-800 text-xs rounded-xl flex items-start space-x-2">
             <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
             <span className="font-semibold">{errorMsg}</span>
           </div>
@@ -367,7 +369,7 @@ export const BackupHubModal: React.FC<BackupHubModalProps> = ({
               className="p-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-2 shadow-xs transition cursor-pointer disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
-              <span>Download Forever Backup (.json)</span>
+              <span>{isProcessing ? 'Backup සකස් කරමින්… / Preparing backup…' : 'Download Forever Backup (.json) / Backup බාගත කරන්න'}</span>
             </button>
 
             {/* Instant Restore from Mirror */}
