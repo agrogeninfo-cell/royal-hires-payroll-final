@@ -129,6 +129,18 @@ export const ReportsView: React.FC = () => {
           a.date, a.factoryName, a.employeeId, a.employeeName, a.employeeGender,
           a.shift, a.status, a.payableUnits, a.totalOtHours, a.supervisorName,
         ]);
+    } else if (activeReport === 'payroll_summary') {
+      headers = ['Payroll Number', 'Period Start', 'Period End', 'Run Status', 'Employee ID', 'Employee Name', 'Factory', 'Wage Arrangement', 'Days Worked', 'Approved OT Hours', 'Gross Earnings (LKR)', 'Total Deductions (LKR)', 'Net Payable (LKR)', 'Amount Paid (LKR)', 'Remaining Balance (LKR)'];
+      rows = payrollRuns
+        .filter((run) => run.periodStart <= endDate && run.periodEnd >= startDate)
+        .flatMap((run) => run.items
+          .filter((item) => filterFactory === 'all' || item.factoryId === filterFactory)
+          .map((item) => [
+            run.payrollNumber, run.periodStart, run.periodEnd, run.status,
+            item.employeeId, item.employeeName, item.factoryName, item.wageArrangement,
+            item.daysWorked, item.approvedOtHours, item.grossEarnings,
+            item.totalDeductions, item.netPayable, item.amountPaid, item.remainingBalance,
+          ]));
     } else if (activeReport === 'invoices') {
       headers = ['Invoice Number', 'Factory', 'Invoice Date', 'Period Start', 'Period End', 'Due Date', 'Status', 'Subtotal (LKR)', 'Adjustments (LKR)', 'Invoice Total (LKR)', 'Received (LKR)', 'Outstanding Balance (LKR)'];
       rows = invoices
