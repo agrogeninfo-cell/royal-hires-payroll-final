@@ -156,14 +156,9 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
         >
           <div className={`rh-screen-content rh-screen-${activeTab}`}>
           {activeTab === 'dashboard' && (
-            <DashboardView
-              setActiveTab={handleNavigateTab}
-              onOpenTests={() => setIsTestsOpen(true)}
-              onOpenBackupHub={() => setIsBackupHubOpen(true)}
-              onOpenInstall={() => setIsInstallModalOpen(true)}
-            />
+            <PremiumDashboardView onNavigate={handleNavigateTab} />
           )}
-          {activeTab === 'premium' && <PremiumDashboardView />}
+          {activeTab === 'premium' && <PremiumDashboardView onNavigate={handleNavigateTab} />}
           {activeTab === 'attendance' && <AttendanceView />}
           {activeTab === 'overtime' && <OvertimeApprovalView />}
           {activeTab === 'factories' && <FactoriesView />}
