@@ -329,12 +329,12 @@ export const PayrollView: React.FC = () => {
     // quotes, or newlines remain in their original columns when opened in Excel.
     const csvCell = (value: unknown): string => {
       let text = String(value ?? '');
-      if (/^[=+@\\t\\r]/.test(text)) text = `'${text}`;
+      if (/^[=+@\t\r]/.test(text)) text = `'${text}`;
       return `"${text.replace(/"/g, '""')}"`;
     };
-    const csv = '\\uFEFF' + [headers, ...rows]
+    const csv = '\uFEFF' + [headers, ...rows]
       .map((row) => row.map(csvCell).join(','))
-      .join('\\r\\n');
+      .join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
