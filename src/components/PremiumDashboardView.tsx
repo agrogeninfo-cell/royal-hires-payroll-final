@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  ArrowRight, Bell, CalendarCheck, ClipboardList, FileText, Users,
-  WalletCards, Wifi, WifiOff, Clock3, Building2, Plus, ArrowUpRight,
+  ArrowRight, Bell, CalendarCheck, FileText, Users,
+  WalletCards, Wifi, WifiOff, Building2, ArrowUpRight,
 } from 'lucide-react';
 
 type DashboardTab = 'attendance' | 'employees' | 'payroll' | 'invoices' | 'reports';
