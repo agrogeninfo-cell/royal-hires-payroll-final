@@ -164,7 +164,7 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
             />
           )}
           {activeTab === 'premium' && <PremiumDashboardView />}
-          {activeTab === 'attendance' && <AttendanceView />
+          {activeTab === 'attendance' && <AttendanceView />}
           {activeTab === 'overtime' && <OvertimeApprovalView />}
           {activeTab === 'factories' && <FactoriesView />}
           {activeTab === 'employees' && <EmployeesView />}
