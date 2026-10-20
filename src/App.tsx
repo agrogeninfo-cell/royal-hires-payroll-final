@@ -5,6 +5,7 @@ import { AdminAccessPanel } from './components/AdminAccessPanel';
 import { Navbar } from './components/Navbar';
 import { NavigationTabs, TabType } from './components/NavigationTabs';
 import { DashboardView } from './components/DashboardView';
+import { PremiumDashboardView } from './components/PremiumDashboardView';
 import { AttendanceView } from './components/AttendanceView';
 import { OvertimeApprovalView } from './components/OvertimeApprovalView';
 import { FactoriesView } from './components/FactoriesView';
@@ -47,6 +48,7 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
     const currentHash = window.location.hash.replace('#', '') as TabType;
     const validTabs: TabType[] = [
       'dashboard',
+      'premium',
       'attendance',
       'overtime',
       'factories',
@@ -161,7 +163,8 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
               onOpenInstall={() => setIsInstallModalOpen(true)}
             />
           )}
-          {activeTab === 'attendance' && <AttendanceView />}
+          {activeTab === 'premium' && <PremiumDashboardView />}
+          {activeTab === 'attendance' && <AttendanceView />
           {activeTab === 'overtime' && <OvertimeApprovalView />}
           {activeTab === 'factories' && <FactoriesView />}
           {activeTab === 'employees' && <EmployeesView />}
