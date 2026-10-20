@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PayrollItem, PayrollRun, EmployeePayment } from '../types';
 import { PayrollService } from '../services/payrollService';
+import { createPayslipPdf } from '../utils/payslipPdf';
+import { createExcelXmlWorkbook } from '../utils/excelXml';
+import { exportFile } from '../utils/exportFile';
 import {
   Calculator,
   Calendar,
@@ -52,80 +55,28 @@ export const PayrollView: React.FC = () => {
 
   const [payslipPeriodType, setPayslipPeriodType] = useState<'weekly' | 'monthly'>('monthly');
 
-  const escapeHtml = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[char] || char));
-
-  const printPayslips = (items: PayrollItem[]) => {
-    if (!previewRun || items.length === 0) return;
-    const money = (amount: number) => `LKR ${Number(amount || 0).toLocaleString('en-LK')}`;
-    const slipMarkup = items.map((item, index) => `
-      <section class="payslip ${index > 0 ? 'page-break' : ''}">
-        <header><div class="brand">ROYAL HIRES PRIVATE LIMITED</div><h1>EMPLOYEE PAYSLIP</h1>
-          <div class="period">${payslipPeriodType.toUpperCase()} PAYSLIP · ${escapeHtml(previewRun.periodStart)} to ${escapeHtml(previewRun.periodEnd)}</div></header>
-        <div class="details">
-          <div><span>Employee Name</span><strong>${escapeHtml(item.employeeName)}</strong></div>
-          <div><span>Employee ID</span><strong>${escapeHtml(item.employeeId)}</strong></div>
-          <div><span>Factory</span><strong>${escapeHtml(item.factoryName)}</strong></div>
-          <div><span>Wage Arrangement</span><strong>${escapeHtml(item.wageArrangement)}</strong></div>
-          <div><span>Payroll No.</span><strong>${escapeHtml(previewRun.payrollNumber)}</strong></div>
-          <div><span>Days Worked</span><strong>${escapeHtml(item.daysWorked)}</strong></div>
-        </div>
-        <table><thead><tr><th>Earnings</th><th>Amount</th><th>Deductions</th><th>Amount</th></tr></thead><tbody>
-          <tr><td>Normal Wages</td><td>${money(item.normalWage)}</td><td>Meals</td><td>${money(item.totalMealDeductions)}</td></tr>
-          <tr><td>Approved Overtime (${escapeHtml(item.approvedOtHours)} hrs)</td><td>${money(item.otWage)}</td><td>Boarding</td><td>${money(item.totalBoardingDeductions)}</td></tr>
-          <tr><td>Other Earnings</td><td>${money(0)}</td><td>Salary Advances</td><td>${money(item.advancesDeducted)}</td></tr>
-          <tr class="total"><td>Gross Earnings</td><td>${money(item.grossEarnings)}</td><td>Total Deductions</td><td>${money(item.totalDeductions)}</td></tr>
-        </tbody></table>
-        <div class="net"><span>NET PAYABLE</span><strong>${money(item.netPayable)}</strong></div>
-        <div class="payment">
-          <div><span>Amount Paid</span><strong>${money(item.amountPaid)}</strong></div>
-          <div><span>Remaining Balance</span><strong>${money(item.remainingBalance)}</strong></div>
-          <div><span>Payment Status</span><strong>${escapeHtml(item.paymentStatus)}</strong></div>
-        </div>
-        <footer><span>Generated: ${escapeHtml(new Date().toLocaleDateString())}</span><span>Employee Signature: __________________</span><span>Authorized By: __________________</span></footer>
-      </section>
-    `).join('');
-
-    // Avoid window.open('', '_blank'): Android WebView/Chrome can block the
-    // blank popup, leaving the user on about:blank#blocked. Print an isolated
-    // same-origin iframe instead so the payroll screen and current state remain.
-    const frame = document.createElement('iframe');
-    frame.setAttribute('title', 'Royal Hires payslip print preview');
-    frame.setAttribute('aria-hidden', 'true');
-    Object.assign(frame.style, {
-      position: 'fixed',
-      right: '0',
-      bottom: '0',
-      width: '1px',
-      height: '1px',
-      border: '0',
-      opacity: '0',
-      pointerEvents: 'none',
-    });
-    const printDocument = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Royal Hires Payslips - ${escapeHtml(previewRun.payrollNumber)}</title><style>
-      *{box-sizing:border-box}html,body{width:100%;max-width:100%;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#17212b;font-size:11px;overflow-wrap:anywhere}.payslip{width:100%;max-width:100%;min-height:250mm;display:flex;flex-direction:column;padding:0}.page-break{page-break-before:always;break-before:page}.brand{font-size:18px;font-weight:800;color:#065f46;letter-spacing:.4px}header{border-bottom:3px solid #d4b36a;padding-bottom:12px}h1{font-size:17px;margin:12px 0 5px}.period{color:#475569;font-size:10px}.details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:20px 0}.details div,.payment div{min-width:0;background:#f8fafc;padding:9px;border:1px solid #e2e8f0}.details span,.payment span{display:block;color:#64748b;font-size:9px;margin-bottom:4px;text-transform:uppercase}.details strong,.payment strong{font-size:11px;overflow-wrap:anywhere}table{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-top:4px}th,td{padding:8px 6px;border:1px solid #cbd5e1;text-align:left;overflow-wrap:anywhere;word-break:normal}th{background:#ecfdf5;color:#065f46}th:nth-child(2),th:nth-child(4),td:nth-child(2),td:nth-child(4){width:19%}.total{font-weight:700;background:#f8fafc}.net{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;padding:16px;background:#065f46;color:white}.net span{font-weight:700;letter-spacing:.5px}.net strong{font-size:20px}.payment{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:auto;padding-top:32px;color:#475569;font-size:9px}@page{size:A4;margin:12mm}@media screen{body{padding:12px;background:#f1f5f9}.payslip{max-width:760px;margin:0 auto 18px;padding:16px;background:white;box-shadow:0 1px 6px #0002}}@media print{html,body{width:auto;max-width:none}.payslip{min-height:260mm;padding:0}.page-break{break-before:page;page-break-before:always}}
-    </style></head><body>${slipMarkup}</body></html>`;
-    document.body.appendChild(frame);
-    const frameWindow = frame.contentWindow;
-    const frameDoc = frame.contentDocument;
-    if (!frameWindow || !frameDoc) {
-      frame.remove();
-      setFeedback('Could not prepare the payslip print view on this device. Please try Chrome or the desktop print option.');
+  const exportPayslipsPdf = async (items: PayrollItem[]) => {
+    if (!previewRun || items.length === 0) {
+      setFeedback('Calculate payroll first, then select the payslips to export.');
       return;
     }
-    frameDoc.open();
-    frameDoc.write(printDocument);
-    frameDoc.close();
     try {
-      frameWindow.focus();
-      frameWindow.print();
-      window.setTimeout(() => frame.remove(), 1500);
-      setFeedback('Print dialog requested. Choose “Save as PDF” to create a PDF copy.');
+      const pdf = createPayslipPdf(items, previewRun, payslipPeriodType);
+      const safePayrollNumber = previewRun.payrollNumber.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = `Royal_Hires_Payslips_${safePayrollNumber}.pdf`;
+      await exportFile({
+        fileName,
+        data: window.btoa(pdf),
+        mimeType: 'application/pdf',
+        base64: true,
+        title: 'Royal Hires payslip PDF',
+        dialogTitle: 'Save or share payslip PDF',
+      });
+      setFeedback(`PDF payslip export prepared: ${fileName}`);
+      window.setTimeout(() => setFeedback(''), 5000);
     } catch (error) {
-      frame.remove();
-      setFeedback('This Android WebView could not open the print dialog. Try opening the app in Chrome and choose Print / Save as PDF.');
-      console.error('Payslip print failed:', error);
+      console.error('Payslip PDF export failed:', error);
+      setFeedback(error instanceof Error ? `Payslip PDF export failed: ${error.message}` : 'Payslip PDF export failed. Please try again.');
     }
   };
 
@@ -219,6 +170,18 @@ export const PayrollView: React.FC = () => {
     e.preventDefault();
     if (!selectedItemForPayment || !previewRun) return;
 
+    // Check every factory represented in this run before saving a payment record,
+    // preventing a partial save when the payroll cloud-confirmation guard rejects
+    // the subsequent run update.
+    const runFactoryIds = Array.from(new Set(previewRun.items.map((item) => item.factoryId)));
+    const unconfirmedFactoryNames = runFactoryIds
+      .filter((factoryId) => !factories.some((factory) => factory.id === factoryId && factory.cloudSyncConfirmed === true))
+      .map((factoryId) => factories.find((factory) => factory.id === factoryId)?.name || factoryId);
+    if (unconfirmedFactoryNames.length > 0) {
+      setFeedback(`Payment not recorded. Confirm the cloud-saved rates for: ${unconfirmedFactoryNames.join(', ')}.`);
+      return;
+    }
+
     if (paymentAmount <= 0) {
       alert('Payment amount must be greater than zero.');
       return;
@@ -289,56 +252,46 @@ export const PayrollView: React.FC = () => {
     }
   };
 
-  const exportPayrollCsv = () => {
-    if (!previewRun) return;
+  const exportPayrollExcel = async () => {
+    if (!previewRun) {
+      setFeedback('Calculate payroll first, then export the summary sheet.');
+      return;
+    }
     const headers = [
-      'Helper ID',
-      'Full Name',
-      'Gender',
-      'Factory',
-      'Wage Rate (LKR)',
-      'Days Worked',
-      'Normal Wages',
-      'Approved OT Hours',
-      'OT Wages',
-      'Gross Earnings',
-      'Meal Deductions',
-      'Boarding Deductions',
-      'Advances Deducted',
-      'Total Deductions',
-      'Net Payable',
-      'Amount Paid',
-      'Remaining Balance',
+      'Payroll Number', 'Period Start', 'Period End', 'Payroll Status',
+      'Helper ID', 'Full Name', 'Gender', 'Factory', 'Wage Arrangement',
+      'Wage Rate (LKR)', 'Days Worked', 'Normal Wages (LKR)',
+      'Approved OT Hours', 'OT Wages (LKR)', 'Gross Earnings (LKR)',
+      'Meal Deductions (LKR)', 'Boarding Deductions (LKR)',
+      'Advances Deducted (LKR)', 'Total Deductions (LKR)',
+      'Net Payable (LKR)', 'Amount Paid (LKR)', 'Remaining Balance (LKR)',
     ];
-
-    const rows = previewRun.items.map((it) => [
-      it.employeeId,
-      `"${it.employeeName}"`,
-      it.employeeGender,
-      `"${it.factoryName}"`,
-      it.snapshotWageRate,
-      it.daysWorked,
-      it.normalWage,
-      it.approvedOtHours,
-      it.otWage,
-      it.grossEarnings,
-      it.totalMealDeductions,
-      it.totalBoardingDeductions,
-      it.advancesDeducted,
-      it.totalDeductions,
-      it.netPayable,
-      it.amountPaid,
-      it.remainingBalance,
+    const rows = previewRun.items.map((item) => [
+      previewRun.payrollNumber, previewRun.periodStart, previewRun.periodEnd, previewRun.status,
+      item.employeeId, item.employeeName, item.employeeGender, item.factoryName, item.wageArrangement,
+      item.snapshotWageRate, item.daysWorked, item.normalWage,
+      item.approvedOtHours, item.otWage, item.grossEarnings,
+      item.totalMealDeductions, item.totalBoardingDeductions,
+      item.advancesDeducted, item.totalDeductions, item.netPayable,
+      item.amountPaid, item.remainingBalance,
     ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Payroll_${previewRun.payrollNumber}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const workbook = createExcelXmlWorkbook('Payroll Summary', headers, rows);
+    const safePayrollNumber = previewRun.payrollNumber.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `Royal_Hires_Payroll_Summary_${safePayrollNumber}.xls`;
+    try {
+      await exportFile({
+        fileName,
+        data: workbook,
+        mimeType: 'application/vnd.ms-excel',
+        title: 'Royal Hires payroll summary sheet',
+        dialogTitle: 'Save or share Excel payroll summary',
+      });
+      setFeedback(`Excel summary sheet prepared: ${fileName}`);
+      window.setTimeout(() => setFeedback(''), 5000);
+    } catch (error) {
+      console.error('Payroll Excel export failed:', error);
+      setFeedback(error instanceof Error ? `Excel summary export failed: ${error.message}` : 'Excel summary export failed. Please try again.');
+    }
   };
 
   return (
@@ -359,15 +312,15 @@ export const PayrollView: React.FC = () => {
           <div className="flex items-center space-x-2">
             {previewRun && (
               <>
-              <button onClick={() => printPayslips(previewRun.items)} className="px-3 py-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg border border-emerald-200 flex items-center space-x-1 transition cursor-pointer">
-                <Download className="w-3.5 h-3.5" /><span>Print All Payslips</span>
+              <button onClick={() => { void exportPayslipsPdf(previewRun.items); }} className="px-3 py-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg border border-emerald-200 flex items-center space-x-1 transition cursor-pointer">
+                <Download className="w-3.5 h-3.5" /><span>Export Payslips PDF</span>
               </button>
               <button
-                onClick={exportPayrollCsv}
+                onClick={() => { void exportPayrollExcel(); }}
                 className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 flex items-center space-x-1 transition cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export CSV</span>
+                <span>Export Excel Summary</span>
               </button>
               </>
             )}
@@ -526,7 +479,7 @@ export const PayrollView: React.FC = () => {
                         LKR {item.remainingBalance.toLocaleString()}
                       </td>
                       <td className="p-3 text-right space-x-1">
-                        <button onClick={() => printPayslips([item])} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold">Payslip</button>
+                        <button onClick={() => { void exportPayslipsPdf([item]); }} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold">Payslip</button>
                         {item.remainingBalance > 0 ? (
                           <button
                             onClick={() => {

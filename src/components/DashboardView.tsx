@@ -32,7 +32,6 @@ interface DashboardViewProps {
   setActiveTab: (tab: TabType) => void;
   onOpenTests: () => void;
   onOpenBackupHub: () => void;
-  onOpenInstall?: () => void;
 }
 
 const localDateKey = (date: Date) => {
@@ -48,7 +47,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   setActiveTab,
   onOpenTests,
   onOpenBackupHub,
-  onOpenInstall,
 }) => {
   const {
     currentUser,
@@ -279,7 +277,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button className="rh-system-button" onClick={onOpenBackupHub}>Backup centre</button>
           <button className="rh-system-button" onClick={() => void downloadForeverBackup()}><Download size={15} /> Export backup</button>
           <button className="rh-system-button" onClick={onOpenTests}>System tests</button>
-          {onOpenInstall && <button className="rh-system-button" onClick={onOpenInstall}><Download size={15} /> App install help</button>}
         </div>
       </section>
 

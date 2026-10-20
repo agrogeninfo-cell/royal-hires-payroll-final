@@ -140,10 +140,10 @@ export async function syncCloudRecords(): Promise<CloudSyncReport> {
           if (store === 'attendance' || store === 'factories') await dbService.put(store, payload);
           out.pushedCount++; out.syncedCount++; continue;
         }
-        if (store === 'factories' && l.cloudSyncReady && !l.cloudSyncConfirmed && r.payload.cloudSyncConfirmed === true) {
-          await dbService.put(store, r.payload); out.pulledCount++; out.syncedCount++;
-          continue;
-        }
+        // Do not blindly pull the old confirmed factory payload after an Admin
+        // explicitly saves rate edits. The timestamp reconciliation below decides
+        // whether the new local configuration should be pushed or the newer cloud
+        // configuration should be pulled. Successful writes set cloudSyncConfirmed.
         if (store === 'attendance' && l.syncStatus !== 'synced' && r.payload.syncStatus === 'synced') {
           const stripSyncMetadata = (record: LocalRecord) => {
             const businessFields = { ...record };

@@ -84,6 +84,7 @@ export const FactoriesView: React.FC = () => {
   };
 
   const openEditModal = (fac: Factory) => {
+    // Re-confirm only when editing rates; preserve the existing explicit safety gate.
     setRateReviewConfirmed(false);
     setEditingFactory(fac);
     setName(fac.name);

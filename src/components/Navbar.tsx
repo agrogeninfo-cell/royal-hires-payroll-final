@@ -3,7 +3,6 @@ import brandLogo from '../../brand-kit-export/company-logo/royal-hires-full-comp
 import {
   ArrowLeft,
   Bell,
-  Download,
   Moon,
   Monitor,
   ShieldCheck,
@@ -21,7 +20,6 @@ interface NavbarProps {
   onOpenTests: () => void;
   onOpenBackupHub: () => void;
   onQuickAction: () => void;
-  onOpenInstall?: () => void;
   onOpenProfile?: () => void;
   activeTab?: string;
   onBackToDashboard?: () => void;
@@ -33,7 +31,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenTests,
   onOpenBackupHub,
   onQuickAction,
-  onOpenInstall,
   onOpenProfile,
   activeTab,
   onBackToDashboard,
@@ -85,9 +82,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
           <button className="rh-topbar-icon rh-desktop-tool" onClick={onOpenTests} title="Run system tests"><PlayCircle size={17} /></button>
           <button className="rh-topbar-icon rh-desktop-tool" onClick={onOpenBackupHub} title="Backup centre"><ShieldCheck size={17} /></button>
-          {onOpenInstall && (
-            <button className="rh-topbar-icon" onClick={onOpenInstall} title="App installation help"><Download size={17} /></button>
-          )}
           {currentUser.role === 'admin' && onManageAccess && (
             <button className="rh-topbar-icon" onClick={onManageAccess} title="Manage user access" aria-label="Manage user access"><ShieldCheck size={17} /></button>
           )}

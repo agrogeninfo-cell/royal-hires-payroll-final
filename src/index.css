@@ -709,3 +709,8 @@ html, body, #root { min-height: 100%; min-height: 100dvh; }
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Royal Pay profile accessibility contrast: keep Sinhala and English copy readable on light cards. */
+.rh-theme-light .rh-screen-profile [class*="text-slate-300"] { color: #475569 !important; }
+.rh-theme-light .rh-screen-profile [class*="text-white/"] { color: #334155 !important; }

@@ -19,7 +19,6 @@ import { ProfileView } from './components/ProfileView';
 import { TestSuiteModal } from './components/TestSuiteModal';
 import { BackupHubModal } from './components/BackupHubModal';
 import { QuickActionModal } from './components/QuickActionModal';
-import { InstallAppModal } from './components/InstallAppModal';
 import { Wifi, Battery } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 
@@ -28,7 +27,6 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
   const [isTestsOpen, setIsTestsOpen] = useState<boolean>(false);
   const [isBackupHubOpen, setIsBackupHubOpen] = useState<boolean>(false);
   const [isQuickActionOpen, setIsQuickActionOpen] = useState<boolean>(false);
-  const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
   const [isAccessPanelOpen, setIsAccessPanelOpen] = useState<boolean>(false);
 
   const { theme, mobileFrameMode, setMobileFrameMode } = useApp();
@@ -71,10 +69,6 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
 
     const handlePopState = (event: PopStateEvent) => {
       // 1. If any modal is open, back button closes the modal
-      if (isInstallModalOpen) {
-        setIsInstallModalOpen(false);
-        return;
-      }
       if (isTestsOpen) {
         setIsTestsOpen(false);
         return;
@@ -96,7 +90,7 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isInstallModalOpen, isTestsOpen, isBackupHubOpen, isQuickActionOpen]);
+  }, [isTestsOpen, isBackupHubOpen, isQuickActionOpen]);
 
   return (
     <div
@@ -131,7 +125,6 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
           onOpenTests={() => setIsTestsOpen(true)}
           onOpenBackupHub={() => setIsBackupHubOpen(true)}
           onQuickAction={() => setIsQuickActionOpen(true)}
-          onOpenInstall={() => setIsInstallModalOpen(true)}
           onOpenProfile={() => handleNavigateTab('profile')}
           activeTab={activeTab}
           onBackToDashboard={() => handleNavigateTab('dashboard')}
@@ -158,7 +151,6 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
               setActiveTab={handleNavigateTab}
               onOpenTests={() => setIsTestsOpen(true)}
               onOpenBackupHub={() => setIsBackupHubOpen(true)}
-              onOpenInstall={() => setIsInstallModalOpen(true)}
             />
           )}
           {activeTab === 'attendance' && <AttendanceView />}
@@ -194,11 +186,7 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
       <BackupHubModal
         isOpen={isBackupHubOpen}
         onClose={() => setIsBackupHubOpen(false)}
-        onOpenInstall={() => setIsInstallModalOpen(true)}
       />
-
-      {/* Android Native Install & APK Modal */}
-      <InstallAppModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />
 
       {/* Server-authorized user invitation and approval */}
       {!PUBLIC_DEMO_MODE && <AdminAccessPanel isOpen={isAccessPanelOpen} onClose={() => setIsAccessPanelOpen(false)} />}
