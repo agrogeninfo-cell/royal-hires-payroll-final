@@ -99,61 +99,107 @@ export const ReportsView: React.FC = () => {
   const grandTotalProfit = pnlData.reduce((s, p) => s + p.estimatedGrossProfit, 0);
 
   const exportCurrentReport = () => {
-    let csvContent = '';
-    if (activeReport === 'pnl') {
-      const headers = [
-        'Factory Name',
-        'Billing Method',
-        'Invoiced Revenue (LKR)',
-        'Collected Receipts (LKR)',
-        'Outstanding Due (LKR)',
-        'Days Supplied',
-        'Approved OT Hours',
-        'Helper Wages Cost (LKR)',
-        'Helper OT Cost (LKR)',
-        'Total Labor Cost (LKR)',
-        'Estimated Profit (LKR)',
-        'Margin %',
-      ];
-      const rows = pnlData.map((d) => [
-        `"${d.factory.name}"`,
-        d.factory.billingMethod,
-        d.invoicedRevenue,
-        d.collectedCash,
-        d.outstandingInvoiceDue,
-        d.totalDaysWorked,
-        d.approvedOtHours,
-        d.helperWageCost,
-        d.helperOtCost,
-        d.totalLaborCost,
-        d.estimatedGrossProfit,
-        `${d.marginPct}%`,
-      ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    } else if (activeReport === 'attendance') {
-      const headers = ['Date', 'Factory', 'Helper ID', 'Helper Name', 'Status', 'Days', 'OT Hours', 'Supervisor'];
-      const rows = attendance
-        .filter((a) => (filterFactory === 'all' || a.factoryId === filterFactory) && a.date >= startDate && a.date <= endDate)
-        .map((a) => [
-          a.date,
-          `"${a.factoryName}"`,
-          a.employeeId,
-          `"${a.employeeName}"`,
-          a.status,
-          a.payableUnits,
-          a.totalOtHours,
-          `"${a.supervisorName}"`,
-        ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    if (startDate > endDate) {
+      window.alert('Start date must be on or before end date.');
+      return;
     }
 
-    const encodedUri = encodeURI(csvContent);
+    type ExportCell = string | number | boolean | null | undefined;
+    let headers: string[] = [];
+    let rows: ExportCell[][] = [];
+
+    if (activeReport === 'pnl') {
+      headers = [
+        'Factory Name', 'Billing Method', 'Invoiced Revenue (LKR)',
+        'Collected Receipts (LKR)', 'Outstanding Due (LKR)', 'Days Supplied',
+        'Approved OT Hours', 'Helper Wages Cost (LKR)', 'Helper OT Cost (LKR)',
+        'Total Labor Cost (LKR)', 'Estimated Profit (LKR)', 'Margin %',
+      ];
+      rows = pnlData.map((d) => [
+        d.factory.name, d.factory.billingMethod, d.invoicedRevenue,
+        d.collectedCash, d.outstandingInvoiceDue, d.totalDaysWorked,
+        d.approvedOtHours, d.helperWageCost, d.helperOtCost,
+        d.totalLaborCost, d.estimatedGrossProfit, d.marginPct,
+      ]);
+    } else if (activeReport === 'attendance') {
+      headers = ['Date', 'Factory', 'Helper ID', 'Helper Name', 'Gender', 'Shift', 'Status', 'Days', 'OT Hours', 'Supervisor'];
+      rows = attendance
+        .filter((a) => (filterFactory === 'all' || a.factoryId === filterFactory) && a.date >= startDate && a.date <= endDate)
+        .map((a) => [
+          a.date, a.factoryName, a.employeeId, a.employeeName, a.employeeGender,
+          a.shift, a.status, a.payableUnits, a.totalOtHours, a.supervisorName,
+        ]);
+    } else if (activeReport === 'invoices') {
+      headers = ['Invoice Number', 'Factory', 'Invoice Date', 'Period Start', 'Period End', 'Due Date', 'Status', 'Subtotal (LKR)', 'Adjustments (LKR)', 'Invoice Total (LKR)', 'Received (LKR)', 'Outstanding Balance (LKR)'];
+      rows = invoices
+        .filter((inv) =>
+          (filterFactory === 'all' || inv.factoryId === filterFactory) &&
+          inv.periodStart <= endDate && inv.periodEnd >= startDate
+        )
+        .map((inv) => [
+          inv.invoiceNumber, inv.factoryName, inv.invoiceDate, inv.periodStart,
+          inv.periodEnd, inv.dueDate, inv.status, inv.subtotal, inv.adjustments,
+          inv.totalAmount, inv.amountReceived, inv.outstandingBalance,
+        ]);
+    } else if (activeReport === 'advances') {
+      headers = ['Date', 'Employee ID', 'Employee Name', 'Factory', 'Transaction Type', 'Amount (LKR)', 'Payment Method', 'Reference', 'Notes'];
+      rows = payments
+        .filter((p) => p.paymentType === 'advance' && p.paymentDate >= startDate && p.paymentDate <= endDate)
+        .filter((p) => {
+          const employee = employees.find((e) => e.id === p.employeeId);
+          return filterFactory === 'all' || employee?.currentFactoryId === filterFactory;
+        })
+        .map((p) => {
+          const employee = employees.find((e) => e.id === p.employeeId);
+          const factory = factories.find((f) => f.id === employee?.currentFactoryId);
+          return [
+            p.paymentDate, p.employeeId, p.employeeName, factory?.name || '',
+            p.paymentType, p.amount, p.paymentMethod, p.referenceNumber || '', p.notes || '',
+          ];
+        });
+    }
+
+    if (rows.length === 0) {
+      window.alert('There are no records for the selected report and date/factory filters.');
+      return;
+    }
+
+    // Excel-compatible SpreadsheetML 2003 workbook. This is a real Excel-readable
+    // workbook file and does not require adding a runtime dependency to the Android app.
+    const xmlEscape = (value: ExportCell): string => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+    const xmlCell = (value: ExportCell): string => {
+      const isNumber = typeof value === 'number' && Number.isFinite(value);
+      const type = isNumber || typeof value === 'boolean' ? 'Number' : 'String';
+      const normalized = typeof value === 'boolean' ? (value ? 1 : 0) : value;
+      return `<Cell><Data ss:Type="${type}">${xmlEscape(normalized)}</Data></Cell>`;
+    };
+    const worksheetName = ({ pnl: 'Profit and Loss', attendance: 'Attendance', invoices: 'Invoices', advances: 'Advances' } as const)[activeReport];
+    const workbook = `<?xml version="1.0" encoding="UTF-8"?>
+      <?mso-application progid="Excel.Sheet"?>
+      <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+        xmlns:o="urn:schemas-microsoft-com:office:office"
+        xmlns:x="urn:schemas-microsoft-com:office:excel"
+        xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+        xmlns:html="http://www.w3.org/TR/REC-html40">
+        <Worksheet ss:Name="${xmlEscape(worksheetName)}"><Table>
+          <Row>${headers.map((header) => xmlCell(header)).join('')}</Row>
+          ${rows.map((row) => `<Row>${row.map((cell) => xmlCell(cell)).join('')}</Row>`).join('')}
+        </Table></Worksheet>
+      </Workbook>`;
+    const blob = new Blob(['\\uFEFF', workbook], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = encodedUri;
-    link.download = `Report_${activeReport}_${startDate}_${endDate}.csv`;
+    link.href = url;
+    link.download = `RoyalPay_${activeReport}_${startDate}_${endDate}.xls`;
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -175,7 +221,7 @@ export const ReportsView: React.FC = () => {
           className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg shadow-xs flex items-center space-x-1.5 transition cursor-pointer"
         >
           <Download className="w-3.5 h-3.5" />
-          <span>Export Current Report (CSV)</span>
+          <span>Download Excel Summary (.xls)</span>
         </button>
       </div>
 
