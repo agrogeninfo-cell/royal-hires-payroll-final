@@ -243,6 +243,7 @@ export const ReportsView: React.FC = () => {
           {[
             { id: 'pnl', label: 'Factory Profit & Loss (P&L)' },
             { id: 'attendance', label: 'Attendance Audit Register' },
+            { id: 'payroll_summary', label: 'Payroll Summary' },
             { id: 'invoices', label: 'Invoices & Receivables' },
             { id: 'advances', label: 'Employee Advances Ledger' },
           ].map((tab) => (
