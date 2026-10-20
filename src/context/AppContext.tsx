@@ -530,7 +530,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
   const downloadForeverBackup = async () => {
     const payload = await dbService.exportFullBackupPayload();
     const { ForeverStorageService } = await import('../db/foreverStorage');
-    ForeverStorageService.downloadBackupFile(payload);
+    await ForeverStorageService.downloadBackupFile(payload);
     setLastBackupTime(new Date().toLocaleTimeString());
   };
 
