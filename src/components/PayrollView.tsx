@@ -130,6 +130,11 @@ export const PayrollView: React.FC = () => {
   };
 
   const handleGeneratePayroll = () => {
+    if (!periodStart || !periodEnd || periodStart > periodEnd) {
+      setFeedback('Invalid payroll period: start date must be on or before end date.');
+      return;
+    }
+
     const targetEmployees = employees.filter((e) => {
       if (e.status !== 'active') return false;
       if (selectedFactoryId !== 'all' && e.currentFactoryId !== selectedFactoryId) return false;
@@ -291,31 +296,20 @@ export const PayrollView: React.FC = () => {
 
   const exportPayrollCsv = () => {
     if (!previewRun) return;
+
     const headers = [
-      'Helper ID',
-      'Full Name',
-      'Gender',
-      'Factory',
-      'Wage Rate (LKR)',
-      'Days Worked',
-      'Normal Wages',
-      'Approved OT Hours',
-      'OT Wages',
-      'Gross Earnings',
-      'Meal Deductions',
-      'Boarding Deductions',
-      'Advances Deducted',
-      'Total Deductions',
-      'Net Payable',
-      'Amount Paid',
-      'Remaining Balance',
+      'Helper ID', 'Full Name', 'Gender', 'Factory', 'Wage Rate (LKR)',
+      'Days Worked', 'Normal Wages', 'Approved OT Hours', 'OT Wages',
+      'Gross Earnings', 'Meal Deductions', 'Boarding Deductions',
+      'Advances Deducted', 'Total Deductions', 'Net Payable',
+      'Amount Paid', 'Remaining Balance',
     ];
 
     const rows = previewRun.items.map((it) => [
       it.employeeId,
-      `"${it.employeeName}"`,
+      it.employeeName,
       it.employeeGender,
-      `"${it.factoryName}"`,
+      it.factoryName,
       it.snapshotWageRate,
       it.daysWorked,
       it.normalWage,
@@ -331,14 +325,25 @@ export const PayrollView: React.FC = () => {
       it.remainingBalance,
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    // Quote every field and escape embedded quotes so names containing commas,
+    // quotes, or newlines remain in their original columns when opened in Excel.
+    const csvCell = (value: unknown): string => {
+      let text = String(value ?? '');
+      if (/^[=+@\\t\\r]/.test(text)) text = `'${text}`;
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+    const csv = '\\uFEFF' + [headers, ...rows]
+      .map((row) => row.map(csvCell).join(','))
+      .join('\\r\\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Payroll_${previewRun.payrollNumber}.csv`);
+    link.href = url;
+    link.download = `Payroll_${previewRun.payrollNumber}.csv`;
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
