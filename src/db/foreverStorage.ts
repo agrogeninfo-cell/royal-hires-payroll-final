@@ -1,3 +1,7 @@
+import { Capacitor } from '@capacitor/core';
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+
 /**
  * Forever Storage & Backup Engine
  * Provides dual-layer persistence (IndexedDB + LocalStorage mirror + Auto-snapshots)
@@ -121,6 +125,32 @@ export class ForeverStorageService {
       throw new Error('Backup file could not be prepared. No JSON data was generated.');
     }
 
+    // Android WebView does not reliably hand Blob URLs to the system download
+    // manager. Write the backup with Capacitor and open the native share sheet
+    // so the user can save a copy to Downloads or another chosen destination.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const savedFile = await Filesystem.writeFile({
+          path: filename,
+          data: jsonStr,
+          directory: Directory.Documents,
+          encoding: Encoding.UTF8,
+          recursive: true,
+        });
+        await Share.share({
+          title: 'Royal Pay JSON Backup',
+          text: 'Save this Royal Pay backup file in a secure location.',
+          url: savedFile.uri,
+          dialogTitle: 'Save Royal Pay backup',
+        });
+        return;
+      } catch (error) {
+        console.error('Native backup export failed:', error);
+        throw new Error('Could not export the backup on this Android device. Check available storage and try again. Your app records were not changed.');
+      }
+    }
+
+    // Browser/PWA fallback.
     const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -132,9 +162,7 @@ export class ForeverStorageService {
 
     try {
       link.click();
-      // Android Chrome/WebView may need the Blob URL to remain alive until the
-      // download manager has started reading it. Revoke asynchronously instead
-      // of immediately after link.click().
+      // Keep the Blob URL alive briefly so Android Chrome can begin the download.
       window.setTimeout(() => {
         URL.revokeObjectURL(url);
         link.remove();
