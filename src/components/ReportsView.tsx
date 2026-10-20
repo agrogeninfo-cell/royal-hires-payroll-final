@@ -178,7 +178,7 @@ export const ReportsView: React.FC = () => {
       const normalized = typeof value === 'boolean' ? (value ? 1 : 0) : value;
       return `<Cell><Data ss:Type="${type}">${xmlEscape(normalized)}</Data></Cell>`;
     };
-    const worksheetName = ({ pnl: 'Profit and Loss', attendance: 'Attendance', invoices: 'Invoices', advances: 'Advances' } as const)[activeReport];
+    const worksheetName = ({ pnl: 'Profit and Loss', attendance: 'Attendance', payroll_summary: 'Payroll Summary', invoices: 'Invoices', advances: 'Advances' } as const)[activeReport];
     const workbook = `<?xml version="1.0" encoding="UTF-8"?>
       <?mso-application progid="Excel.Sheet"?>
       <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
