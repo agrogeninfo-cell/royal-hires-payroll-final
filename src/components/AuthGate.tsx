@@ -3,6 +3,8 @@ import { App } from '@capacitor/app';
 import type { User } from '../types';
 import { AuthScreen } from './AuthScreen';
 import { SetPasswordScreen } from './SetPasswordScreen';
+import { PersonalPinGate } from './PersonalPinGate';
+import { clearPersonalPin } from '../services/personalPinService';
 import { getCurrentSession, getSupabaseClient, handleNativeAuthCallback, isSupabaseConfigured, loadAccessProfile, signOut, AUTH_CALLBACK_URL } from '../services/authService';
 
 interface AuthGateProps {
@@ -93,9 +95,6 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     let appListener: { remove: () => Promise<void> } | undefined;
     void App.addListener('appUrlOpen', ({ url }) => processAuthCallback(url)).then((listener) => {
       appListener = listener;
-      // The OS may cold-start the app directly into the OAuth callback, in which
-      // case appUrlOpen is not guaranteed to fire. Register the listener first,
-      // then inspect the launch URL so neither return path is missed.
       void App.getLaunchUrl().then((launch) => {
         if (launch?.url) processAuthCallback(launch.url);
       }).catch((error) => {
@@ -112,6 +111,16 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
 
   const handleSignOut = async () => {
     await signOut();
+    setUser(null);
+    setAccessState(null);
+    setRequiresPasswordSetup(false);
+  };
+
+  const handlePinReset = async () => {
+    // Re-authentication is required before a new PIN can be configured. Only PIN
+    // metadata is cleared; IndexedDB, payroll history, invoices and backups remain intact.
+    await signOut();
+    await clearPersonalPin();
     setUser(null);
     setAccessState(null);
     setRequiresPasswordSetup(false);
@@ -145,5 +154,5 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     return <main className="min-h-screen bg-[#071D17] text-white flex items-center justify-center p-5"><section className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.06] p-7"><div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-300/10 text-amber-200"><span className="text-xl">⏳</span></div><h1 className="text-2xl font-bold">{title}</h1><p className="mt-3 text-sm leading-6 text-slate-300">{description}</p>{errorMessage && <p role="alert" className="mt-3 text-sm text-rose-200">{errorMessage}</p>}<button onClick={() => void handleSignOut()} className="mt-6 w-full rounded-xl border border-white/15 px-4 py-3 font-semibold hover:bg-white/5">Sign out</button></section></main>;
   }
 
-  return <>{children(user, handleSignOut)}</>;
+  return <PersonalPinGate onResetPin={handlePinReset}>{children(user, handleSignOut)}</PersonalPinGate>;
 };
