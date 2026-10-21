@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07050d">
+  <meta name="description" content="Royal Hires — The Royal Standard Of Recruitment. Professional manpower, recruitment and workforce solutions.">
+  <title>Royal Hires | The Royal Standard Of Recruitment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{color-scheme:dark;--bg:#07050d;--panel:#100b1b;--panel2:#171027;--purple:#7138f5;--violet:#a18aff;--white:#f8f6ff;--muted:#b0a9c0;--line:rgba(180,153,255,.16);--ease:cubic-bezier(.16,1,.3,1)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:100px}body{margin:0;background:var(--bg);color:var(--white);font-family:"DM Sans",sans-serif;line-height:1.6;overflow-x:hidden}a{color:inherit;text-decoration:none}button{font:inherit}button,a{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--violet);outline-offset:4px}.wrap{width:min(1200px,calc(100% - 48px));margin:auto}.ambient{position:absolute;pointer-events:none;filter:blur(90px);opacity:.22;border-radius:50%;z-index:0}.ambient.one{width:380px;height:380px;right:4%;top:40px;background:#5925c9}.ambient.two{width:320px;height:320px;left:-180px;top:650px;background:#3a197b}.grid-bg{position:absolute;inset:0;z-index:0;opacity:.15;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:66px 66px;mask-image:linear-gradient(#000,transparent 86%)}
+    .header{height:84px;display:flex;align-items:center;position:sticky;top:0;z-index:20;background:rgba(7,5,13,.78);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.04)}.nav{display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{display:flex;align-items:center;gap:12px;min-width:205px}.brand-mark{width:42px;height:42px;color:var(--violet)}.brand-text{font-family:Manrope,sans-serif;font-size:18px;letter-spacing:.06em;font-weight:800;line-height:1.1}.brand-text small{display:block;font:600 9px "DM Sans",sans-serif;letter-spacing:.34em;color:var(--muted);margin-top:5px}.navlinks{display:flex;gap:26px;align-items:center}.navlinks a{font-size:13px;color:#d5d0e0;position:relative;transition:color .2s}.navlinks a:after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:2px;background:var(--violet);transform:scaleX(0);transform-origin:left;transition:transform .22s var(--ease)}.navlinks a:hover,.navlinks a.active{color:white}.navlinks a:hover:after,.navlinks a.active:after{transform:scaleX(1)}.btn{border:1px solid transparent;border-radius:999px;min-height:46px;padding:0 23px;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:13px;cursor:pointer;transition:transform .18s,box-shadow .18s,background .18s,border-color .18s}.btn:hover{transform:translateY(-2px)}.btn-primary{background:linear-gradient(110deg,#6e32ef,#8b5cf6);color:white;box-shadow:0 8px 28px rgba(113,56,245,.19)}.btn-primary:hover{box-shadow:0 12px 34px rgba(113,56,245,.34)}.btn-outline{background:rgba(255,255,255,.02);border-color:rgba(177,145,255,.45);color:white}.btn-outline:hover{background:rgba(113,56,245,.1);border-color:var(--violet)}.menu-toggle{display:none;width:44px;height:44px;border:1px solid var(--line);border-radius:50%;background:var(--panel);color:white}
+    .hero{position:relative;padding:86px 0 54px;min-height:620px;display:flex;align-items:center;isolation:isolate}.hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:1.04fr .96fr;align-items:center;gap:42px}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.32em;font-weight:700;color:var(--violet)}h1,h2,h3,p{margin-top:0}h1,h2,h3{font-family:Manrope,sans-serif}h1{font-size:clamp(42px,5.6vw,76px);line-height:1.05;letter-spacing:-.055em;margin:22px 0 22px;font-weight:800}h1 span{display:block;color:#a78bfa}.hero-copy{max-width:570px;font-size:16px;color:#bcb5ca;line-height:1.8;margin-bottom:28px}.hero-actions{display:flex;gap:12px;flex-wrap:wrap}.hero-micro{display:flex;align-items:center;gap:10px;margin-top:32px;color:#a9a1b8;font-size:11px;letter-spacing:.04em}.pulse{width:7px;height:7px;background:#9b7bff;border-radius:50%;box-shadow:0 0 16px #8a5cff}.hero-visual{position:relative;min-height:420px;display:grid;place-items:center}.visual-halo{position:absolute;width:min(440px,100%);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(114,57,244,.3),rgba(48,22,94,.13) 48%,transparent 70%);animation:halo 7s ease-in-out infinite}.visual-ring{position:absolute;width:330px;height:330px;border-radius:50%;border:1px solid rgba(167,139,250,.23);box-shadow:inset 0 0 60px rgba(113,56,245,.08),0 0 70px rgba(99,53,197,.08)}.visual-ring:before,.visual-ring:after{content:"";position:absolute;border:1px solid rgba(167,139,250,.15);border-radius:50%;inset:24px}.visual-ring:after{inset:-25px}.orbit-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:#b59bff;box-shadow:0 0 24px #8558ff;top:62px;right:90px}.hero-card{position:relative;width:min(420px,100%);padding:26px;border-radius:25px;background:linear-gradient(145deg,rgba(28,19,47,.95),rgba(12,9,21,.94));border:1px solid rgba(180,153,255,.24);box-shadow:0 25px 90px rgba(0,0,0,.42);transform:rotate(-2deg);overflow:hidden}.hero-card:before{content:"";position:absolute;width:240px;height:240px;right:-120px;top:-135px;border-radius:50%;background:#6d35e9;filter:blur(60px);opacity:.3}.card-top{display:flex;justify-content:space-between;align-items:center;position:relative}.card-label{font-size:10px;letter-spacing:.2em;color:#c4b7e9;text-transform:uppercase}.badge{font-size:10px;border:1px solid rgba(177,145,255,.35);border-radius:99px;padding:5px 10px;color:#d4c7ff;background:rgba(113,56,245,.11)}.people-graphic{height:205px;display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:26px 8px 8px;position:relative}.person{position:relative;width:76px;height:136px;border-radius:38px 38px 15px 15px;background:linear-gradient(150deg,#7851ca,#28203b);border:1px solid rgba(194,172,255,.3);box-shadow:inset 0 0 25px rgba(255,255,255,.06)}.person:before{content:"";position:absolute;width:45px;height:45px;border-radius:50%;background:linear-gradient(140deg,#d9d1ff,#8f7ac2);top:-24px;left:15px;border:4px solid #201733}.person:nth-child(2){height:165px;background:linear-gradient(150deg,#8e6bee,#3a245e);width:85px}.person:nth-child(3){height:118px;background:linear-gradient(150deg,#493b68,#1c182a)}.person:nth-child(3):before{width:38px;height:38px;left:15px;top:-22px}.visual-footer{display:flex;justify-content:space-between;gap:15px;border-top:1px solid var(--line);padding-top:15px;color:#aaa1bf;font-size:10px}.visual-footer strong{display:block;color:white;font-size:17px;font-family:Manrope,sans-serif}.stats{position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:24px 0}.stat{padding:4px 24px;border-right:1px solid var(--line);display:flex;align-items:center;gap:14px}.stat:last-child{border:0}.stat-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(113,56,245,.13);color:#ad94ff;flex-shrink:0}.stat strong{font:800 24px Manrope,sans-serif;display:block;letter-spacing:-.04em}.stat span{font-size:10px;color:var(--muted)}
+    section.content{position:relative;padding:95px 0;isolation:isolate}.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:34px}.section-head h2{font-size:clamp(30px,3.7vw,46px);letter-spacing:-.04em;line-height:1.13;margin:13px 0}.section-head p{max-width:490px;color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:4px}.service-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.service-card{position:relative;min-height:260px;padding:23px;border:1px solid var(--line);border-radius:19px;background:linear-gradient(145deg,rgba(22,15,37,.96),rgba(10,8,17,.96));transition:transform .22s var(--ease),border-color .22s,box-shadow .22s;overflow:hidden}.service-card:before{content:"";position:absolute;width:140px;height:140px;right:-80px;bottom:-90px;border-radius:50%;background:var(--purple);filter:blur(50px);opacity:0;transition:opacity .25s}.service-card:hover{transform:translateY(-4px);border-color:rgba(167,139,250,.55);box-shadow:0 20px 45px rgba(0,0,0,.25)}.service-card:hover:before{opacity:.32}.service-num{font-size:11px;color:#8874b5;letter-spacing:.1em}.service-icon{width:47px;height:47px;border-radius:14px;background:rgba(113,56,245,.14);color:#b39bff;display:grid;place-items:center;margin:24px 0 20px}.service-icon svg{width:23px;height:23px}.service-card h3{font-size:17px;margin-bottom:9px}.service-card p{color:var(--muted);font-size:12px;line-height:1.7;margin-bottom:20px}.round-arrow{display:grid;place-items:center;width:32px;height:32px;border:1px solid rgba(167,139,250,.52);color:#d5c7ff;border-radius:50%;transition:transform .2s,background .2s}.service-card:hover .round-arrow{transform:translateX(3px);background:rgba(113,56,245,.22)}
+    .industries{display:grid;grid-template-columns:1fr 1.05fr;gap:34px;align-items:center}.industry-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.industry{min-height:104px;padding:18px 12px;border:1px solid var(--line);border-radius:14px;background:#0e0a18;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#d3cde0;font-size:11px}.industry svg{color:#9e83f7;width:24px;height:24px}.cta-band{border:1px solid rgba(167,139,250,.25);border-radius:22px;padding:32px;background:radial-gradient(ellipse at 100% 0%,rgba(113,56,245,.18),transparent 60%),#100b1b;display:flex;align-items:center;justify-content:space-between;gap:26px}.cta-band h2{font-size:26px;margin:0 0 6px}.cta-band p{font-size:13px;color:var(--muted);margin:0}.cta-band .btn{flex-shrink:0}
+    .about-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:52px;align-items:center}.about-panel{border:1px solid var(--line);border-radius:24px;padding:32px;background:radial-gradient(circle at 0 0,rgba(113,56,245,.17),transparent 65%),#100b1b}.about-panel h2{font-size:38px;line-height:1.15;letter-spacing:-.04em;margin:14px 0}.about-panel p,.about-copy p{color:var(--muted);font-size:14px;line-height:1.9}.check-list{list-style:none;padding:0;margin:25px 0 0;display:grid;gap:13px}.check-list li{display:flex;gap:11px;font-size:13px;color:#ddd7e9}.check{width:21px;height:21px;border-radius:50%;display:grid;place-items:center;background:rgba(113,56,245,.2);color:#c7b8ff;flex-shrink:0}
+    .contact-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:45px}.contact-copy h2{font-size:42px;letter-spacing:-.04em;line-height:1.1}.contact-copy p{color:var(--muted);font-size:14px}.contact-point{display:flex;gap:12px;align-items:center;margin-top:20px;color:#d9d2e6;font-size:13px}.contact-point span{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(113,56,245,.15);color:#b59dff}.form{padding:26px;border:1px solid var(--line);border-radius:20px;background:#100b1b}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:grid;gap:7px;margin-bottom:15px}.field label{font-size:11px;color:#c9c1d7}.field input,.field textarea,.field select{width:100%;background:#090711;border:1px solid rgba(180,153,255,.17);border-radius:10px;padding:13px 12px;color:white;font:13px "DM Sans",sans-serif}.field textarea{min-height:112px;resize:vertical}.form-note{font-size:10px;color:#8f87a2;margin:10px 0 0}.form-status{display:none;border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;background:rgba(113,56,245,.13);color:#d9ceff}.form-status.show{display:block}
+    footer{border-top:1px solid var(--line);padding:35px 0 25px;background:#06040a}.footer-top{display:flex;align-items:flex-start;justify-content:space-between;gap:30px}.footer-brand p{max-width:340px;color:#91899f;font-size:12px;margin-top:15px}.footer-links{display:flex;flex-wrap:wrap;gap:22px;color:#b4adc2;font-size:12px}.footer-bottom{display:flex;justify-content:space-between;gap:20px;padding-top:22px;margin-top:24px;border-top:1px solid rgba(255,255,255,.06);color:#7f778f;font-size:10px}
+    .nav-arrive{animation:section-arrive .48s var(--ease) both}@keyframes section-arrive{from{opacity:.72;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .reveal{opacity:0;transform:translateY(22px);transition:opacity .48s var(--ease),transform .48s var(--ease)}.reveal.in-view{opacity:1;transform:translateY(0)}.stagger>*{transition-delay:calc(var(--i,0)*70ms)}.hero .reveal{transform:translateY(18px)}.hero .reveal.in-view{transform:translateY(0)}.mobile-drawer{position:fixed;inset:0;z-index:50;visibility:hidden;pointer-events:none}.mobile-drawer.open{visibility:visible;pointer-events:auto}.drawer-overlay{position:absolute;inset:0;border:0;background:rgba(0,0,0,.68);opacity:0;transition:opacity .18s}.mobile-drawer.open .drawer-overlay{opacity:1}.drawer-panel{position:absolute;right:0;top:0;bottom:0;width:min(86vw,360px);background:#100b1b;border-left:1px solid var(--line);padding:25px;transform:translateX(100%);transition:transform .24s var(--ease)}.mobile-drawer.open .drawer-panel{transform:translateX(0)}.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:38px}.drawer-close{border:1px solid var(--line);border-radius:50%;height:42px;width:42px;background:transparent;color:white;font-size:22px}.drawer-links{display:grid;gap:5px}.drawer-links a{padding:14px;border-bottom:1px solid rgba(255,255,255,.06);color:#e5dff1}.drawer-links .btn{margin-top:20px}
+    @keyframes halo{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.07);opacity:1}}@keyframes ambient-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:1000px){.navlinks,.nav>.btn{display:none}.menu-toggle{display:grid;place-items:center}.brand{min-width:0}.hero{padding-top:56px}.hero-grid{grid-template-columns:1fr;gap:28px}.hero-copy{max-width:680px}.hero-visual{min-height:360px}.hero-card{max-width:430px}.stats{grid-template-columns:repeat(2,1fr);row-gap:17px}.stat:nth-child(2){border-right:0}.service-grid{grid-template-columns:repeat(2,1fr)}.industries,.about-grid,.contact-grid{grid-template-columns:1fr}.industries{gap:25px}.about-grid{gap:24px}.section-head{align-items:flex-start;flex-direction:column}.section-head p{max-width:650px}}
+    @media(max-width:600px){.wrap{width:min(100% - 32px,1200px)}.header{height:72px}.hero{padding:53px 0 35px;min-height:0}.hero-grid{gap:16px}h1{font-size:clamp(39px,12vw,58px);margin:18px 0}.hero-copy{font-size:14px}.hero-actions .btn{flex:1;padding:0 15px}.hero-visual{min-height:310px}.visual-ring{width:245px;height:245px}.hero-card{padding:20px;border-radius:20px;max-width:360px}.people-graphic{height:165px}.person{width:60px;height:105px}.person:before{width:38px;height:38px;left:10px;top:-20px}.person:nth-child(2){height:130px;width:68px}.person:nth-child(3){height:92px}.person:nth-child(3):before{width:33px;height:33px;left:12px;top:-19px}.stats{padding:17px 0;row-gap:14px}.stat{padding:4px 9px;gap:9px}.stat-icon{width:31px;height:31px;border-radius:9px}.stat strong{font-size:20px}.stat span{font-size:9px}.content{padding:65px 0!important}.section-head h2{font-size:32px}.service-grid{grid-template-columns:1fr;gap:11px}.service-card{min-height:0;padding:20px}.service-icon{margin:18px 0 14px}.industry-list{grid-template-columns:repeat(2,1fr)}.cta-band{align-items:flex-start;flex-direction:column;padding:24px}.cta-band h2{font-size:24px}.about-panel{padding:24px}.about-panel h2{font-size:31px}.contact-copy h2{font-size:34px}.form{padding:19px}.form-row{grid-template-columns:1fr;gap:0}.footer-top,.footer-bottom{flex-direction:column}.footer-links{gap:14px 18px}.footer-bottom{gap:8px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.reveal,.hero .reveal{opacity:1!important;transform:none!important}.stagger>*{transition-delay:0ms!important}}
+  </style>
+</head>
+<body>
+  <div class="ambient one"></div><div class="ambient two"></div>
+  <header class="header">
+    <nav class="wrap nav" aria-label="Main navigation">
+      <a class="brand" href="#home" aria-label="Royal Hires home">
+        <svg class="brand-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M7 16 15 23 24 7 33 23 41 16 37 34Q24 42 11 34L7 16Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="7" cy="13" r="3" fill="currentColor"/><circle cx="24" cy="5" r="3" fill="currentColor"/><circle cx="41" cy="13" r="3" fill="currentColor"/><path d="M16 29h16M19 33h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="brand-text">ROYAL HIRES<small>THE ROYAL STANDARD</small></span>
+      </a>
+      <div class="navlinks" id="desktop-nav"><a class="active" href="#home">Home</a><a href="#about">About Us</a><a href="#services">Our Services</a><a href="#employers">For Employers</a><a href="#careers">Careers</a><a href="#contact">Contact Us</a></div>
+      <a class="btn btn-outline" href="#contact">Let's Talk <span aria-hidden="true">↗</span></a>
+      <button class="menu-toggle" id="menu-open" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-drawer"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </nav>
+  </header>
+  <aside class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
+    <button class="drawer-overlay" id="drawer-overlay" aria-label="Close navigation"></button>
+    <div class="drawer-panel" role="dialog" aria-modal="true" aria-label="Navigation menu">
+      <div class="drawer-head"><a class="brand" href="#home"><span class="brand-text">ROYAL HIRES<small>THE ROYAL STANDARD</small></span></a><button class="drawer-close" id="menu-close" aria-label="Close menu">×</button></div>
+      <nav class="drawer-links" aria-label="Mobile navigation"><a href="#home">Home</a><a href="#about">About Us</a><a href="#services">Our Services</a><a href="#employers">For Employers</a><a href="#careers">Careers</a><a href="#contact">Contact Us</a><a class="btn btn-primary" href="#contact">Let's Talk ↗</a></nav>
+    </div>
+  </aside>
+  <main id="main-content">
+    <section class="hero" id="home">
+      <div class="grid-bg"></div>
+      <div class="wrap hero-grid">
+        <div>
+          <p class="eyebrow reveal">People&nbsp; | &nbsp;Opportunities&nbsp; | &nbsp;Stronger Tomorrows</p>
+          <h1 class="reveal">Royal Hires <span>Private Limited</span></h1>
+          <p class="reveal hero-copy">The Royal Standard Of Recruitment. Connecting businesses with the right workforce through professional recruitment and tailored manpower solutions.</p>
+          <div class="hero-actions reveal"><a class="btn btn-primary" href="#careers">Explore Careers <span aria-hidden="true">↗</span></a><a class="btn btn-outline" href="#services">Our Services <span aria-hidden="true">→</span></a></div>
+          <div class="hero-micro reveal"><span class="pulse"></span> Reliable people. Meaningful opportunities. Lasting partnerships.</div>
+        </div>
+        <div class="hero-visual reveal" aria-label="Illustration representing a connected workforce">
+          <div class="visual-halo"></div><div class="visual-ring"></div><div class="orbit-dot"></div>
+          <div class="hero-card">
+            <div class="card-top"><span class="card-label">People power progress</span><span class="badge">Recruitment · Staffing</span></div>
+            <div class="people-graphic" aria-hidden="true"><div class="person"></div><div class="person"></div><div class="person"></div></div>
+            <div class="visual-footer"><div><strong>Talent</strong>Right people, right roles</div><div><strong>Trust</strong>Partnerships that last</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div class="wrap stats reveal" aria-label="Company highlights">
+      <div class="stat"><div class="stat-icon"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v1"/></svg></div><div><strong>People first</strong><span>Our workforce philosophy</span></div></div>
+      <div class="stat"><div class="stat-icon"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 21V8l9-5 9 5v13M8 21v-7h8v7M7 9h.01M12 9h.01M17 9h.01"/></svg></div><div><strong>Business ready</strong><span>Staffing for operations</span></div></div>
+      <div class="stat"><div class="stat-icon"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></div><div><strong>Built on trust</strong><span>Professional partnerships</span></div></div>
+      <div class="stat"><div class="stat-icon"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 20h18M6 16V9M12 16V4M18 16v-5"/></svg></div><div><strong>Future focused</strong><span>Stronger tomorrows</span></div></div>
+    </div>
+    <section class="content" id="services">
+      <div class="wrap">
+        <div class="section-head reveal"><div><p class="eyebrow">Our services</p><h2>Manpower solutions<br>for a stronger tomorrow.</h2></div><p>People make the difference. We help businesses build dependable teams with workforce solutions shaped around their operational needs.</p></div>
+        <div class="service-grid stagger">
+          <article class="service-card reveal" style="--i:0"><span class="service-num">01 / SERVICE</span><div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v1"/></svg></div><h3>Manpower Supply</h3><p>Reliable workforce support to help businesses, factories and industries meet staffing needs.</p><a class="round-arrow" href="#employers" aria-label="Enquire about manpower supply">↗</a></article>
+          <article class="service-card reveal" style="--i:1"><span class="service-num">02 / SERVICE</span><div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 21V8l9-5 9 5v13M8 21v-7h8v7M7 9h.01M12 9h.01M17 9h.01"/></svg></div><h3>Factory Staffing</h3><p>Flexible staffing support for production, packing, processing and operational teams.</p><a class="round-arrow" href="#employers" aria-label="Enquire about factory staffing">↗</a></article>
+          <article class="service-card reveal" style="--i:2"><span class="service-num">03 / SERVICE</span><div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="8" r="4"/><path d="M3 21v-2a7 7 0 0 1 11-5.7M16 16l2 2 4-4M16 21h6"/></svg></div><h3>Recruitment Services</h3><p>Helping connect suitable candidates with work opportunities and employer requirements.</p><a class="round-arrow" href="#careers" aria-label="Explore recruitment services">↗</a></article>
+          <article class="service-card reveal" style="--i:3"><span class="service-num">04 / SERVICE</span><div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 2.9-.2-.1a1.7 1.7 0 0 0-1.8.3l-.1.1h-3.4l-.1-.2a1.7 1.7 0 0 0-1.4-1l-.2 0-1.7-2.9.1-.2a1.7 1.7 0 0 0-.3-1.8l-.1-.1v-3.4l.2-.1a1.7 1.7 0 0 0 1-1.4v-.2l2.9-1.7.2.1a1.7 1.7 0 0 0 1.8-.3l.1-.1h3.4l.1.2a1.7 1.7 0 0 0 1.4 1l.2 0 1.7 2.9-.1.2a1.7 1.7 0 0 0 .3 1.8l.1.1v1.2Z"/></svg></div><h3>Workforce Support</h3><p>Responsive coordination that helps employers manage changing staffing requirements.</p><a class="round-arrow" href="#contact" aria-label="Enquire about workforce support">↗</a></article>
+        </div>
+      </div>
+    </section>
+    <section class="content" id="about" style="padding-top:25px">
+      <div class="wrap about-grid">
+        <div class="about-panel reveal"><p class="eyebrow">About Royal Hires</p><h2>People are at the heart of every successful business.</h2><p>Royal Hires is focused on connecting workforce capability with business opportunity through professional, dependable recruitment and manpower support.</p><a href="#contact" class="btn btn-outline">Meet our team <span aria-hidden="true">→</span></a></div>
+        <div class="about-copy reveal"><p class="eyebrow">Our approach</p><h2 style="font-size:clamp(27px,3vw,39px);line-height:1.2;letter-spacing:-.04em">The right people. A stronger team. A better future.</h2><p>We work to understand each employer’s staffing needs and each candidate’s goals. Our aim is to make workforce connections clearer, more responsive and more valuable to both sides.</p><ul class="check-list"><li><span class="check">✓</span>Business-focused staffing and recruitment support</li><li><span class="check">✓</span>Respectful, people-centred communication</li><li><span class="check">✓</span>Flexible solutions shaped around operational needs</li><li><span class="check">✓</span>Long-term partnerships built on professionalism</li></ul></div>
+      </div>
+    </section>
+    <section class="content" id="employers">
+      <div class="wrap">
+        <div class="section-head reveal"><div><p class="eyebrow">Who we support</p><h2>Workforce solutions for<br>real-world industries.</h2></div><p>Whether you are scaling operations or looking for your next opportunity, Royal Hires is ready to hear what you need.</p></div>
+        <div class="industries">
+          <div class="industry-list stagger">
+            <div class="industry reveal" style="--i:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21V8l9-5 9 5v13M8 21v-7h8v7"/></svg>Manufacturing</div>
+            <div class="industry reveal" style="--i:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V5h16v16M8 9h2m4 0h2M8 13h2m4 0h2M9 21v-4h6v4"/></svg>Factory Operations</div>
+            <div class="industry reveal" style="--i:2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16v14H4zM8 7V4h8v3M8 12h8M8 16h5"/></svg>Packing</div>
+            <div class="industry reveal" style="--i:3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M5 21V10l7-6 7 6v11M9 21v-6h6v6"/></svg>Food Processing</div>
+            <div class="industry reveal" style="--i:4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h18v13H3zM7 8V4h10v4M7 13h10M7 17h6"/></svg>Tea & Beverage</div>
+            <div class="industry reveal" style="--i:5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h12v11H3zM15 11h4l3 3v4h-7zM7 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM18 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg>Logistics</div>
+          </div>
+          <div class="cta-band reveal"><div><p class="eyebrow">For employers</p><h2>Looking for reliable manpower?</h2><p>Tell us about your staffing requirements and start a conversation.</p></div><a class="btn btn-primary" href="#contact">Get in touch <span aria-hidden="true">→</span></a></div>
+        </div>
+      </div>
+    </section>
+    <section class="content" id="careers">
+      <div class="wrap cta-band reveal"><div><p class="eyebrow">Careers at Royal Hires</p><h2>Ready for your next opportunity?</h2><p>Tell us what kind of work you are looking for. Our team will review your inquiry and respond using the contact details you provide.</p></div><a class="btn btn-primary" href="#contact">Explore opportunities <span aria-hidden="true">↗</span></a></div>
+    </section>
+    <section class="content" id="contact">
+      <div class="wrap contact-grid">
+        <div class="contact-copy reveal"><p class="eyebrow">Contact us</p><h2>Let’s start a conversation.</h2><p>Looking for manpower, recruitment support or a new opportunity? Send us an inquiry and tell us how we can help.</p>
+          <div class="contact-point"><span>↗</span><div><strong>Employers</strong><br><small style="color:var(--muted)">Share your staffing requirements.</small></div></div>
+          <div class="contact-point"><span>◎</span><div><strong>Job seekers</strong><br><small style="color:var(--muted)">Tell us about the work you are seeking.</small></div></div>
+          <div class="contact-point"><span>✉</span><div><strong>General inquiries</strong><br><small style="color:var(--muted)">We welcome professional inquiries.</small></div></div>
+        </div>
+        <form class="form reveal" id="contact-form">
+          <div class="form-status" id="form-status" role="status" aria-live="polite"></div>
+          <div class="form-row"><div class="field"><label for="name">Full name *</label><input id="name" name="name" autocomplete="name" required maxlength="100" placeholder="Your name"></div><div class="field"><label for="email">Email address *</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="180" placeholder="you@example.com"></div></div>
+          <div class="form-row"><div class="field"><label for="kind">I am a…</label><select id="kind" name="kind"><option>Employer</option><option>Job seeker</option><option>Business partner</option><option>Other</option></select></div><div class="field"><label for="phone">Phone (optional)</label><input id="phone" name="phone" autocomplete="tel" maxlength="40" placeholder="Your contact number"></div></div>
+          <div class="field"><label for="message">How can we help? *</label><textarea id="message" name="message" required maxlength="3000" placeholder="Tell us a little about your inquiry…"></textarea></div>
+          <button class="btn btn-primary" type="submit">Prepare inquiry <span aria-hidden="true">→</span></button>
+          <p class="form-note">This demo does not send or store your message. It will prepare an email draft on your device. Do not include sensitive personal or payroll information.</p>
+        </form>
+      </div>
+    </section>
+  </main>
+  <footer><div class="wrap"><div class="footer-top"><div class="footer-brand"><a class="brand" href="#home"><svg class="brand-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M7 16 15 23 24 7 33 23 41 16 37 34Q24 42 11 34L7 16Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="7" cy="13" r="3" fill="currentColor"/><circle cx="24" cy="5" r="3" fill="currentColor"/><circle cx="41" cy="13" r="3" fill="currentColor"/></svg><span class="brand-text">ROYAL HIRES<small>THE ROYAL STANDARD</small></span></a><p>The Royal Standard Of Recruitment. Professional manpower and recruitment solutions built around people and opportunity.</p></div><nav class="footer-links" aria-label="Footer navigation"><a href="#about">About</a><a href="#services">Services</a><a href="#employers">Employers</a><a href="#careers">Careers</a><a href="#contact">Contact</a></nav></div><div class="footer-bottom"><span>© <span id="year"></span> Royal Hires. All rights reserved.</span><span>People · Opportunities · Stronger Tomorrows</span></div></div></footer>
+  <script>
+    (() => {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const revealNodes = [...document.querySelectorAll('.reveal')];
+      if (!reduce && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(entries => {
+          for (const entry of entries) if (entry.isIntersecting) {
+            entry.target.classList.add('in-view'); observer.unobserve(entry.target);
+          }
+        }, { threshold: 0.12, rootMargin: '0px 0px -4% 0px' });
+        revealNodes.forEach((node, i) => {
+          if (node.closest('.stagger')) node.style.setProperty('--i', String(i % 4));
+          observer.observe(node);
+        });
+      } else revealNodes.forEach(node => node.classList.add('in-view'));
+
+      const anchors = [...document.querySelectorAll('a[href^="#"]')];
+      const drawer = document.getElementById('mobile-drawer');
+      const opener = document.getElementById('menu-open');
+      const closer = document.getElementById('menu-close');
+      const overlay = document.getElementById('drawer-overlay');
+      let previousFocus = null;
+      const openDrawer = () => {
+        previousFocus = document.activeElement; drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
+        opener.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; closer.focus();
+      };
+      const closeDrawer = () => {
+        drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); opener.setAttribute('aria-expanded','false');
+        document.body.style.overflow=''; if (previousFocus instanceof HTMLElement) previousFocus.focus();
+      };
+      opener.addEventListener('click', openDrawer); closer.addEventListener('click', closeDrawer); overlay.addEventListener('click', closeDrawer);
+      drawer.querySelectorAll('a').forEach(a => a.addEventListener('click', closeDrawer));
+      document.addEventListener('keydown', e => { if(e.key==='Escape' && drawer.classList.contains('open')) closeDrawer(); });
+
+      const navLinks=[...document.querySelectorAll('.navlinks a')];
+      const updateActive=()=>{const current=location.hash||'#home';navLinks.forEach(a=>{a.classList.toggle('active',a.getAttribute('href')===current);});};
+      window.addEventListener('hashchange', updateActive); updateActive();
+      anchors.forEach(a => a.addEventListener('click', e => {
+        const id=a.getAttribute('href'); if(!id || id==='#') return;
+        const target=document.querySelector(id); if(!target) return;
+        if (!reduce) { target.classList.remove('nav-arrive'); void target.offsetWidth; target.classList.add('nav-arrive'); target.addEventListener('animationend', () => target.classList.remove('nav-arrive'), { once:true }); }
+        if (!reduce && !a.closest('.navlinks') && !a.closest('.drawer-links')) return;
+        e.preventDefault(); target.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+        if(location.hash!==id) history.pushState(null,'',id);
+        updateActive();
+      }));
+      // Visual prototype only: prepares an email draft without collecting data on a server.
+      document.getElementById('contact-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const form=e.currentTarget; const data=new FormData(form);
+        const subject=encodeURIComponent('Royal Hires Website Inquiry — '+String(data.get('kind')||'General'));
+        const body=encodeURIComponent('Name: '+data.get('name')+'\nEmail: '+data.get('email')+'\nInquiry type: '+data.get('kind')+'\nPhone: '+(data.get('phone')||'Not provided')+'\n\nMessage:\n'+data.get('message'));
+        const status=document.getElementById('form-status');
+        status.textContent='Your email app will open with a drafted inquiry. No message has been sent yet.';status.classList.add('show');
+        window.location.href='mailto:?subject='+subject+'&body='+body;
+      });
+      document.getElementById('year').textContent=String(new Date().getFullYear());
+    })();
+  </script>
+</body>
+</html>

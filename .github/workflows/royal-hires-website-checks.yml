@@ -1,0 +1,75 @@
+name: Royal Hires Website Checks
+
+on:
+  pull_request:
+    paths:
+      - "website/**"
+      - ".github/workflows/royal-hires-website-checks.yml"
+  push:
+    branches: [feature/royal-hires-official-website]
+    paths:
+      - "website/**"
+      - ".github/workflows/royal-hires-website-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-static-site:
+    name: Validate Royal Hires static site
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout website source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate page structure, branding and data boundary
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+
+          html = Path("website/index.html").read_text(encoding="utf-8")
+          required = [
+              "<title>Royal Hires | The Royal Standard Of Recruitment</title>",
+              "Royal Hires",
+              "Private Limited",
+              "The Royal Standard Of Recruitment",
+              'id="home"', 'id="about"', 'id="services"',
+              'id="employers"', 'id="careers"', 'id="contact"',
+              "prefers-reduced-motion:reduce",
+              "@keyframes section-arrive",
+              "IntersectionObserver",
+              'aria-label="Main navigation"',
+          ]
+          missing = [item for item in required if item not in html]
+          if missing:
+              raise SystemExit("Missing website requirements: " + ", ".join(missing))
+          if re.search(r"#(?:d7b56d|eac66f|f7e3c5|ffd700|c9a227)\b", html, re.I):
+              raise SystemExit("Gold palette value found; the selected brand palette excludes gold.")
+          if re.search(r"payrollRuns|EmployeePayment|outstandingBalance|LankaManpowerDB", html):
+              raise SystemExit("Private payroll data integration detected in public website source.")
+          class PageCheck(HTMLParser):
+              def error(self, message):
+                  raise SystemExit(message)
+          PageCheck().feed(html)
+          scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S)
+          if not scripts:
+              raise SystemExit("Expected inline website behavior script was not found.")
+          Path("/tmp/royal-hires-site.js").write_text("\n".join(scripts), encoding="utf-8")
+          print("Website structure, brand, motion and public/private boundary checks passed.")
+          PY
+      - name: Check JavaScript syntax
+        run: node --check /tmp/royal-hires-site.js
+      - name: Check whitespace errors
+        run: git diff --check origin/main...HEAD
+      - name: Package website preview (not public deployment)
+        uses: actions/upload-artifact@v4
+        with:
+          name: royal-hires-website-preview
+          path: website/
+          if-no-files-found: error
+          retention-days: 14
