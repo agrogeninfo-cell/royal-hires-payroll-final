@@ -16,6 +16,7 @@
     "test:unit": "tsx src/test/runUnitTests.ts"
   },
   "dependencies": {
+    "@aparajita/capacitor-secure-storage": "7.0.0",
     "@capacitor/android": "^7.4.3",
     "@capacitor/core": "^7.4.3",
     "@google/genai": "^2.4.0",
