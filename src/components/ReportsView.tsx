@@ -104,7 +104,7 @@ export const ReportsView: React.FC = () => {
   const exportCurrentReport = async () => {
     const quote = (value: unknown) => '"' + String(value ?? '').replace(/"/g, '""') + '"';
     const selectedInvoices = invoices.filter((item) => (filterFactory === 'all' || item.factoryId === filterFactory) && item.invoiceDate >= startDate && item.invoiceDate <= endDate);
-    const selectedPayments = payments.filter((item) => (filterFactory === 'all' || employees.find((employee) => employee.id === item.employeeId)?.currentFactoryId === filterFactory) && item.createdAt.slice(0, 10) >= startDate && item.createdAt.slice(0, 10) <= endDate);
+    const selectedPayments = payments.filter((item) => item.paymentType === 'advance' && (filterFactory === 'all' || employees.find((employee) => employee.id === item.employeeId)?.currentFactoryId === filterFactory) && item.paymentDate >= startDate && item.paymentDate <= endDate);
     let headers: unknown[] = [];
     let rows: unknown[][] = [];
     if (activeReport === 'pnl') {
@@ -118,7 +118,7 @@ export const ReportsView: React.FC = () => {
       rows = selectedInvoices.map((inv) => [inv.invoiceNumber,inv.factoryName,inv.invoiceDate,inv.dueDate,inv.periodStart,inv.periodEnd,inv.subtotal,inv.adjustments,inv.totalAmount,inv.amountReceived,inv.outstandingBalance,inv.status]);
     } else if (activeReport === 'advances') {
       headers = ['Date','Helper ID','Helper Name','Payment Type','Amount (LKR)','Method','Reference','Notes'];
-      rows = selectedPayments.map((payment) => [payment.createdAt.slice(0,10),payment.employeeId,payment.employeeName,payment.paymentType,payment.amount,payment.paymentMethod || '',payment.referenceNumber || '',payment.notes || '']);
+      rows = selectedPayments.map((payment) => [payment.paymentDate,payment.employeeId,payment.employeeName,payment.paymentType,payment.amount,payment.paymentMethod || '',payment.referenceNumber || '',payment.notes || '']);
     } else {
       headers = ['Payroll Number','Period Start','Period End','Generated At','Total Gross (LKR)','Total Deductions (LKR)','Total Net (LKR)'];
       rows = payrollRuns.filter((run) => run.periodStart >= startDate && run.periodEnd <= endDate && (filterFactory === 'all' || run.items.some((item) => item.factoryId === filterFactory))).map((run) => [run.payrollNumber,run.periodStart,run.periodEnd,run.generatedAt,run.totalGross,run.totalDeductions,run.totalNet]);
@@ -174,6 +174,7 @@ export const ReportsView: React.FC = () => {
             { id: 'attendance', label: 'Attendance Audit Register' },
             { id: 'invoices', label: 'Invoices & Receivables' },
             { id: 'advances', label: 'Employee Advances Ledger' },
+            { id: 'payroll_summary', label: 'Payroll Summary' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -382,7 +383,7 @@ export const ReportsView: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {invoices
-                  .filter((i) => (filterFactory === 'all' || i.factoryId === filterFactory))
+                  .filter((i) => (filterFactory === 'all' || i.factoryId === filterFactory) && i.invoiceDate >= startDate && i.invoiceDate <= endDate)
                   .map((inv) => (
                     <tr key={inv.id}>
                       <td className="p-3 font-bold text-slate-900">{inv.invoiceNumber}</td>
@@ -423,7 +424,7 @@ export const ReportsView: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {payments
-                  .filter((p) => p.paymentType === 'advance')
+                  .filter((p) => p.paymentType === 'advance' && p.paymentDate >= startDate && p.paymentDate <= endDate && (filterFactory === 'all' || employees.find((employee) => employee.id === p.employeeId)?.currentFactoryId === filterFactory))
                   .map((p) => (
                     <tr key={p.id}>
                       <td className="p-3 text-slate-500">{p.paymentDate}</td>
@@ -435,6 +436,40 @@ export const ReportsView: React.FC = () => {
                       <td className="p-3 text-slate-400">{p.recordedBy}</td>
                     </tr>
                   ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* REPORT CONTENT: Payroll Summary */}
+      {activeReport === 'payroll_summary' && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                <tr>
+                  <th className="p-3">Payroll Number</th>
+                  <th className="p-3">Period Start</th>
+                  <th className="p-3">Period End</th>
+                  <th className="p-3">Generated At</th>
+                  <th className="p-3">Gross (LKR)</th>
+                  <th className="p-3">Deductions (LKR)</th>
+                  <th className="p-3">Net (LKR)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {payrollRuns.filter((run) => run.periodStart >= startDate && run.periodEnd <= endDate && (filterFactory === 'all' || run.items.some((item) => item.factoryId === filterFactory))).map((run) => (
+                  <tr key={run.id}>
+                    <td className="p-3 font-bold text-slate-900">{run.payrollNumber}</td>
+                    <td className="p-3">{run.periodStart}</td>
+                    <td className="p-3">{run.periodEnd}</td>
+                    <td className="p-3">{run.generatedAt}</td>
+                    <td className="p-3">{run.totalGross.toLocaleString()}</td>
+                    <td className="p-3">{run.totalDeductions.toLocaleString()}</td>
+                    <td className="p-3 font-bold">{run.totalNet.toLocaleString()}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
