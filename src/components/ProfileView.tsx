@@ -332,7 +332,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
       description: 'Dual-tier supervisor recording and administrative OT threshold approvals with meal tracking.',
       icon: Clock,
       stat: 'Dual-Signoff Audited',
-      accent: 'border-cyan-500/30 text-emerald-700',
+      accent: 'border-cyan-500/30 text-emerald-700 dark:text-emerald-300',
     },
     {
       title: 'Payroll Processing and Salary Reporting',
@@ -428,7 +428,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
             onClick={onBackToDashboard}
             className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer shadow-xs ${
               isDark
-                ? 'bg-[#111b24] border-white/10 text-emerald-700 hover:bg-[#162430]'
+                ? 'bg-[#111b24] border-white/10 text-emerald-700 dark:text-emerald-300 hover:bg-[#162430]'
                 : 'bg-white border-slate-200 text-emerald-800 hover:bg-slate-50'
             }`}
           >
@@ -497,7 +497,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
 
         {/* Top Executive Watermark / Brand Crest */}
         <div className="absolute top-4 right-5 hidden md:flex items-center space-x-2 opacity-35 select-none pointer-events-none">
-          <Gem className="w-5 h-5 text-emerald-700" />
+          <Gem className="w-5 h-5 text-emerald-700 dark:text-emerald-300" />
           <span className="font-mono text-xs tracking-widest font-black uppercase text-emerald-400">
             RH-EXECUTIVE-OS
           </span>
@@ -534,8 +534,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
                   {/* Creative Interactive Hover & Mobile Overlay (Admin Only) */}
                   {isAdmin && (
                     <div className="absolute inset-0 bg-slate-950/75 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white text-[11px] font-bold space-y-1.5 p-3 text-center backdrop-blur-xs">
-                      <Camera className="w-8 h-8 text-emerald-700 animate-bounce" />
-                      <span className="text-emerald-700 font-extrabold text-xs">ඡායාරූපය මාරු කරන්න</span>
+                      <Camera className="w-8 h-8 text-emerald-700 dark:text-emerald-300 animate-bounce" />
+                      <span className="text-emerald-700 dark:text-emerald-300 font-extrabold text-xs">ඡායාරූපය මාරු කරන්න</span>
                       <span className="text-[10px] text-slate-300 font-semibold">(Click to Upload Photo)</span>
                     </div>
                   )}
@@ -546,7 +546,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
               <div
                 className={`absolute bottom-0 right-2 px-3.5 py-1.5 rounded-full text-[10px] font-black flex items-center space-x-1.5 shadow-xl border backdrop-blur-md ${
                   isDark
-                    ? 'bg-[#0E1720]/95 border-[#00E5C9]/60 text-emerald-700 shadow-[#00E5C9]/20'
+                    ? 'bg-[#0E1720]/95 border-[#00E5C9]/60 text-emerald-700 dark:text-emerald-300 shadow-[#00E5C9]/20'
                     : 'bg-white/95 border-emerald-400 text-emerald-900 shadow-emerald-500/20'
                 }`}
                 title="Verified Managing Director & Systems Architect"
@@ -561,7 +561,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
               <div className="mt-4 flex items-center space-x-2.5">
                 <button
                   onClick={() => setIsPhotoModalOpen(true)}
-                  className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-[#00E5C9]/20 hover:bg-[#00E5C9]/30 text-emerald-700 border border-[#00E5C9]/40 transition cursor-pointer shadow-sm hover:shadow-[#00E5C9]/25"
+                  className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-[#00E5C9]/20 hover:bg-[#00E5C9]/30 text-emerald-700 dark:text-emerald-300 border border-[#00E5C9]/40 transition cursor-pointer shadow-sm hover:shadow-[#00E5C9]/25"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span>{isCustomPhoto ? 'ඡායාරූපය මාරු කරන්න' : 'Upload Real Photo'}</span>
@@ -657,7 +657,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
                       : 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300 text-emerald-950'
                   }`}
                 >
-                  <Code2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <Code2 className="w-4 h-4 text-emerald-700 dark:text-emerald-300 shrink-0" />
                   <span>App Developer &amp; System Designer</span>
                 </div>
               </div>
@@ -666,7 +666,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
             {/* Application Tag */}
             <p className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
               Developer and system designer of the{' '}
-              <span className="font-extrabold text-emerald-400 dark:text-emerald-700 underline decoration-emerald-500/40 underline-offset-4">
+              <span className="font-extrabold text-emerald-400 dark:text-emerald-300 dark:text-emerald-300 underline decoration-emerald-500/40 underline-offset-4">
                 {appName}
               </span>
             </p>
@@ -738,10 +738,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
                 }`}
               >
                 <div className="flex items-center space-x-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  <Cpu className="w-3 h-3 text-emerald-700" />
+                  <Cpu className="w-3 h-3 text-emerald-700 dark:text-emerald-300" />
                   <span>Architecture</span>
                 </div>
-                <div className="text-xs sm:text-sm font-black mt-1 flex items-center space-x-1 text-emerald-700">
+                <div className="text-xs sm:text-sm font-black mt-1 flex items-center space-x-1 text-emerald-700 dark:text-emerald-300">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Offline First</span>
                 </div>
@@ -777,7 +777,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
                 </span>
               </div>
               <p className="text-[11px] opacity-90 leading-relaxed">
-                ඉහත ඇති ඡායාරූපය මත හෝ <strong className="text-emerald-700 font-bold">"Upload Real Photo"</strong> බොත්තම ඔබා ඔබගේ phone gallery එකෙන් හෝ පරිගණකයෙන් ඔබගේ සැබෑ photo එක තෝරන්න. එය වහාම App එක පුරා ස්ථිරව සුරැකේ.
+                ඉහත ඇති ඡායාරූපය මත හෝ <strong className="text-emerald-700 dark:text-emerald-300 font-bold">"Upload Real Photo"</strong> බොත්තම ඔබා ඔබගේ phone gallery එකෙන් හෝ පරිගණකයෙන් ඔබගේ සැබෑ photo එක තෝරන්න. එය වහාම App එක පුරා ස්ථිරව සුරැකේ.
               </p>
             </div>
           </div>
@@ -890,7 +890,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
 
             {/* Quote Visual Strip */}
             <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-[#00E5C9]/10 to-transparent border-l-4 border-[#00E5C9] flex items-start space-x-3">
-              <Quote className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+              <Quote className="w-5 h-5 text-emerald-700 dark:text-emerald-300 shrink-0 mt-0.5" />
               <p className="text-xs sm:text-sm font-semibold italic text-slate-200 dark:text-slate-200 leading-relaxed">
                 "Combining business leadership with practical software development to digitize and elevate workforce operations across Sri Lankan industries."
               </p>
@@ -938,12 +938,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
                     : 'bg-emerald-50/70 border-emerald-200'
                 }`}
               >
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-700 flex items-center justify-center mb-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center mb-2.5">
                   <Terminal className="w-4 h-4" />
                 </div>
                 <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center justify-between">
                   <span>Software Architecture</span>
-                  <Code2 className="w-3.5 h-3.5 text-emerald-700" />
+                  <Code2 className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-300" />
                 </h4>
                 <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
                   End-to-end design of payroll algorithms, ledger integrity, offline mirrors, and native mobile apps.
@@ -1009,7 +1009,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
           >
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#00E5C9]/10 text-emerald-700 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-[#00E5C9]/10 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
                   <Workflow className="w-5 h-5" />
                 </div>
                 <div>
@@ -1051,7 +1051,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-[10px] font-mono font-bold text-emerald-700">
+                            <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300">
                               STAGE {step.step}
                             </span>
                             <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-white/10 text-slate-300">
@@ -1069,7 +1069,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
 
                       <ChevronRight
                         className={`w-5 h-5 shrink-0 transition-transform ${
-                          isSelected ? 'rotate-90 text-emerald-700' : 'text-slate-500'
+                          isSelected ? 'rotate-90 text-emerald-700 dark:text-emerald-300' : 'text-slate-500'
                         }`}
                       />
                     </div>
@@ -1116,7 +1116,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
                           {item.title}
                         </h3>
                       </div>
-                      <p className="text-[11px] font-semibold text-emerald-500 dark:text-emerald-700">
+                      <p className="text-[11px] font-semibold text-emerald-500 dark:text-emerald-300 dark:text-emerald-300">
                         {item.titleSi}
                       </p>
                       <p className="text-xs text-slate-600 dark:text-slate-400 leading-snug pt-1">
@@ -1145,7 +1145,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
             }`}
           >
             <div className="flex items-center space-x-3 mb-5">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
                 <Laptop className="w-5 h-5" />
               </div>
               <div>
@@ -1176,7 +1176,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onBackToDashboard }) =
                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   Application Version
                 </div>
-                <div className="text-sm font-mono font-extrabold mt-1 text-emerald-600 dark:text-emerald-700">
+                <div className="text-sm font-mono font-extrabold mt-1 text-emerald-600 dark:text-emerald-300 dark:text-emerald-300">
                   v{appVersion} (Production Build)
                 </div>
               </div>
