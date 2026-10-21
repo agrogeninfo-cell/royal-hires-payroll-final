@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { todayLocalDate } from '../utils/date';
 import { useApp } from '../context/AppContext';
 import { FactoryReceipt, ReceiptAllocation, FactoryInvoice } from '../types';
 import { InvoicingService } from '../services/invoicingService';
@@ -63,7 +64,7 @@ export const ReceiptsView: React.FC = () => {
         receiptNumber,
         factoryId: fac.id,
         factoryName: fac.name,
-        receiptDate: new Date().toISOString().split('T')[0],
+        receiptDate: todayLocalDate(),
         amount: Number(amount),
         paymentMethod,
         referenceNumber: referenceNumber || `REF-${Date.now().toString().slice(-4)}`,
