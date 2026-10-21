@@ -298,7 +298,7 @@ export const PayrollView: React.FC = () => {
     }
   };
 
-  const exportPayrollCsv = () => {
+  const exportPayrollCsv = async () => {
     if (!previewRun) return;
     const headers = [
       'Helper ID',
@@ -333,17 +333,40 @@ export const PayrollView: React.FC = () => {
     // Blob downloads are more reliable than a large data: URI in Android WebView;
     // RFC-style escaping preserves commas, quotes and line breaks in names.
     const csvContent = '\uFEFF' + [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Payroll_${previewRun.payrollNumber}.csv`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setFeedback('Payroll CSV export requested. Check your Downloads folder.');
+    const safeNumber = previewRun.payrollNumber.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fileName = 'Pay_Royal_Payroll_' + safeNumber + '.csv';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const saved = await Filesystem.writeFile({
+          path: fileName,
+          data: csvContent,
+          directory: Directory.Cache,
+          recursive: true,
+        });
+        await Share.share({
+          title: 'Pay Royal Payroll Export',
+          text: 'Payroll CSV for ' + previewRun.payrollNumber,
+          url: saved.uri,
+          dialogTitle: 'Save or share payroll CSV',
+        });
+        setFeedback('Payroll CSV prepared. Choose a destination in the Android share sheet.');
+      } else {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+        setFeedback('Payroll CSV export requested. Check your Downloads folder.');
+      }
+    } catch (error) {
+      console.error('Payroll CSV export failed:', error);
+      setFeedback('Could not export payroll CSV. Please retry or check Android share/save options.');
+    }
   };
 
   return (
