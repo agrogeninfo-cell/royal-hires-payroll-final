@@ -4,6 +4,7 @@ import { PayrollService } from '../services/payrollService';
 import { InvoicingService } from '../services/invoicingService';
 import { getMissingRequiredFactories } from '../db/indexedDb';
 import { getMillenniumBillingPeriod, buildMillenniumMonthEndSummary } from '../services/millenniumMonthEndSummaryService';
+import { formatLocalDate } from '../utils/date';
 
 export interface TestResult {
   id: number;
@@ -17,6 +18,15 @@ export interface TestResult {
 export class SystemTestSuite {
   public static runAllTests(): TestResult[] {
     const results: TestResult[] = [];
+    const localStart = formatLocalDate(new Date(2026, 7, 1));
+    const localEnd = formatLocalDate(new Date(2026, 8, 0));
+    results.push({
+      id: 28,
+      title: 'Local calendar dates preserve payroll month boundaries',
+      category: 'Payroll',
+      passed: localStart === '2026-08-01' && localEnd === '2026-08-31',
+      message: `Verified local dates: ${localStart} through ${localEnd}`,
+    });
 
     // Helper Factory Fixtures
     const factoryA: Factory = {
