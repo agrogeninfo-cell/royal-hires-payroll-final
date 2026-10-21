@@ -101,6 +101,18 @@ export const ReportsView: React.FC = () => {
   const grandTotalLabor = pnlData.reduce((s, p) => s + p.totalLaborCost, 0);
   const grandTotalProfit = pnlData.reduce((s, p) => s + p.estimatedGrossProfit, 0);
 
+  const payrollSummaryRows = payrollRuns
+    .filter((run) => run.periodStart >= startDate && run.periodEnd <= endDate && (filterFactory === 'all' || run.items.some((item) => item.factoryId === filterFactory)))
+    .map((run) => {
+      const items = filterFactory === 'all' ? run.items : run.items.filter((item) => item.factoryId === filterFactory);
+      return {
+        run,
+        totalGross: filterFactory === 'all' ? run.totalGross : items.reduce((sum, item) => sum + item.grossEarnings, 0),
+        totalDeductions: filterFactory === 'all' ? run.totalDeductions : items.reduce((sum, item) => sum + item.totalDeductions, 0),
+        totalNet: filterFactory === 'all' ? run.totalNet : items.reduce((sum, item) => sum + item.netPayable, 0),
+      };
+    });
+
   const exportCurrentReport = async () => {
     const quote = (value: unknown) => '"' + String(value ?? '').replace(/"/g, '""') + '"';
     const selectedInvoices = invoices.filter((item) => (filterFactory === 'all' || item.factoryId === filterFactory) && item.invoiceDate >= startDate && item.invoiceDate <= endDate);
@@ -121,7 +133,7 @@ export const ReportsView: React.FC = () => {
       rows = selectedPayments.map((payment) => [payment.paymentDate,payment.employeeId,payment.employeeName,payment.paymentType,payment.amount,payment.paymentMethod || '',payment.referenceNumber || '',payment.notes || '']);
     } else {
       headers = ['Payroll Number','Period Start','Period End','Generated At','Total Gross (LKR)','Total Deductions (LKR)','Total Net (LKR)'];
-      rows = payrollRuns.filter((run) => run.periodStart >= startDate && run.periodEnd <= endDate && (filterFactory === 'all' || run.items.some((item) => item.factoryId === filterFactory))).map((run) => [run.payrollNumber,run.periodStart,run.periodEnd,run.generatedAt,run.totalGross,run.totalDeductions,run.totalNet]);
+      rows = payrollSummaryRows.map(({ run, totalGross, totalDeductions, totalNet }) => [run.payrollNumber,run.periodStart,run.periodEnd,run.generatedAt,totalGross,totalDeductions,totalNet]);
     }
     const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(quote).join(',')).join('\r\n');
     const fileName = 'RoyalPay_' + activeReport + '_' + startDate + '_' + endDate + '.csv';
@@ -459,15 +471,15 @@ export const ReportsView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {payrollRuns.filter((run) => run.periodStart >= startDate && run.periodEnd <= endDate && (filterFactory === 'all' || run.items.some((item) => item.factoryId === filterFactory))).map((run) => (
+                {payrollSummaryRows.map(({ run, totalGross, totalDeductions, totalNet }) => (
                   <tr key={run.id}>
                     <td className="p-3 font-bold text-slate-900">{run.payrollNumber}</td>
                     <td className="p-3">{run.periodStart}</td>
                     <td className="p-3">{run.periodEnd}</td>
                     <td className="p-3">{run.generatedAt}</td>
-                    <td className="p-3">{run.totalGross.toLocaleString()}</td>
-                    <td className="p-3">{run.totalDeductions.toLocaleString()}</td>
-                    <td className="p-3 font-bold">{run.totalNet.toLocaleString()}</td>
+                    <td className="p-3">{totalGross.toLocaleString()}</td>
+                    <td className="p-3">{totalDeductions.toLocaleString()}</td>
+                    <td className="p-3 font-bold">{totalNet.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
