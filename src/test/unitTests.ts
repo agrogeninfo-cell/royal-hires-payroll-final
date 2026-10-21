@@ -121,6 +121,26 @@ export class SystemTestSuite {
       results.push({ id: 23, title: 'Millennium night shift rate validation', category: 'Billing', passed: rejected, message: rejected ? 'Night invoices are blocked until an approved night rate is configured.' : 'Missing night rate was not rejected.' });
     } catch (err: any) { results.push({ id: 23, title: 'Millennium night rate validation', category: 'Billing', passed: false, message: err.message }); }
 
+    // Test 24: Empire Teas combined Day + Night bills exactly twice the applicable day rate.
+    try {
+      const empire: Factory = { ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas', sameRate: 1525 };
+      const weekdayDay = BillingService.getApplicableDailyBillingRate(empire, 'male', '2026-10-19', 'Day Shift').rate;
+      const weekdayCombined = BillingService.getApplicableDailyBillingRate(empire, 'male', '2026-10-19', 'Day + Night').rate;
+      const saturdayDay = BillingService.getApplicableDailyBillingRate(empire, 'male', '2026-10-17', 'Day Shift').rate;
+      const saturdayCombined = BillingService.getApplicableDailyBillingRate(empire, 'male', '2026-10-17', 'Day + Night').rate;
+      const passed = weekdayCombined === weekdayDay * 2 && saturdayCombined === saturdayDay * 2;
+      results.push({ id: 24, title: 'Empire Day + Night billing doubles applicable daily rate', category: 'Billing', passed, message: passed ? 'Combined weekday and Saturday rates are exactly twice their applicable day rates.' : `Unexpected rates: weekday ${weekdayDay}/${weekdayCombined}, Saturday ${saturdayDay}/${saturdayCombined}` });
+    } catch (err: any) { results.push({ id: 24, title: 'Empire combined shift billing', category: 'Billing', passed: false, message: err.message }); }
+
+    // Test 25: Millennium Teas must not accept a combined Day + Night rate without an approved night rate.
+    try {
+      const millennium: Factory = { ...factoryB, id: 'fac-millennium-teas', name: 'Millennium Teas', maleRate: 3000, femaleRate: 2500 };
+      let rejected = false;
+      try { BillingService.getApplicableDailyBillingRate(millennium, 'male', '2026-08-01', 'Day + Night'); }
+      catch (err: any) { rejected = /night-shift.*not configured/i.test(err.message); }
+      results.push({ id: 25, title: 'Millennium combined shift is blocked without night rate', category: 'Billing', passed: rejected, message: rejected ? 'Millennium combined Day + Night billing is blocked; no night rate is invented.' : 'Combined shift was not blocked.' });
+    } catch (err: any) { results.push({ id: 25, title: 'Millennium shift restriction', category: 'Billing', passed: false, message: err.message }); }
+
     // Test 1: Factory A SAME_RATE_FOR_ALL equal male and female
     try {
       const maleRateA = BillingService.getApplicableDailyBillingRate(factoryA, 'male', '2026-02-01');
