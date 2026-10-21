@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a3324">
+<title>Royal Pay | Dashboard Prototype</title>
+<style>
+:root{--forest:#0a3324;--forest2:#104b36;--forest3:#176044;--gold:#d7b56d;--gold-soft:#f4ead2;--canvas:#f3f6f2;--surface:#fff;--ink:#182820;--muted:#738077;--line:#e1e9e1;--mint:#eaf3ec;--shadow:0 10px 28px rgba(12,48,31,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button{font:inherit;cursor:pointer}.shell{min-height:100vh;display:grid;grid-template-columns:244px minmax(0,1fr)}.sidebar{background:var(--forest);color:white;padding:24px 16px;display:flex;flex-direction:column;gap:28px}.brand{display:flex;align-items:center;gap:11px;padding:0 8px}.crest{width:42px;height:42px;border:1px solid rgba(215,181,109,.65);border-radius:14px;display:grid;place-items:center;color:var(--gold);font-size:21px;background:rgba(215,181,109,.1)}.brand strong{display:block;letter-spacing:.12em;font-size:16px}.brand small{display:block;color:#c8d8cd;font-size:9px;letter-spacing:.12em;margin-top:4px}.nav-label{font-size:10px;letter-spacing:.15em;color:#9eb9a8;padding:0 12px;margin-bottom:8px}.nav{display:grid;gap:5px}.nav button{border:0;background:transparent;color:#d6e4d9;border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;text-align:left}.nav button.active,.nav button:hover{background:#194d38;color:#fff}.nav button.active{box-shadow:inset 3px 0 var(--gold)}.nav .ico{width:20px;text-align:center;color:var(--gold)}.side-foot{margin-top:auto;border:1px solid #2a5a43;background:#103d2b;border-radius:14px;padding:13px;color:#cbdccf;font-size:11px}.side-foot strong{color:var(--gold);display:block;margin-bottom:5px}.main{min-width:0}.topbar{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 30px;gap:16px}.eyebrow{font-size:10px;letter-spacing:.14em;color:var(--muted);font-weight:800}.topbar h1{font-size:20px;margin:3px 0 0;letter-spacing:-.03em}.top-actions{display:flex;align-items:center;gap:10px}.status{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:99px;padding:8px 11px;font-size:11px;color:var(--muted);background:#fbfcfb}.dot{width:7px;height:7px;border-radius:50%;background:#d6a94f}.avatar{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;background:var(--gold-soft);color:var(--forest);font-weight:800}.content{max-width:1440px;margin:auto;padding:26px 30px 38px}.welcome{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:23px}.welcome h2{font-size:25px;letter-spacing:-.04em;margin:4px 0}.welcome p{margin:0;color:var(--muted)}.date-pill{background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 13px;color:#536258;font-size:12px;white-space:nowrap}.notice{border:1px solid #eadbb7;background:#fffaf0;color:#725a2a;padding:12px 15px;border-radius:12px;margin-bottom:19px;display:flex;gap:10px;align-items:flex-start;font-size:12px}.notice b{color:#4e3b16}.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}.card{background:var(--surface);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow)}.kpi{padding:18px;min-height:138px}.kpi-top{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:650}.kpi-icon{width:37px;height:37px;display:grid;place-items:center;background:var(--mint);color:var(--forest2);border-radius:12px;font-size:17px}.kpi-value{font-size:28px;font-weight:800;letter-spacing:-.05em;margin:15px 0 3px;color:var(--forest)}.kpi-foot{font-size:11px;color:var(--muted)}.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}.section-head h3{margin:0;font-size:15px;letter-spacing:-.02em}.section-head p{margin:4px 0 0;color:var(--muted);font-size:11px}.link{border:0;background:transparent;color:var(--forest2);font-weight:750;font-size:11px}.analytics-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:16px;margin-top:17px}.panel{padding:20px;min-width:0}.chart-empty{height:205px;border:1px dashed #cfdbd0;background:linear-gradient(180deg,#fbfdfb,#f6faf6);border-radius:13px;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--muted)}.chart-empty strong{display:block;color:var(--forest);font-size:13px;margin-bottom:5px}.chart-symbol{font-size:25px;color:#9bb5a0;margin-bottom:10px}.chart-legend{display:flex;gap:15px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-top:13px}.legend-dot{display:inline-block;width:7px;height:7px;border-radius:3px;background:var(--forest2);margin-right:5px}.legend-dot.gold{background:var(--gold)}.bottom-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-top:16px}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:12px}th{text-align:left;color:var(--muted);font-size:10px;letter-spacing:.06em;font-weight:750;background:#f8faf8}th,td{padding:12px 10px;border-bottom:1px solid #edf1ed;white-space:nowrap}td{color:#536258}.empty-row{text-align:center!important;padding:25px!important;color:var(--muted)}.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.quick{border:1px solid var(--line);background:#fff;border-radius:12px;padding:13px;text-align:left;color:var(--ink);display:flex;gap:10px;align-items:center}.quick:hover{border-color:#b4cbb8;background:#fbfdfb}.quick .qico{width:33px;height:33px;border-radius:10px;display:grid;place-items:center;background:var(--mint);color:var(--forest2)}.quick strong{display:block;font-size:11px}.quick small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#849087;font-size:10px;padding:22px 2px 0}.gold-text{color:#9b7836}.mobile-nav{display:none}
+@media(max-width:1050px){.shell{grid-template-columns:205px minmax(0,1fr)}.content{padding:22px 20px}.topbar{padding:0 20px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-grid,.bottom-grid{grid-template-columns:1fr}}
+@media(max-width:680px){.shell{display:block;padding-bottom:67px}.sidebar{display:none}.topbar{height:66px;padding:0 15px}.topbar h1{font-size:17px}.top-actions .status{display:none}.content{padding:20px 14px}.welcome{align-items:flex-start;flex-direction:column}.welcome h2{font-size:23px}.date-pill{white-space:normal}.kpis{gap:10px}.kpi{padding:14px;min-height:128px}.kpi-value{font-size:24px}.kpi-top{font-size:11px}.kpi-icon{width:32px;height:32px}.panel{padding:15px}.chart-empty{height:175px}.mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;height:65px;background:#fff;border-top:1px solid var(--line);z-index:5;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}.mobile-nav button{border:0;background:transparent;color:var(--muted);font-size:9px;display:grid;gap:3px;justify-items:center;padding:6px}.mobile-nav button span{font-size:17px}.mobile-nav button.active{color:var(--forest);font-weight:800}.footer{padding-top:18px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="brand"><div class="crest">♛</div><div><strong>ROYAL PAY</strong><small>ROYAL HIRES PRIVATE LIMITED</small></div></div>
+  <div><div class="nav-label">WORKSPACE</div><nav class="nav" id="sideNav">
+    <button class="active" data-page="Overview"><span class="ico">◈</span>Overview</button>
+    <button data-page="Employees"><span class="ico">♙</span>Employees</button>
+    <button data-page="Attendance"><span class="ico">▦</span>Attendance</button>
+    <button data-page="Overtime"><span class="ico">◷</span>Overtime</button>
+    <button data-page="Payroll"><span class="ico">₹</span>Payroll</button>
+    <button data-page="Invoices"><span class="ico">▤</span>Invoices</button>
+    <button data-page="Receipts"><span class="ico">↗</span>Receipts</button>
+    <button data-page="Factories"><span class="ico">⌂</span>Factories</button>
+    <button data-page="Reports"><span class="ico">▥</span>Reports</button>
+  </nav></div>
+  <div class="side-foot"><strong>◉ DATA CONNECTION</strong>Prototype mode<br>Live payroll data is not connected.</div>
+</aside>
+<main class="main">
+  <header class="topbar"><div><div class="eyebrow">ROYAL HIRES / WORKSPACE</div><h1 id="pageTitle">Overview dashboard</h1></div><div class="top-actions"><div class="status"><span class="dot"></span> Demo preview · No live sync</div><div class="avatar">RH</div></div></header>
+  <div class="content">
+    <div class="welcome"><div><div class="eyebrow gold-text">MONITOR YOUR OPERATIONS</div><h2>Good day, Royal Hires</h2><p>Your workforce and finance overview, in one place.</p></div><div class="date-pill">▣ &nbsp; Reporting period: <b>Not selected</b></div></div>
+    <div class="notice"><span>ⓘ</span><div><b>Prototype — no production data loaded.</b> Cards and charts intentionally show placeholders until the actual app data fields and approved sync source are verified.</div></div>
+    <section class="kpis">
+      <article class="card kpi"><div class="kpi-top"><span>Employees</span><span class="kpi-icon">♙</span></div><div class="kpi-value">—</div><div class="kpi-foot">Awaiting verified employee data</div></article>
+      <article class="card kpi"><div class="kpi-top"><span>Today's attendance</span><span class="kpi-icon">▦</span></div><div class="kpi-value">—</div><div class="kpi-foot">Awaiting attendance records</div></article>
+      <article class="card kpi"><div class="kpi-top"><span>Payroll total</span><span class="kpi-icon">₹</span></div><div class="kpi-value">—</div><div class="kpi-foot">No salary figures calculated</div></article>
+      <article class="card kpi"><div class="kpi-top"><span>Outstanding invoices</span><span class="kpi-icon">▤</span></div><div class="kpi-value">—</div><div class="kpi-foot">Awaiting invoice and receipt data</div></article>
+    </section>
+    <section class="analytics-grid">
+      <article class="card panel"><div class="section-head"><div><h3>Payroll trend</h3><p>Monthly totals · LKR</p></div><button class="link" data-page="Reports">View reports ↗</button></div><div class="chart-empty"><div><div class="chart-symbol">⌁</div><strong>Payroll chart will appear here</strong>Verified payroll totals are required before plotting.</div></div><div class="chart-legend"><span><i class="legend-dot"></i>Payroll total</span><span><i class="legend-dot gold"></i>Previous period</span></div></article>
+      <article class="card panel"><div class="section-head"><div><h3>Attendance overview</h3><p>Daily workforce status</p></div><button class="link" data-page="Attendance">Open attendance ↗</button></div><div class="chart-empty"><div><div class="chart-symbol">◌</div><strong>Attendance chart will appear here</strong>Verified attendance records are required.</div></div><div class="chart-legend"><span><i class="legend-dot"></i>Present</span><span><i class="legend-dot gold"></i>Half day</span></div></article>
+    </section>
+    <section class="bottom-grid">
+      <article class="card panel"><div class="section-head"><div><h3>Factory overview</h3><p>Workforce distribution</p></div><button class="link" data-page="Factories">View factories ↗</button></div><div class="table-wrap"><table><thead><tr><th>FACTORY</th><th>WORKERS</th><th>STATUS</th></tr></thead><tbody><tr><td colspan="3" class="empty-row">No verified factory data connected.</td></tr></tbody></table></div></article>
+      <article class="card panel"><div class="section-head"><div><h3>Quick actions</h3><p>Prototype navigation</p></div></div><div class="quick-grid">
+        <button class="quick" data-page="Employees"><span class="qico">♙</span><span><strong>Employees</strong><small>View workforce</small></span></button>
+        <button class="quick" data-page="Attendance"><span class="qico">▦</span><span><strong>Attendance</strong><small>Daily records</small></span></button>
+        <button class="quick" data-page="Payroll"><span class="qico">₹</span><span><strong>Payroll</strong><small>Payroll summaries</small></span></button>
+        <button class="quick" data-page="Invoices"><span class="qico">▤</span><span><strong>Invoices</strong><small>Billing overview</small></span></button>
+      </div></article>
+    </section>
+    <div class="footer"><span>ROYAL PAY · PREMIUM DASHBOARD PROTOTYPE</span><span>Emerald Green <b>#0A3324</b> · Champagne Gold <b>#D7B56D</b></span><span>Offline mockup · No credentials or live records</span></div>
+  </div>
+</main>
+</div>
+<nav class="mobile-nav" id="mobileNav">
+<button class="active" data-page="Overview"><span>◈</span>Overview</button><button data-page="Employees"><span>♙</span>Employees</button><button data-page="Attendance"><span>▦</span>Attendance</button><button data-page="Payroll"><span>₹</span>Payroll</button><button data-page="Invoices"><span>▤</span>Invoices</button>
+</nav>
+<script>
+function navigate(page){
+  document.getElementById('pageTitle').textContent = page === 'Overview' ? 'Overview dashboard' : page + ' · preview';
+  document.querySelectorAll('[data-page]').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  if(page !== 'Overview'){
+    const notice = document.querySelector('.notice');
+    notice.innerHTML = '<span>ⓘ</span><div><b>'+page+' preview.</b> This prototype provides navigation only. No employee, attendance, payroll or invoice records have been loaded or modified.</div>';
+    notice.scrollIntoView({behavior:'smooth',block:'nearest'});
+  } else {
+    document.querySelector('.notice').innerHTML = '<span>ⓘ</span><div><b>Prototype — no production data loaded.</b> Cards and charts intentionally show placeholders until the actual app data fields and approved sync source are verified.</div>';
+  }
+}
+document.querySelectorAll('[data-page]').forEach(el => el.addEventListener('click', () => navigate(el.dataset.page)));
+</script>
+</body>
+</html>

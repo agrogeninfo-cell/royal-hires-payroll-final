@@ -4,7 +4,7 @@ import { AuthGate } from './components/AuthGate';
 import { AdminAccessPanel } from './components/AdminAccessPanel';
 import { Navbar } from './components/Navbar';
 import { NavigationTabs, TabType } from './components/NavigationTabs';
-import { DashboardView } from './components/DashboardView';
+import { PremiumDashboardView } from './components/PremiumDashboardView';
 import { AttendanceView } from './components/AttendanceView';
 import { OvertimeApprovalView } from './components/OvertimeApprovalView';
 import { FactoriesView } from './components/FactoriesView';
@@ -47,6 +47,7 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
     const currentHash = window.location.hash.replace('#', '') as TabType;
     const validTabs: TabType[] = [
       'dashboard',
+      'premium',
       'attendance',
       'overtime',
       'factories',
@@ -154,13 +155,9 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
         >
           <div className={`rh-screen-content rh-screen-${activeTab}`}>
           {activeTab === 'dashboard' && (
-            <DashboardView
-              setActiveTab={handleNavigateTab}
-              onOpenTests={() => setIsTestsOpen(true)}
-              onOpenBackupHub={() => setIsBackupHubOpen(true)}
-              onOpenInstall={() => setIsInstallModalOpen(true)}
-            />
+            <PremiumDashboardView onNavigate={handleNavigateTab} />
           )}
+          {activeTab === 'premium' && <PremiumDashboardView onNavigate={handleNavigateTab} />}
           {activeTab === 'attendance' && <AttendanceView />}
           {activeTab === 'overtime' && <OvertimeApprovalView />}
           {activeTab === 'factories' && <FactoriesView />}

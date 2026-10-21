@@ -1,0 +1,36 @@
+name: Royal Pay Web Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/royal-pay-premium-dashboard]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: royal-pay-web-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: TypeScript, unit tests and web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript check
+        run: npm run lint
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Build web application
+        run: npm run build

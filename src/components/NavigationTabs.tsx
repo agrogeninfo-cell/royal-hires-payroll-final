@@ -30,6 +30,7 @@ import {
 
 export type TabType =
   | 'dashboard'
+  | 'premium'
   | 'attendance'
   | 'overtime'
   | 'factories'
@@ -83,6 +84,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     hideForSupervisor?: boolean;
   }> = [
     { id: 'dashboard', label: t.nav.dashboard, icon: LayoutDashboard, category: 'core' },
+    { id: 'premium', label: 'Premium', icon: BarChart3, category: 'core' },
     { id: 'attendance', label: t.nav.attendance, icon: CalendarCheck, category: 'core' },
     { id: 'overtime', label: t.nav.overtime, icon: Clock3, category: 'operations', badge: pendingOtCount, hideForSupervisor: true },
     { id: 'factories', label: t.nav.factories, icon: Building2, category: 'core', hideForSupervisor: true },
@@ -99,7 +101,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
   const visibleTabs = allTabs.filter((tab) => !(isSupervisor && tab.hideForSupervisor));
   const preferredMobileIds: TabType[] = isSupervisor
     ? ['dashboard', 'attendance', 'profile']
-    : ['dashboard', 'employees', 'attendance', 'payroll'];
+    : ['dashboard', 'premium', 'employees', 'attendance'];
   const mobileTabs = preferredMobileIds.map((id) => visibleTabs.find((tab) => tab.id === id)).filter((tab): tab is (typeof visibleTabs)[number] => Boolean(tab));
 
   const selectTab = (id: TabType) => {

@@ -180,15 +180,41 @@ export const InvoicesView: React.FC = () => {
   const htmlEscape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
 
   const exportInvoiceLetterheadPdf = (inv: FactoryInvoice) => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) { alert('Allow pop-ups to export the invoice as a PDF.'); return; }
     const lineRows = inv.lineItems.map((line) => `<tr><td>${htmlEscape(line.date)}</td><td>${htmlEscape(line.employeeName)} (${line.employeeGender === 'male' ? 'M' : 'F'})</td><td>${htmlEscape(line.shift)}</td><td class="num">${line.billableDays}</td><td class="num">${line.snapshotBillingRate.toLocaleString('en-LK')}</td><td class="num">${line.dayBillingTotal.toLocaleString('en-LK')}</td><td class="num">${line.approvedOtHours}</td><td class="num">${line.otBillingTotal.toLocaleString('en-LK')}</td><td class="num">${line.lineTotal.toLocaleString('en-LK')}</td></tr>`).join('');
-    printWindow.document.open();
-    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${htmlEscape(inv.invoiceNumber)}</title><style>
+    // Use an isolated same-origin iframe instead of window.open: Android WebView
+    // commonly blocks blank popups and may leave a white/blank PDF preview.
+    const frame = document.createElement('iframe');
+    frame.setAttribute('title', `Royal Hires invoice ${inv.invoiceNumber} print preview`);
+    frame.setAttribute('aria-hidden', 'true');
+    Object.assign(frame.style, { position: 'fixed', left: '0', bottom: '0', width: '1px', height: '1px', border: '0', opacity: '0', pointerEvents: 'none' });
+    const documentHtml = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Invoice ${htmlEscape(inv.invoiceNumber)}</title><style>
       @page{size:A4;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;font-family:Arial,sans-serif;color:#1f2937;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .letterhead{position:fixed;left:0;top:0;width:210mm;height:297mm;z-index:-1}main{padding:48mm 14mm 24mm;min-height:297mm;font-size:10px}.meta{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.meta h1{font-size:19px;margin:0 0 6px;color:#0f3d2e}.meta p{margin:3px 0}.invoice-label{font-size:10px;letter-spacing:1.5px;color:#8b6b32;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:9px}th{background:#0f3d2e;color:#fff;text-align:left;padding:7px 5px}td{border-bottom:1px solid #d1d5db;padding:6px 5px;vertical-align:top}.num{text-align:right;white-space:nowrap}.totals{margin:16px 0 0 auto;width:68mm;border-top:2px solid #0f3d2e;padding-top:8px}.total{font-size:14px;font-weight:bold;color:#0f3d2e;display:flex;justify-content:space-between;margin-top:8px}.notes{margin-top:18px;font-size:9px;color:#4b5563}.signature{display:flex;justify-content:space-between;margin-top:28mm;font-size:9px}.signature span{border-top:1px solid #64748b;padding-top:5px;width:58mm}@media screen{body{background:#e5e7eb}.letterhead{opacity:.95}main{background:transparent;max-width:210mm;margin:auto}}
-      </style></head><body><img class="letterhead" src="${ROYAL_HIRES_LETTERHEAD_DATA_URI}" alt="Royal Hires letterhead"><main><div class="invoice-label">SERVICE INVOICE</div><div class="meta"><div><h1>INVOICE</h1><p><b>Invoice No:</b> ${htmlEscape(inv.invoiceNumber)}</p><p><b>Invoice Date:</b> ${htmlEscape(inv.invoiceDate)}</p><p><b>Status:</b> ${htmlEscape(inv.status.toUpperCase())}</p></div><div><p><b>Billed To:</b> ${htmlEscape(inv.factoryName)}</p><p><b>Billing Period:</b> ${htmlEscape(inv.periodStart)} to ${htmlEscape(inv.periodEnd)}</p><p><b>Due Date:</b> ${htmlEscape(inv.dueDate)}</p></div></div><table><thead><tr><th>Date</th><th>Employee</th><th>Shift</th><th class="num">Days</th><th class="num">Rate (LKR)</th><th class="num">Day Total</th><th class="num">OT Hours</th><th class="num">OT Total</th><th class="num">Line Total</th></tr></thead><tbody>${lineRows}</tbody></table><div class="totals"><div><b>Subtotal:</b> <span style="float:right">LKR ${inv.subtotal.toLocaleString('en-LK')}</span></div><div><b>Adjustments:</b> <span style="float:right">LKR ${inv.adjustments.toLocaleString('en-LK')}</span></div><div class="total"><span>TOTAL</span><span>LKR ${inv.totalAmount.toLocaleString('en-LK')}</span></div><div style="margin-top:8px"><b>Received:</b> <span style="float:right">LKR ${inv.amountReceived.toLocaleString('en-LK')}</span></div><div><b>Outstanding:</b> <span style="float:right">LKR ${inv.outstandingBalance.toLocaleString('en-LK')}</span></div></div><div class="notes">Rates are the invoice-time snapshots. Please quote the invoice number when making payment.${inv.notes ? `<br>${htmlEscape(inv.notes)}` : ''}</div><div class="signature"><span>Prepared by / Authorized Signature</span><span>Factory Acknowledgement</span></div></main><script>window.onload=()=>setTimeout(()=>window.print(),500);</script></body></html>`);
-    printWindow.document.close();
+      body{position:relative;width:210mm;min-height:297mm}.letterhead{position:absolute;left:0;top:0;width:210mm;height:297mm;z-index:0;object-fit:fill}main{position:relative;z-index:1;padding:48mm 14mm 24mm;min-height:297mm;font-size:10px}.meta{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.meta h1{font-size:19px;margin:0 0 6px;color:#0f3d2e}.meta p{margin:3px 0}.invoice-label{font-size:10px;letter-spacing:1.5px;color:#8b6b32;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:9px;table-layout:fixed}th{background:#0f3d2e;color:#fff;text-align:left;padding:7px 5px}td{border-bottom:1px solid #d1d5db;padding:6px 5px;vertical-align:top;overflow-wrap:anywhere}.num{text-align:right;white-space:nowrap}.totals{margin:16px 0 0 auto;width:68mm;border-top:2px solid #0f3d2e;padding-top:8px}.total{font-size:14px;font-weight:bold;color:#0f3d2e;display:flex;justify-content:space-between;margin-top:8px}.notes{margin-top:18px;font-size:9px;color:#4b5563}.signature{display:flex;justify-content:space-between;margin-top:20mm;font-size:9px;break-inside:avoid}.signature span{border-top:1px solid #64748b;padding-top:5px;width:58mm}@media screen{body{background:#fff;width:auto;max-width:210mm;margin:auto}.letterhead{opacity:.95}}@media print{body{width:210mm;min-height:297mm}.letterhead{position:fixed}main{background:transparent}}
+      </style></head><body><img class="letterhead" src="${ROYAL_HIRES_LETTERHEAD_DATA_URI}" alt="Royal Hires letterhead"><main><div class="invoice-label">SERVICE INVOICE</div><div class="meta"><div><h1>INVOICE</h1><p><b>Invoice No:</b> ${htmlEscape(inv.invoiceNumber)}</p><p><b>Invoice Date:</b> ${htmlEscape(inv.invoiceDate)}</p><p><b>Status:</b> ${htmlEscape(inv.status.toUpperCase())}</p></div><div><p><b>Billed To:</b> ${htmlEscape(inv.factoryName)}</p><p><b>Billing Period:</b> ${htmlEscape(inv.periodStart)} to ${htmlEscape(inv.periodEnd)}</p><p><b>Due Date:</b> ${htmlEscape(inv.dueDate)}</p></div></div><table><thead><tr><th>Date</th><th>Employee</th><th>Shift</th><th class="num">Days</th><th class="num">Rate (LKR)</th><th class="num">Day Total</th><th class="num">OT Hours</th><th class="num">OT Total</th><th class="num">Line Total</th></tr></thead><tbody>${lineRows}</tbody></table><div class="totals"><div><b>Subtotal:</b> <span style="float:right">LKR ${inv.subtotal.toLocaleString('en-LK')}</span></div><div><b>Adjustments:</b> <span style="float:right">LKR ${inv.adjustments.toLocaleString('en-LK')}</span></div><div class="total"><span>TOTAL</span><span>LKR ${inv.totalAmount.toLocaleString('en-LK')}</span></div><div style="margin-top:8px"><b>Received:</b> <span style="float:right">LKR ${inv.amountReceived.toLocaleString('en-LK')}</span></div><div><b>Outstanding:</b> <span style="float:right">LKR ${inv.outstandingBalance.toLocaleString('en-LK')}</span></div></div><div class="notes">Rates are the invoice-time snapshots. Please quote the invoice number when making payment.${inv.notes ? `<br>${htmlEscape(inv.notes)}` : ''}</div><div class="signature"><span>Prepared by / Authorized Signature</span><span>Factory Acknowledgement</span></div></main></body></html>`;
+    document.body.appendChild(frame);
+    const frameWindow = frame.contentWindow;
+    const frameDoc = frame.contentDocument;
+    if (!frameWindow || !frameDoc) {
+      frame.remove();
+      alert('Could not prepare the invoice PDF preview on this device. Please try Chrome or desktop print.');
+      return;
+    }
+    frameDoc.open();
+    frameDoc.write(documentHtml);
+    frameDoc.close();
+    try {
+      frameWindow.focus();
+      window.setTimeout(() => {
+        try { frameWindow.print(); } catch (error) { console.error('Invoice print failed:', error); }
+        window.setTimeout(() => frame.remove(), 2000);
+      }, 300);
+      setFeedback('Invoice print view prepared. Choose “Save as PDF” in the print dialog.');
+      window.setTimeout(() => setFeedback(''), 5000);
+    } catch (error) {
+      frame.remove();
+      console.error('Invoice print failed:', error);
+      alert('Could not open the invoice print dialog. Try opening Royal Pay in Chrome and choose Print / Save as PDF.');
+    }
   };
 
   const exportMillenniumSummaryCsv = async (inv: Pick<FactoryInvoice, 'factoryId' | 'periodStart' | 'periodEnd' | 'invoiceNumber'>) => {
