@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { todayLocalDate } from '../utils/date';
 import { useApp } from '../context/AppContext';
 import { AttendanceRecord, AttendanceStatus, Employee } from '../types';
 import {
@@ -54,7 +55,7 @@ export const AttendanceView: React.FC = () => {
     accessibleFactories[0]?.id || ''
   );
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
+    todayLocalDate()
   );
   const [selectedShift, setSelectedShift] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
