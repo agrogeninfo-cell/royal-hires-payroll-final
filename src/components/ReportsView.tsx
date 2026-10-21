@@ -118,7 +118,7 @@ export const ReportsView: React.FC = () => {
       rows = selectedInvoices.map((inv) => [inv.invoiceNumber,inv.factoryName,inv.invoiceDate,inv.dueDate,inv.periodStart,inv.periodEnd,inv.subtotal,inv.adjustments,inv.totalAmount,inv.amountReceived,inv.outstandingBalance,inv.status]);
     } else if (activeReport === 'advances') {
       headers = ['Date','Helper ID','Helper Name','Payment Type','Amount (LKR)','Method','Reference','Notes'];
-      rows = selectedPayments.map((payment) => [payment.createdAt.slice(0,10),payment.employeeId,payment.employeeName,payment.paymentType,payment.amount,payment.method || '',payment.reference || '',payment.notes || '']);
+      rows = selectedPayments.map((payment) => [payment.createdAt.slice(0,10),payment.employeeId,payment.employeeName,payment.paymentType,payment.amount,payment.paymentMethod || '',payment.referenceNumber || '',payment.notes || '']);
     } else {
       headers = ['Payroll Number','Period Start','Period End','Generated At','Total Gross (LKR)','Total Deductions (LKR)','Total Net (LKR)'];
       rows = payrollRuns.filter((run) => run.periodStart >= startDate && run.periodEnd <= endDate && (filterFactory === 'all' || run.items.some((item) => item.factoryId === filterFactory))).map((run) => [run.payrollNumber,run.periodStart,run.periodEnd,run.generatedAt,run.totalGross,run.totalDeductions,run.totalNet]);
