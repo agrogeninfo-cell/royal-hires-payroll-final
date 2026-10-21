@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatLocalDate } from '../utils/date';
 import { useApp } from '../context/AppContext';
 import { PayrollItem, PayrollRun, EmployeePayment } from '../types';
 import { PayrollService } from '../services/payrollService';
@@ -38,8 +39,8 @@ export const PayrollView: React.FC = () => {
 
   // Period state (default to current month)
   const today = new Date();
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+  const firstDay = formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  const lastDay = formatLocalDate(new Date(today.getFullYear(), today.getMonth() + 1, 0));
 
   const [periodStart, setPeriodStart] = useState<string>(firstDay);
   const [periodEnd, setPeriodEnd] = useState<string>(lastDay);
