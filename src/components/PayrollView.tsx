@@ -86,7 +86,7 @@ export const PayrollView: React.FC = () => {
       labelValue('Wage Arrangement', item.wageArrangement, left + cardWidth + gap, y, cardWidth); y += 19;
       labelValue('Payroll Number', previewRun.payrollNumber, left, y, cardWidth);
       labelValue('Days Worked', String(item.daysWorked), left + cardWidth + gap, y, cardWidth); y += 24;
-      const col = [left, left + 83, left + 111, left + 166];
+      const col = [left, left + 76, left + 102, left + 154];
       const tableWidth = pageWidth - 28;
       pdf.setFillColor(235, 245, 239); pdf.rect(left, y, tableWidth, 9, 'F');
       pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(20, 65, 45);
@@ -102,9 +102,9 @@ export const PayrollView: React.FC = () => {
         pdf.setFillColor(rowIndex === 3 ? 246 : 255, rowIndex === 3 ? 249 : 255, rowIndex === 3 ? 247 : 255);
         pdf.rect(left, y, tableWidth, 10, 'F'); pdf.setDrawColor(220, 226, 222); pdf.rect(left, y, tableWidth, 10, 'S');
         pdf.setFont('helvetica', rowIndex === 3 ? 'bold' : 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(35, 45, 39);
-        pdf.text(pdf.splitTextToSize(row[0], 78).slice(0, 1), col[0] + 2, y + 6.5);
+        pdf.text(pdf.splitTextToSize(row[0], 71).slice(0, 1), col[0] + 2, y + 6.5);
         pdf.text(row[1], col[1] + 2, y + 6.5);
-        pdf.text(pdf.splitTextToSize(row[2], 52).slice(0, 1), col[2] + 2, y + 6.5);
+        pdf.text(pdf.splitTextToSize(row[2], 48).slice(0, 1), col[2] + 2, y + 6.5);
         pdf.text(row[3], col[3] + 2, y + 6.5); y += 10;
       });
       y += 8;
