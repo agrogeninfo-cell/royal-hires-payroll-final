@@ -6,11 +6,12 @@ import { createPin, getPinConfig, getPinLockRemainingMs, verifyPin } from '../se
 
 interface PersonalPinGateProps {
   children: React.ReactNode;
+  onResetPin: () => Promise<void>;
 }
 
 type GateStatus = 'loading' | 'setup' | 'locked' | 'unlocked' | 'error';
 
-export const PersonalPinGate: React.FC<PersonalPinGateProps> = ({ children }) => {
+export const PersonalPinGate: React.FC<PersonalPinGateProps> = ({ children, onResetPin }) => {
   const [status, setStatus] = useState<GateStatus>('loading');
   const [pin, setPin] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -37,7 +38,10 @@ export const PersonalPinGate: React.FC<PersonalPinGateProps> = ({ children }) =>
     let mounted = true;
     void getPinConfig()
       .then((config) => {
-        if (mounted) setStatus(config ? 'locked' : 'setup');
+        if (mounted) {
+          setStatus(config ? 'locked' : 'setup');
+          if (config) void refreshLockRemaining();
+        }
       })
       .catch((error: unknown) => {
         if (!mounted) return;
@@ -212,7 +216,19 @@ export const PersonalPinGate: React.FC<PersonalPinGateProps> = ({ children }) =>
             {busy ? 'Please wait…' : isSetup ? 'Save PIN & Continue' : 'Unlock Royal Pay'}
           </button>
         </form>
-        <p className="mt-5 text-center text-xs leading-5 text-slate-400">Your PIN is never stored as plain text. Secure storage is protected by Android Keystore.</p>
+        {!isSetup && (
+          <button
+            type="button"
+            onClick={() => {
+              const confirmed = window.confirm('Forgot your PIN? You will be signed out and must sign in again with your Royal Pay account to create a new PIN. Payroll records will not be deleted.');
+              if (confirmed) void onResetPin().catch((error: unknown) => setMessage(error instanceof Error ? error.message : 'Could not reset PIN. Please try again.'));
+            }}
+            className="mt-4 w-full rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-white/5"
+          >
+            Forgot PIN? Sign out and reset
+          </button>
+        )}
+        <p className="mt-5 text-center text-xs leading-5 text-slate-400">Your PIN is never stored as plain text. Secure storage is protected by Android Keystore. Reset requires signing in again.</p>
       </section>
     </main>
   );
