@@ -122,7 +122,9 @@ export const ReportsView: React.FC = () => {
       rows = payments.filter((p) => p.paymentType === 'advance').map((p) => [p.paymentDate, p.employeeName, p.amount, p.paymentMethod, p.referenceNumber || '', p.notes || '', p.recordedBy]);
     }
     const csvCell = (value: string | number | null | undefined) => {
-      const text = String(value ?? '');
+      let text = String(value ?? '');
+      // Escape formula-leading text for safe opening in Excel; numeric values remain numeric.
+      if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = "'" + text;
       return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
     };
     const csvContent = '\uFEFF' + [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
