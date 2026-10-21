@@ -46,12 +46,16 @@ export class BillingService {
       const isSaturday = date?.getDay() === 6;
       const isSunday = date?.getDay() === 0;
       const isConfiguredPoya = Boolean(attendanceDate && factory.specialBillingDates?.includes(attendanceDate));
-      const isNight = /night/i.test(shift || '');
+      const isDayAndNight = /day\s*\+\s*night/i.test(shift || '');
+      const isNight = /night/i.test(shift || '') && !isDayAndNight;
       const baseRate = factory.sameRate && factory.sameRate > 0 ? factory.sameRate : 1525;
       let rate = baseRate;
       if (isSunday || isConfiguredPoya) rate = 3600 + (gender === 'female' ? 100 : 0);
       else if (isSaturday && !isNight) rate = 1875;
       else if (isNight && gender === 'female') rate = baseRate + 100;
+      // Empire Teas only: a single Day + Night attendance record bills twice
+      // the applicable daily rate. Employee payroll payableUnits remain unchanged.
+      if (isDayAndNight) rate *= 2;
       return { rate, method: 'SAME_RATE_FOR_ALL', factoryId: factory.id, factoryName: factory.name };
     }
 
