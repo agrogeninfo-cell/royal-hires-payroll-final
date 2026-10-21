@@ -283,7 +283,9 @@ export const PayrollView: React.FC = () => {
     ];
 
     const csvCell = (value: unknown) => {
-      const text = String(value ?? '');
+      let text = String(value ?? '');
+      // Prevent Excel formula execution in user-controlled text cells; numeric payroll values remain numeric.
+      if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = "'" + text;
       return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
     };
     const rows = previewRun.items.map((it) => [
