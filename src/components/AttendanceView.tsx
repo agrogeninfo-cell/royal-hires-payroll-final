@@ -71,14 +71,29 @@ export const AttendanceView: React.FC = () => {
     }
   }, [accessibleFactories, selectedFactoryId]);
 
-  // Set default shift when factory changes
+  // Factory-specific attendance options: Empire supports combined Day + Night;
+  // Millennium is restricted to its configured day shift(s).
+  const factoryKey = `${selectedFactory?.id || ''} ${selectedFactory?.name || ''}`.toLowerCase();
+  const isEmpireTeas = factoryKey.includes('empire-teas') || factoryKey.includes('empire teas');
+  const isMillenniumTeas = factoryKey.includes('millennium-teas') || factoryKey.includes('millennium teas');
+  const availableShifts = selectedFactory
+    ? selectedFactory.shifts.filter((shift) => !isMillenniumTeas || !/night/i.test(shift.name))
+    : [];
+  const hasDayNightOption = isEmpireTeas;
+
   useEffect(() => {
     if (selectedFactory && selectedFactory.shifts.length > 0) {
-      setSelectedShift(selectedFactory.shifts[0].name);
+      const allowed = selectedFactory.shifts.filter((shift) => !/night/i.test(shift.name) || !isMillenniumTeas);
+      setSelectedShift((current) => {
+        if (current === 'Day + Night' && isEmpireTeas) return current;
+        return allowed.some((shift) => shift.name === current)
+          ? current
+          : (allowed[0]?.name || 'General Shift');
+      });
     } else {
       setSelectedShift('General Shift');
     }
-  }, [selectedFactoryId, selectedFactory]);
+  }, [selectedFactoryId, selectedFactory, isMillenniumTeas, isEmpireTeas]);
 
   // Load employees and merge existing attendance records for the selected factory and date
   useEffect(() => {
@@ -303,11 +318,15 @@ export const AttendanceView: React.FC = () => {
               onChange={(e) => setSelectedShift(e.target.value)}
               className="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             >
-              {selectedFactory?.shifts.map((s) => (
+              {availableShifts.map((s) => (
                 <option key={s.id} value={s.name}>
                   {s.name} ({s.startTime} - {s.endTime})
                 </option>
-              )) || <option value="General Shift">General Shift (08:00 - 17:00)</option>}
+              ))}
+              {hasDayNightOption && (
+                <option value="Day + Night">Day + Night (combined billing rate × 2)</option>
+              )}
+              {availableShifts.length === 0 && <option value="General Shift">General Shift (08:00 - 17:00)</option>}
             </select>
           </div>
         </div>
