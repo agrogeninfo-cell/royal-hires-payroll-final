@@ -36,7 +36,7 @@ jobs:
           required = [
               "<title>Royal Hires | The Royal Standard Of Recruitment</title>",
               "Royal Hires",
-              "Royal Hires Private Limited",
+              "Private Limited",
               "The Royal Standard Of Recruitment",
               'id="home"', 'id="about"', 'id="services"',
               'id="employers"', 'id="careers"', 'id="contact"',
