@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import { TabType } from './NavigationTabs';
 import { getProfilePhoto, subscribeToPhotoUpdates } from '../utils/profilePhotoHelper';
+import { RoyalHoverCard } from './RoyalHoverCard';
+import { ContainerTextFlip } from './ui/container-text-flip';
 
 interface DashboardViewProps {
   setActiveTab: (tab: TabType) => void;
@@ -143,7 +145,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="rh-welcome-copy">
           <span className="rh-eyebrow"><span className="rh-live-dot" /> WORKFORCE OVERVIEW</span>
           <h1>{greeting}, {currentUser.name.split(' ')[0]} <span className="rh-wave">✦</span></h1>
-          <p>Here’s what’s happening across your workforce today.</p>
+          <p className="rh-dashboard-tagline">
+            Workforce management, made{' '}
+            <ContainerTextFlip
+              words={['simpler', 'clearer', 'more organised', 'more efficient']}
+              className="rh-dashboard-flip"
+              interval={2600}
+            />
+          </p>
           <div className="rh-date-line"><CalendarCheck size={14} /> {formattedDate}</div>
         </div>
         <div className="rh-welcome-actions">
@@ -164,14 +173,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div><h2>Today at a glance</h2><p>Live figures from attendance records</p></div>
           <button className="rh-text-button" onClick={() => setActiveTab('reports')}>View reports <ArrowRight size={15} /></button>
         </div>
-        <div className="rh-stats-grid">
+        <div className="rh-stats-grid rh-card-interaction-group">
           {statCards.map(({ label, value, foot, icon: Icon, style, tab }) => (
-            <button key={label} className={`rh-stat-card ${style}`} onClick={() => setActiveTab(tab)}>
+            <RoyalHoverCard key={label} className={`rh-stat-card ${style}`} onClick={() => setActiveTab(tab)}>
               <span className="rh-stat-icon"><Icon size={18} /></span>
               <span className="rh-stat-value">{value.toLocaleString()}</span>
               <span className="rh-stat-label">{label}</span>
               <span className="rh-stat-foot">{foot}</span>
-            </button>
+            </RoyalHoverCard>
           ))}
         </div>
       </section>
@@ -181,14 +190,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div><h2>Quick access</h2><p>Your everyday workforce tools</p></div>
           <span className="rh-section-count">{visibleModules.length} modules</span>
         </div>
-        <div className="rh-module-grid">
+        <div className="rh-module-grid rh-card-interaction-group">
           {visibleModules.map(({ id, label, subtitle, icon: Icon, style }) => (
-            <button key={id} className={`rh-module-tile ${style}`} onClick={() => setActiveTab(id)}>
+            <RoyalHoverCard key={id} className={`rh-module-tile ${style}`} onClick={() => setActiveTab(id)}>
               <span className="rh-module-icon"><Icon className="rh-module-icon-svg" /></span>
               <span className="rh-module-title">{label}</span>
               <span className="rh-module-subtitle">{subtitle}</span>
               <ArrowRight className="rh-module-arrow" size={14} />
-            </button>
+            </RoyalHoverCard>
           ))}
         </div>
       </section>
