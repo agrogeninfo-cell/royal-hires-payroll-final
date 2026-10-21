@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { AttendanceRecord, Factory } from '../types';
 import { buildMillenniumMonthEndSummary, millenniumSummaryToCsv } from '../services/millenniumMonthEndSummaryService';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { Download, CalendarDays } from 'lucide-react';
 
 interface Props { factories: Factory[]; attendance: AttendanceRecord[]; }
@@ -20,17 +23,39 @@ export const MillenniumMonthEndSummaryView: React.FC<Props> = ({ factories, atte
     catch (error) { console.error('Millennium summary calculation failed', error); return null; }
   }, [factory, attendance, billingMonth]);
 
-  const exportCsv = () => {
+  const exportCsv = async () => {
     if (!summary) return;
-    const blob = new Blob([millenniumSummaryToCsv(summary)], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Millennium_Teas_Billing_Summary_${billingMonth}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const csv = millenniumSummaryToCsv(summary);
+    const fileName = 'Millennium_Teas_Billing_Summary_' + billingMonth + '.csv';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const saved = await Filesystem.writeFile({
+          path: fileName,
+          data: csv,
+          directory: Directory.Cache,
+          recursive: true,
+        });
+        await Share.share({
+          title: 'Millennium Teas Month-End Summary',
+          text: 'Billing summary for ' + billingMonth,
+          url: saved.uri,
+          dialogTitle: 'Save or share Millennium summary',
+        });
+      } else {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+    } catch (error) {
+      console.error('Millennium summary CSV export failed:', error);
+      window.alert('Could not export the Millennium Teas summary. Please retry or check Android share/save options.');
+    }
   };
   const money = (amount: number) => `LKR ${amount.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
