@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'lk.royalhires.payroll',
-  appName: 'Royal Hires Payroll',
+  appName: 'Pay Royal',
   webDir: 'dist',
   android: {
     allowMixedContent: false,

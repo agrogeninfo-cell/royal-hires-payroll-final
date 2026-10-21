@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { todayLocalDate } from '../utils/date';
 import { useApp } from '../context/AppContext';
 import { Employee, WageArrangement, EmployeePayment } from '../types';
 import {
@@ -52,7 +53,7 @@ export const EmployeesView: React.FC = () => {
   const [address, setAddress] = useState('');
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [emergencyContact, setEmergencyContact] = useState('');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(todayLocalDate());
   const [status, setStatus] = useState<Employee['status']>('active');
   const [currentFactoryId, setCurrentFactoryId] = useState('');
   const [wageArrangement, setWageArrangement] = useState<WageArrangement>('daily');
@@ -73,7 +74,7 @@ export const EmployeesView: React.FC = () => {
     setAddress('');
     setGender('male');
     setEmergencyContact('');
-    setStartDate(new Date().toISOString().split('T')[0]);
+    setStartDate(todayLocalDate());
     setStatus('active');
     setCurrentFactoryId(factories[0]?.id || '');
     setWageArrangement('daily');
@@ -174,7 +175,7 @@ export const EmployeesView: React.FC = () => {
         employeeName: advanceEmployee.fullName,
         paymentType: 'advance',
         amount: Number(advanceAmount),
-        paymentDate: new Date().toISOString().split('T')[0],
+        paymentDate: todayLocalDate(),
         paymentMethod: 'cash',
         referenceNumber: advanceRef,
         notes: advanceNotes,

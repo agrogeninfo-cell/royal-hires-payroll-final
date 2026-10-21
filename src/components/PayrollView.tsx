@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
+import { formatLocalDate } from '../utils/date';
 import { useApp } from '../context/AppContext';
 import { PayrollItem, PayrollRun, EmployeePayment } from '../types';
 import { PayrollService } from '../services/payrollService';
+import { Printer } from '@capgo/capacitor-printer';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   Calculator,
   Calendar,
@@ -34,8 +39,8 @@ export const PayrollView: React.FC = () => {
 
   // Period state (default to current month)
   const today = new Date();
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+  const firstDay = formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 1));
+  const lastDay = formatLocalDate(new Date(today.getFullYear(), today.getMonth() + 1, 0));
 
   const [periodStart, setPeriodStart] = useState<string>(firstDay);
   const [periodEnd, setPeriodEnd] = useState<string>(lastDay);
@@ -52,16 +57,17 @@ export const PayrollView: React.FC = () => {
 
   const [payslipPeriodType, setPayslipPeriodType] = useState<'weekly' | 'monthly'>('monthly');
 
-  const escapeHtml = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[char] || char));
+  const escapeHtml = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (char) => {
+    const entities: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return entities[char] || char;
+  });
 
-  const printPayslips = (items: PayrollItem[]) => {
+  const printPayslips = async (items: PayrollItem[]) => {
     if (!previewRun || items.length === 0) return;
-    const money = (amount: number) => `LKR ${Number(amount || 0).toLocaleString('en-LK')}`;
-    const slipMarkup = items.map((item, index) => `
+    const money = (amount: number) => 'LKR ' + Number(amount || 0).toLocaleString('en-LK');
+    const pages = items.map((item, index) => `
       <section class="payslip ${index > 0 ? 'page-break' : ''}">
-        <header><div class="brand">ROYAL HIRES PRIVATE LIMITED</div><h1>EMPLOYEE PAYSLIP</h1>
+        <header><div class="brand">PAY ROYAL</div><div class="company">ROYAL HIRES PRIVATE LIMITED</div><h1>EMPLOYEE PAYSLIP</h1>
           <div class="period">${payslipPeriodType.toUpperCase()} PAYSLIP · ${escapeHtml(previewRun.periodStart)} to ${escapeHtml(previewRun.periodEnd)}</div></header>
         <div class="details">
           <div><span>Employee Name</span><strong>${escapeHtml(item.employeeName)}</strong></div>
@@ -86,49 +92,17 @@ export const PayrollView: React.FC = () => {
         <footer><span>Generated: ${escapeHtml(new Date().toLocaleDateString())}</span><span>Employee Signature: __________________</span><span>Authorized By: __________________</span></footer>
       </section>
     `).join('');
-
-    // Avoid window.open('', '_blank'): Android WebView/Chrome can block the
-    // blank popup, leaving the user on about:blank#blocked. Print an isolated
-    // same-origin iframe instead so the payroll screen and current state remain.
-    const frame = document.createElement('iframe');
-    frame.setAttribute('title', 'Royal Hires payslip print preview');
-    frame.setAttribute('aria-hidden', 'true');
-    Object.assign(frame.style, {
-      position: 'fixed',
-      right: '0',
-      bottom: '0',
-      width: '1px',
-      height: '1px',
-      border: '0',
-      opacity: '0',
-      pointerEvents: 'none',
-    });
-    const printDocument = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Royal Hires Payslips - ${escapeHtml(previewRun.payrollNumber)}</title><style>
-      *{box-sizing:border-box}html,body{width:100%;max-width:100%;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#17212b;font-size:11px;overflow-wrap:anywhere}.payslip{width:100%;max-width:100%;min-height:250mm;display:flex;flex-direction:column;padding:0}.page-break{page-break-before:always;break-before:page}.brand{font-size:18px;font-weight:800;color:#065f46;letter-spacing:.4px}header{border-bottom:3px solid #d4b36a;padding-bottom:12px}h1{font-size:17px;margin:12px 0 5px}.period{color:#475569;font-size:10px}.details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:20px 0}.details div,.payment div{min-width:0;background:#f8fafc;padding:9px;border:1px solid #e2e8f0}.details span,.payment span{display:block;color:#64748b;font-size:9px;margin-bottom:4px;text-transform:uppercase}.details strong,.payment strong{font-size:11px;overflow-wrap:anywhere}table{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-top:4px}th,td{padding:8px 6px;border:1px solid #cbd5e1;text-align:left;overflow-wrap:anywhere;word-break:normal}th{background:#ecfdf5;color:#065f46}th:nth-child(2),th:nth-child(4),td:nth-child(2),td:nth-child(4){width:19%}.total{font-weight:700;background:#f8fafc}.net{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;padding:16px;background:#065f46;color:white}.net span{font-weight:700;letter-spacing:.5px}.net strong{font-size:20px}.payment{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:auto;padding-top:32px;color:#475569;font-size:9px}@page{size:A4;margin:12mm}@media screen{body{padding:12px;background:#f1f5f9}.payslip{max-width:760px;margin:0 auto 18px;padding:16px;background:white;box-shadow:0 1px 6px #0002}}@media print{html,body{width:auto;max-width:none}.payslip{min-height:260mm;padding:0}.page-break{break-before:page;page-break-before:always}}
-    </style></head><body>${slipMarkup}</body></html>`;
-    document.body.appendChild(frame);
-    const frameWindow = frame.contentWindow;
-    const frameDoc = frame.contentDocument;
-    if (!frameWindow || !frameDoc) {
-      frame.remove();
-      setFeedback('Could not prepare the payslip print view on this device. Please try Chrome or the desktop print option.');
-      return;
-    }
-    frameDoc.open();
-    frameDoc.write(printDocument);
-    frameDoc.close();
+    const printDocument = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pay Royal Payslips - ${escapeHtml(previewRun.payrollNumber)}</title><style>
+      *{box-sizing:border-box}html,body{width:100%;max-width:100%;margin:0;padding:0}body{font-family:Arial,'Noto Sans Sinhala',sans-serif;color:#17212b;font-size:11px;overflow-wrap:anywhere}.payslip{width:100%;max-width:100%;min-height:250mm;display:flex;flex-direction:column;padding:0}.page-break{page-break-before:always;break-before:page}.brand{font-size:20px;font-weight:800;color:#065f46;letter-spacing:.4px}.company{font-size:9px;color:#475569;margin-top:3px}header{border-bottom:3px solid #d4b36a;padding-bottom:12px}h1{font-size:17px;margin:12px 0 5px}.period{color:#475569;font-size:10px}.details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:20px 0}.details div,.payment div{min-width:0;background:#f8fafc;padding:9px;border:1px solid #e2e8f0}.details span,.payment span{display:block;color:#64748b;font-size:9px;margin-bottom:4px;text-transform:uppercase}.details strong,.payment strong{font-size:11px;overflow-wrap:anywhere}table{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-top:4px}th,td{padding:8px 6px;border:1px solid #cbd5e1;text-align:left;overflow-wrap:anywhere;word-break:normal}th{background:#ecfdf5;color:#065f46}th:nth-child(2),th:nth-child(4),td:nth-child(2),td:nth-child(4){width:19%}.total{font-weight:700;background:#f8fafc}.net{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;padding:16px;background:#065f46;color:white}.net span{font-weight:700;letter-spacing:.5px}.net strong{font-size:20px}.payment{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:auto;padding-top:32px;color:#475569;font-size:9px}@page{size:A4;margin:12mm}@media screen{body{padding:12px;background:#f1f5f9}.payslip{max-width:760px;margin:0 auto 18px;padding:16px;background:white;box-shadow:0 1px 6px #0002}}@media print{html,body{width:auto;max-width:none}.payslip{min-height:260mm;padding:0}.page-break{break-before:page;page-break-before:always}}
+    </style></head><body>${pages}</body></html>`;
     try {
-      frameWindow.focus();
-      frameWindow.print();
-      window.setTimeout(() => frame.remove(), 1500);
-      setFeedback('Print dialog requested. Choose “Save as PDF” to create a PDF copy.');
+      await Printer.printHtml({ name: 'Pay Royal Payslips ' + previewRun.payrollNumber, html: printDocument });
+      setFeedback('Payslip print dialog opened. Select “Save as PDF” to export the PDF copy.');
     } catch (error) {
-      frame.remove();
-      setFeedback('This Android WebView could not open the print dialog. Try opening the app in Chrome and choose Print / Save as PDF.');
-      console.error('Payslip print failed:', error);
+      console.error('Payslip PDF print failed:', error);
+      setFeedback('Could not open the payslip print dialog. Please retry; if unavailable, open Pay Royal in Chrome and choose Print / Save as PDF.');
     }
   };
-
   const handleGeneratePayroll = () => {
     const targetEmployees = employees.filter((e) => {
       if (e.status !== 'active') return false;
@@ -289,7 +263,7 @@ export const PayrollView: React.FC = () => {
     }
   };
 
-  const exportPayrollCsv = () => {
+  const exportPayrollCsv = async () => {
     if (!previewRun) return;
     const headers = [
       'Helper ID',
@@ -311,34 +285,55 @@ export const PayrollView: React.FC = () => {
       'Remaining Balance',
     ];
 
+    const csvCell = (value: unknown) => {
+      let text = String(value ?? '');
+      // Prevent Excel formula execution in user-controlled text cells; numeric payroll values remain numeric.
+      if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = "'" + text;
+      return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
     const rows = previewRun.items.map((it) => [
-      it.employeeId,
-      `"${it.employeeName}"`,
-      it.employeeGender,
-      `"${it.factoryName}"`,
-      it.snapshotWageRate,
-      it.daysWorked,
-      it.normalWage,
-      it.approvedOtHours,
-      it.otWage,
-      it.grossEarnings,
-      it.totalMealDeductions,
-      it.totalBoardingDeductions,
-      it.advancesDeducted,
-      it.totalDeductions,
-      it.netPayable,
-      it.amountPaid,
-      it.remainingBalance,
+      it.employeeId, it.employeeName, it.employeeGender, it.factoryName,
+      it.snapshotWageRate, it.daysWorked, it.normalWage, it.approvedOtHours,
+      it.otWage, it.grossEarnings, it.totalMealDeductions, it.totalBoardingDeductions,
+      it.advancesDeducted, it.totalDeductions, it.netPayable, it.amountPaid, it.remainingBalance,
     ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Payroll_${previewRun.payrollNumber}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Blob downloads are more reliable than a large data: URI in Android WebView;
+    // RFC-style escaping preserves commas, quotes and line breaks in names.
+    const csvContent = '\uFEFF' + [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+    const safeNumber = previewRun.payrollNumber.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fileName = 'Pay_Royal_Payroll_' + safeNumber + '.csv';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const saved = await Filesystem.writeFile({
+          path: fileName,
+          data: csvContent,
+          directory: Directory.Cache,
+          recursive: true,
+        });
+        await Share.share({
+          title: 'Pay Royal Payroll Export',
+          text: 'Payroll CSV for ' + previewRun.payrollNumber,
+          url: saved.uri,
+          dialogTitle: 'Save or share payroll CSV',
+        });
+        setFeedback('Payroll CSV prepared. Choose a destination in the Android share sheet.');
+      } else {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+        setFeedback('Payroll CSV export requested. Check your Downloads folder.');
+      }
+    } catch (error) {
+      console.error('Payroll CSV export failed:', error);
+      setFeedback('Could not export payroll CSV. Please retry or check Android share/save options.');
+    }
   };
 
   return (
@@ -367,7 +362,7 @@ export const PayrollView: React.FC = () => {
                 className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 flex items-center space-x-1 transition cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export CSV</span>
+                <span>Export Excel (CSV)</span>
               </button>
               </>
             )}

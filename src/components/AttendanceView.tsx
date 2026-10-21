@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { todayLocalDate } from '../utils/date';
 import { useApp } from '../context/AppContext';
 import { AttendanceRecord, AttendanceStatus, Employee } from '../types';
 import {
@@ -54,7 +55,7 @@ export const AttendanceView: React.FC = () => {
     accessibleFactories[0]?.id || ''
   );
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
+    todayLocalDate()
   );
   const [selectedShift, setSelectedShift] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -243,9 +244,9 @@ export const AttendanceView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-5 w-full max-w-full overflow-hidden">
+    <div className="space-y-4 w-full min-w-0 max-w-full pb-24 sm:pb-6">
       {/* Top Controls Card */}
-      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">
+      <div className="bg-white rounded-2xl p-3 sm:p-5 border border-slate-200 shadow-sm space-y-4 min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-slate-800 flex items-center space-x-2">
@@ -257,7 +258,7 @@ export const AttendanceView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleMarkAllPresent}
               className="px-3 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition cursor-pointer"
@@ -276,7 +277,7 @@ export const AttendanceView: React.FC = () => {
         </div>
 
         {/* Selection Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3 border-t border-slate-100">
           {/* Factory Selector */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -353,7 +354,7 @@ export const AttendanceView: React.FC = () => {
       </div>
 
       {/* Helper Attendance Cards (Optimized for Android Touch & Desktop) */}
-      <div className="space-y-3">
+      <div className="space-y-3 min-w-0">
         {filteredRows.length === 0 ? (
           <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-slate-500">
             <UserCheck className="w-10 h-10 mx-auto text-slate-300 mb-2" />
@@ -368,7 +369,7 @@ export const AttendanceView: React.FC = () => {
             return (
               <div
                 key={emp.id}
-                className={`bg-white rounded-xl p-4 border transition ${
+                className={`bg-white rounded-2xl p-3 sm:p-4 border shadow-sm transition min-w-0 ${
                   row.status === 'present'
                     ? 'border-emerald-300 shadow-xs'
                     : row.status === 'half_day'
@@ -377,8 +378,8 @@ export const AttendanceView: React.FC = () => {
                 }`}
               >
                 {/* Employee Info Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                  <div className="flex items-center space-x-2.5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
                     <span className="px-2 py-0.5 text-xs font-bold bg-slate-100 text-slate-700 rounded border border-slate-300">
                       {emp.id}
                     </span>
@@ -414,7 +415,7 @@ export const AttendanceView: React.FC = () => {
                 </div>
 
                 {/* Entry Form Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-3 min-w-0">
                   {/* Attendance Status Buttons */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">

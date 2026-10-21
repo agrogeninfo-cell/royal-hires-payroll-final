@@ -21,7 +21,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   return (
     <div
       role="status"
-      aria-label="Loading Royal Hires manpower payroll management system"
+      aria-label="Loading Pay Royal payroll management system"
       style={{
         position: 'fixed',
         inset: 0,

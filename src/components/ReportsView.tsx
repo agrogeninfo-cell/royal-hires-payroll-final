@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
+import { todayLocalDate } from '../utils/date';
 import { MillenniumMonthEndSummaryView } from './MillenniumMonthEndSummaryView';
 import { useApp } from '../context/AppContext';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   BarChart3,
   Download,
@@ -33,7 +37,7 @@ export const ReportsView: React.FC = () => {
 
   const [filterFactory, setFilterFactory] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('2026-01-01');
-  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState<string>(todayLocalDate());
 
   // P&L calculation factory-wise
   const targetFactories = filterFactory === 'all'
@@ -99,62 +103,62 @@ export const ReportsView: React.FC = () => {
   const grandTotalLabor = pnlData.reduce((s, p) => s + p.totalLaborCost, 0);
   const grandTotalProfit = pnlData.reduce((s, p) => s + p.estimatedGrossProfit, 0);
 
-  const exportCurrentReport = () => {
-    let csvContent = '';
+  const exportCurrentReport = async () => {
+    // Millennium Month-End owns its own CSV export button; avoid generating an empty report.
+    if (activeReport === 'millennium_summary') return;
+    let headers: string[] = [];
+    let rows: Array<Array<string | number | null | undefined>> = [];
     if (activeReport === 'pnl') {
-      const headers = [
-        'Factory Name',
-        'Billing Method',
-        'Invoiced Revenue (LKR)',
-        'Collected Receipts (LKR)',
-        'Outstanding Due (LKR)',
-        'Days Supplied',
-        'Approved OT Hours',
-        'Helper Wages Cost (LKR)',
-        'Helper OT Cost (LKR)',
-        'Total Labor Cost (LKR)',
-        'Estimated Profit (LKR)',
-        'Margin %',
-      ];
-      const rows = pnlData.map((d) => [
-        `"${d.factory.name}"`,
-        d.factory.billingMethod,
-        d.invoicedRevenue,
-        d.collectedCash,
-        d.outstandingInvoiceDue,
-        d.totalDaysWorked,
-        d.approvedOtHours,
-        d.helperWageCost,
-        d.helperOtCost,
-        d.totalLaborCost,
-        d.estimatedGrossProfit,
-        `${d.marginPct}%`,
-      ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      headers = ['Factory Name', 'Billing Method', 'Invoiced Revenue (LKR)', 'Collected Receipts (LKR)', 'Outstanding Due (LKR)', 'Days Supplied', 'Approved OT Hours', 'Helper Wages Cost (LKR)', 'Helper OT Cost (LKR)', 'Total Labor Cost (LKR)', 'Estimated Profit (LKR)', 'Margin %'];
+      rows = pnlData.map((d) => [d.factory.name, d.factory.billingMethod, d.invoicedRevenue, d.collectedCash, d.outstandingInvoiceDue, d.totalDaysWorked, d.approvedOtHours, d.helperWageCost, d.helperOtCost, d.totalLaborCost, d.estimatedGrossProfit, d.marginPct + '%']);
     } else if (activeReport === 'attendance') {
-      const headers = ['Date', 'Factory', 'Helper ID', 'Helper Name', 'Status', 'Days', 'OT Hours', 'Supervisor'];
-      const rows = attendance
-        .filter((a) => (filterFactory === 'all' || a.factoryId === filterFactory) && a.date >= startDate && a.date <= endDate)
-        .map((a) => [
-          a.date,
-          `"${a.factoryName}"`,
-          a.employeeId,
-          `"${a.employeeName}"`,
-          a.status,
-          a.payableUnits,
-          a.totalOtHours,
-          `"${a.supervisorName}"`,
-        ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      headers = ['Date', 'Factory', 'Helper ID', 'Helper Name', 'Status', 'Days', 'OT Hours', 'Supervisor'];
+      rows = attendance.filter((a) => (filterFactory === 'all' || a.factoryId === filterFactory) && a.date >= startDate && a.date <= endDate).map((a) => [a.date, a.factoryName, a.employeeId, a.employeeName, a.status, a.payableUnits, a.totalOtHours, a.supervisorName]);
+    } else if (activeReport === 'invoices') {
+      headers = ['Invoice Number', 'Factory', 'Invoice Date', 'Due Date', 'Total Billed (LKR)', 'Collected (LKR)', 'Outstanding Balance (LKR)', 'Status'];
+      rows = invoices.filter((inv) => filterFactory === 'all' || inv.factoryId === filterFactory).map((inv) => [inv.invoiceNumber, inv.factoryName, inv.invoiceDate, inv.dueDate, inv.totalAmount, inv.amountReceived, inv.outstandingBalance, inv.status]);
+    } else if (activeReport === 'advances') {
+      headers = ['Date', 'Employee Name', 'Amount (LKR)', 'Payment Method', 'Reference', 'Notes', 'Recorded By'];
+      rows = payments.filter((p) => p.paymentType === 'advance').map((p) => [p.paymentDate, p.employeeName, p.amount, p.paymentMethod, p.referenceNumber || '', p.notes || '', p.recordedBy]);
     }
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.href = encodedUri;
-    link.download = `Report_${activeReport}_${startDate}_${endDate}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvCell = (value: string | number | null | undefined) => {
+      let text = String(value ?? '');
+      // Escape formula-leading text for safe opening in Excel; numeric values remain numeric.
+      if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = "'" + text;
+      return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+    };
+    const csvContent = '\uFEFF' + [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+    const fileName = 'Pay_Royal_Report_' + activeReport + '_' + startDate + '_' + endDate + '.csv';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const saved = await Filesystem.writeFile({
+          path: fileName,
+          data: csvContent,
+          directory: Directory.Cache,
+          recursive: true,
+        });
+        await Share.share({
+          title: 'Pay Royal Report Export',
+          text: 'CSV report: ' + activeReport,
+          url: saved.uri,
+          dialogTitle: 'Save or share report CSV',
+        });
+      } else {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+    } catch (error) {
+      console.error('Report CSV export failed:', error);
+      window.alert('Could not export this report. Please retry or check Android share/save options.');
+    }
   };
 
   return (
@@ -173,10 +177,11 @@ export const ReportsView: React.FC = () => {
 
         <button
           onClick={exportCurrentReport}
+          disabled={activeReport === 'millennium_summary'}
           className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg shadow-xs flex items-center space-x-1.5 transition cursor-pointer"
         >
           <Download className="w-3.5 h-3.5" />
-          <span>Export Current Report (CSV)</span>
+          <span>{activeReport === 'millennium_summary' ? 'Export available in summary' : 'Export Current Report (Excel CSV)'}</span>
         </button>
       </div>
 
