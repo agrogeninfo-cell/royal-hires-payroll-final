@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { todayLocalDate } from '../utils/date';
 import { useApp } from '../context/AppContext';
 import { Factory, BillingRateMethod } from '../types';
 import {
@@ -72,7 +73,7 @@ export const FactoriesView: React.FC = () => {
     setFemaleRate(2900);
     setNightMaleRateText('');
     setNightFemaleRateText('');
-    setBillingEffectiveFrom(new Date().toISOString().split('T')[0]);
+    setBillingEffectiveFrom(todayLocalDate());
     setBillingEffectiveTo('');
     setSpecialBillingDatesText('');
     setBreakfastRate(150);
