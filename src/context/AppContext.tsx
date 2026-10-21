@@ -58,6 +58,7 @@ interface AppContextType {
   saveInvoice: (invoice: FactoryInvoice) => Promise<void>;
   saveReceipt: (receipt: FactoryReceipt) => Promise<void>;
   saveBoardingLocation: (location: BoardingLocation) => Promise<void>;
+  deleteBoardingLocation: (locationId: string) => Promise<void>;
   resetDatabase: () => Promise<void>;
   exportBackupJson: () => Promise<string>;
   importBackupJson: (jsonData: string) => Promise<void>;
@@ -159,8 +160,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       setReceipts(isSupervisor ? [] : recData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
       const allBoarding = await dbService.getAll<BoardingLocation>('boarding_locations');
-      const targetBoardingIds = new Set(eData.map((employee) => employee.boardingLocationId).filter(Boolean));
-      const bData = allBoarding.filter((location) => targetBoardingIds.has(location.id));
+      // Include empty locations too, so Admins can edit and manage every saved boarding location.
+      const bData = allBoarding.filter((location) => location.active !== false);
       setBoardingLocations(isSupervisor ? [] : bData);
 
       const allAuditLogs = await dbService.getAll<AuditLog>('audit_logs');
@@ -502,6 +503,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     setLastBackupTime(new Date().toLocaleTimeString());
   };
 
+  const deleteBoardingLocation = async (locationId: string) => {
+    if (currentUser.role !== 'admin') throw new Error('Only Administrators can delete boarding locations.');
+    const allEmployees = await dbService.getAll<Employee>('employees');
+    const residents = allEmployees.filter((employee) => employee.boardingLocationId === locationId);
+    if (residents.length > 0) throw new Error(`This location has ${residents.length} assigned helper(s). Reassign them before deleting it.`);
+    const location = await dbService.getById<BoardingLocation>('boarding_locations', locationId);
+    if (!location) throw new Error('Boarding location not found.');
+    // Use a synced soft-delete so cloud refresh cannot resurrect a hard-deleted local record.
+    location.active = false;
+    location.updatedAt = new Date().toISOString();
+    location.cloudSyncReady = true;
+    await dbService.put('boarding_locations', location);
+    await dbService.logAudit(currentUser.name, currentUser.role, 'DELETE_BOARDING_LOCATION', 'BoardingLocation', locationId, `Archived boarding location: ${location.name}`);
+    await reloadData();
+    if (isOnline) await syncOfflineQueue();
+    await dbService.triggerMirrorBackup();
+    setLastBackupTime(new Date().toLocaleTimeString());
+  };
+
   const resetDatabase = async () => {
     const stores = [
       'users',
@@ -614,6 +634,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
         saveInvoice,
         saveReceipt,
         saveBoardingLocation,
+        deleteBoardingLocation,
         resetDatabase,
         exportBackupJson,
         importBackupJson,

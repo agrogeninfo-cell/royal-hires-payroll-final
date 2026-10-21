@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { useApp } from '../context/AppContext';
 import {
   BarChart3,
@@ -98,62 +101,58 @@ export const ReportsView: React.FC = () => {
   const grandTotalLabor = pnlData.reduce((s, p) => s + p.totalLaborCost, 0);
   const grandTotalProfit = pnlData.reduce((s, p) => s + p.estimatedGrossProfit, 0);
 
-  const exportCurrentReport = () => {
-    let csvContent = '';
-    if (activeReport === 'pnl') {
-      const headers = [
-        'Factory Name',
-        'Billing Method',
-        'Invoiced Revenue (LKR)',
-        'Collected Receipts (LKR)',
-        'Outstanding Due (LKR)',
-        'Days Supplied',
-        'Approved OT Hours',
-        'Helper Wages Cost (LKR)',
-        'Helper OT Cost (LKR)',
-        'Total Labor Cost (LKR)',
-        'Estimated Profit (LKR)',
-        'Margin %',
-      ];
-      const rows = pnlData.map((d) => [
-        `"${d.factory.name}"`,
-        d.factory.billingMethod,
-        d.invoicedRevenue,
-        d.collectedCash,
-        d.outstandingInvoiceDue,
-        d.totalDaysWorked,
-        d.approvedOtHours,
-        d.helperWageCost,
-        d.helperOtCost,
-        d.totalLaborCost,
-        d.estimatedGrossProfit,
-        `${d.marginPct}%`,
-      ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    } else if (activeReport === 'attendance') {
-      const headers = ['Date', 'Factory', 'Helper ID', 'Helper Name', 'Status', 'Days', 'OT Hours', 'Supervisor'];
-      const rows = attendance
-        .filter((a) => (filterFactory === 'all' || a.factoryId === filterFactory) && a.date >= startDate && a.date <= endDate)
-        .map((a) => [
-          a.date,
-          `"${a.factoryName}"`,
-          a.employeeId,
-          `"${a.employeeName}"`,
-          a.status,
-          a.payableUnits,
-          a.totalOtHours,
-          `"${a.supervisorName}"`,
-        ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    }
+  const payrollSummaryRows = payrollRuns
+    .filter((run) => run.periodStart >= startDate && run.periodEnd <= endDate && (filterFactory === 'all' || run.items.some((item) => item.factoryId === filterFactory)))
+    .map((run) => {
+      const items = filterFactory === 'all' ? run.items : run.items.filter((item) => item.factoryId === filterFactory);
+      return {
+        run,
+        totalGross: filterFactory === 'all' ? run.totalGross : items.reduce((sum, item) => sum + item.grossEarnings, 0),
+        totalDeductions: filterFactory === 'all' ? run.totalDeductions : items.reduce((sum, item) => sum + item.totalDeductions, 0),
+        totalNet: filterFactory === 'all' ? run.totalNet : items.reduce((sum, item) => sum + item.netPayable, 0),
+      };
+    });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.href = encodedUri;
-    link.download = `Report_${activeReport}_${startDate}_${endDate}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const exportCurrentReport = async () => {
+    const quote = (value: unknown) => '"' + String(value ?? '').replace(/"/g, '""') + '"';
+    const selectedInvoices = invoices.filter((item) => (filterFactory === 'all' || item.factoryId === filterFactory) && item.invoiceDate >= startDate && item.invoiceDate <= endDate);
+    const selectedPayments = payments.filter((item) => item.paymentType === 'advance' && (filterFactory === 'all' || employees.find((employee) => employee.id === item.employeeId)?.currentFactoryId === filterFactory) && item.paymentDate >= startDate && item.paymentDate <= endDate);
+    let headers: unknown[] = [];
+    let rows: unknown[][] = [];
+    if (activeReport === 'pnl') {
+      headers = ['Factory Name','Billing Method','Invoiced Revenue (LKR)','Collected Receipts (LKR)','Outstanding Due (LKR)','Days Supplied','Approved OT Hours','Helper Wages Cost (LKR)','Helper OT Cost (LKR)','Total Labor Cost (LKR)','Estimated Profit (LKR)','Margin %'];
+      rows = pnlData.map((d) => [d.factory.name,d.factory.billingMethod,d.invoicedRevenue,d.collectedCash,d.outstandingInvoiceDue,d.totalDaysWorked,d.approvedOtHours,d.helperWageCost,d.helperOtCost,d.totalLaborCost,d.estimatedGrossProfit,d.marginPct + '%']);
+    } else if (activeReport === 'attendance') {
+      headers = ['Date','Factory','Helper ID','Helper Name','Status','Payable Days','OT Hours','Breakfast','Lunch','Dinner','Supervisor','Approval'];
+      rows = attendance.filter((a) => (filterFactory === 'all' || a.factoryId === filterFactory) && a.date >= startDate && a.date <= endDate).map((a) => [a.date,a.factoryName,a.employeeId,a.employeeName,a.status,a.payableUnits,a.totalOtHours,a.hadBreakfast ? 'Yes' : 'No',a.hadLunch ? 'Yes' : 'No',a.hadDinner ? 'Yes' : 'No',a.supervisorName,a.submissionStatus]);
+    } else if (activeReport === 'invoices') {
+      headers = ['Invoice Number','Factory','Invoice Date','Due Date','Period Start','Period End','Subtotal (LKR)','Adjustments (LKR)','Total (LKR)','Received (LKR)','Outstanding (LKR)','Status'];
+      rows = selectedInvoices.map((inv) => [inv.invoiceNumber,inv.factoryName,inv.invoiceDate,inv.dueDate,inv.periodStart,inv.periodEnd,inv.subtotal,inv.adjustments,inv.totalAmount,inv.amountReceived,inv.outstandingBalance,inv.status]);
+    } else if (activeReport === 'advances') {
+      headers = ['Date','Helper ID','Helper Name','Payment Type','Amount (LKR)','Method','Reference','Notes'];
+      rows = selectedPayments.map((payment) => [payment.paymentDate,payment.employeeId,payment.employeeName,payment.paymentType,payment.amount,payment.paymentMethod || '',payment.referenceNumber || '',payment.notes || '']);
+    } else {
+      headers = ['Payroll Number','Period Start','Period End','Generated At','Total Gross (LKR)','Total Deductions (LKR)','Total Net (LKR)'];
+      rows = payrollSummaryRows.map(({ run, totalGross, totalDeductions, totalNet }) => [run.payrollNumber,run.periodStart,run.periodEnd,run.generatedAt,totalGross,totalDeductions,totalNet]);
+    }
+    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(quote).join(',')).join('\r\n');
+    const fileName = 'RoyalPay_' + activeReport + '_' + startDate + '_' + endDate + '.csv';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const saved = await Filesystem.writeFile({ path: fileName, data: csv, directory: Directory.Cache, recursive: true });
+        await Share.share({ title: 'Royal Pay report export', text: 'Report: ' + activeReport, url: saved.uri, dialogTitle: 'Save or share Excel-compatible CSV' });
+      } else {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = fileName; link.style.display = 'none';
+        document.body.appendChild(link); link.click(); link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+    } catch (error) {
+      console.error('Report export failed:', error);
+      alert('Report export failed. Please try again or choose Save to device in the Android share menu.');
+    }
   };
 
   return (
@@ -187,6 +186,7 @@ export const ReportsView: React.FC = () => {
             { id: 'attendance', label: 'Attendance Audit Register' },
             { id: 'invoices', label: 'Invoices & Receivables' },
             { id: 'advances', label: 'Employee Advances Ledger' },
+            { id: 'payroll_summary', label: 'Payroll Summary' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -395,7 +395,7 @@ export const ReportsView: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {invoices
-                  .filter((i) => (filterFactory === 'all' || i.factoryId === filterFactory))
+                  .filter((i) => (filterFactory === 'all' || i.factoryId === filterFactory) && i.invoiceDate >= startDate && i.invoiceDate <= endDate)
                   .map((inv) => (
                     <tr key={inv.id}>
                       <td className="p-3 font-bold text-slate-900">{inv.invoiceNumber}</td>
@@ -436,7 +436,7 @@ export const ReportsView: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {payments
-                  .filter((p) => p.paymentType === 'advance')
+                  .filter((p) => p.paymentType === 'advance' && p.paymentDate >= startDate && p.paymentDate <= endDate && (filterFactory === 'all' || employees.find((employee) => employee.id === p.employeeId)?.currentFactoryId === filterFactory))
                   .map((p) => (
                     <tr key={p.id}>
                       <td className="p-3 text-slate-500">{p.paymentDate}</td>
@@ -448,6 +448,40 @@ export const ReportsView: React.FC = () => {
                       <td className="p-3 text-slate-400">{p.recordedBy}</td>
                     </tr>
                   ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* REPORT CONTENT: Payroll Summary */}
+      {activeReport === 'payroll_summary' && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                <tr>
+                  <th className="p-3">Payroll Number</th>
+                  <th className="p-3">Period Start</th>
+                  <th className="p-3">Period End</th>
+                  <th className="p-3">Generated At</th>
+                  <th className="p-3">Gross (LKR)</th>
+                  <th className="p-3">Deductions (LKR)</th>
+                  <th className="p-3">Net (LKR)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {payrollSummaryRows.map(({ run, totalGross, totalDeductions, totalNet }) => (
+                  <tr key={run.id}>
+                    <td className="p-3 font-bold text-slate-900">{run.payrollNumber}</td>
+                    <td className="p-3">{run.periodStart}</td>
+                    <td className="p-3">{run.periodEnd}</td>
+                    <td className="p-3">{run.generatedAt}</td>
+                    <td className="p-3">{totalGross.toLocaleString()}</td>
+                    <td className="p-3">{totalDeductions.toLocaleString()}</td>
+                    <td className="p-3 font-bold">{totalNet.toLocaleString()}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
