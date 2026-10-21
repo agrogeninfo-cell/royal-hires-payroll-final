@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { useApp } from '../context/AppContext';
 import {
   BarChart3,
@@ -98,62 +101,46 @@ export const ReportsView: React.FC = () => {
   const grandTotalLabor = pnlData.reduce((s, p) => s + p.totalLaborCost, 0);
   const grandTotalProfit = pnlData.reduce((s, p) => s + p.estimatedGrossProfit, 0);
 
-  const exportCurrentReport = () => {
-    let csvContent = '';
+  const exportCurrentReport = async () => {
+    const quote = (value: unknown) => '"' + String(value ?? '').replace(/"/g, '""') + '"';
+    const selectedInvoices = invoices.filter((item) => (filterFactory === 'all' || item.factoryId === filterFactory) && item.invoiceDate >= startDate && item.invoiceDate <= endDate);
+    const selectedPayments = payments.filter((item) => (filterFactory === 'all' || employees.find((employee) => employee.id === item.employeeId)?.currentFactoryId === filterFactory) && item.createdAt.slice(0, 10) >= startDate && item.createdAt.slice(0, 10) <= endDate);
+    let headers: unknown[] = [];
+    let rows: unknown[][] = [];
     if (activeReport === 'pnl') {
-      const headers = [
-        'Factory Name',
-        'Billing Method',
-        'Invoiced Revenue (LKR)',
-        'Collected Receipts (LKR)',
-        'Outstanding Due (LKR)',
-        'Days Supplied',
-        'Approved OT Hours',
-        'Helper Wages Cost (LKR)',
-        'Helper OT Cost (LKR)',
-        'Total Labor Cost (LKR)',
-        'Estimated Profit (LKR)',
-        'Margin %',
-      ];
-      const rows = pnlData.map((d) => [
-        `"${d.factory.name}"`,
-        d.factory.billingMethod,
-        d.invoicedRevenue,
-        d.collectedCash,
-        d.outstandingInvoiceDue,
-        d.totalDaysWorked,
-        d.approvedOtHours,
-        d.helperWageCost,
-        d.helperOtCost,
-        d.totalLaborCost,
-        d.estimatedGrossProfit,
-        `${d.marginPct}%`,
-      ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      headers = ['Factory Name','Billing Method','Invoiced Revenue (LKR)','Collected Receipts (LKR)','Outstanding Due (LKR)','Days Supplied','Approved OT Hours','Helper Wages Cost (LKR)','Helper OT Cost (LKR)','Total Labor Cost (LKR)','Estimated Profit (LKR)','Margin %'];
+      rows = pnlData.map((d) => [d.factory.name,d.factory.billingMethod,d.invoicedRevenue,d.collectedCash,d.outstandingInvoiceDue,d.totalDaysWorked,d.approvedOtHours,d.helperWageCost,d.helperOtCost,d.totalLaborCost,d.estimatedGrossProfit,d.marginPct + '%']);
     } else if (activeReport === 'attendance') {
-      const headers = ['Date', 'Factory', 'Helper ID', 'Helper Name', 'Status', 'Days', 'OT Hours', 'Supervisor'];
-      const rows = attendance
-        .filter((a) => (filterFactory === 'all' || a.factoryId === filterFactory) && a.date >= startDate && a.date <= endDate)
-        .map((a) => [
-          a.date,
-          `"${a.factoryName}"`,
-          a.employeeId,
-          `"${a.employeeName}"`,
-          a.status,
-          a.payableUnits,
-          a.totalOtHours,
-          `"${a.supervisorName}"`,
-        ]);
-      csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      headers = ['Date','Factory','Helper ID','Helper Name','Status','Payable Days','OT Hours','Breakfast','Lunch','Dinner','Supervisor','Approval'];
+      rows = attendance.filter((a) => (filterFactory === 'all' || a.factoryId === filterFactory) && a.date >= startDate && a.date <= endDate).map((a) => [a.date,a.factoryName,a.employeeId,a.employeeName,a.status,a.payableUnits,a.totalOtHours,a.hadBreakfast ? 'Yes' : 'No',a.hadLunch ? 'Yes' : 'No',a.hadDinner ? 'Yes' : 'No',a.supervisorName,a.submissionStatus]);
+    } else if (activeReport === 'invoices') {
+      headers = ['Invoice Number','Factory','Invoice Date','Due Date','Period Start','Period End','Subtotal (LKR)','Adjustments (LKR)','Total (LKR)','Received (LKR)','Outstanding (LKR)','Status'];
+      rows = selectedInvoices.map((inv) => [inv.invoiceNumber,inv.factoryName,inv.invoiceDate,inv.dueDate,inv.periodStart,inv.periodEnd,inv.subtotal,inv.adjustments,inv.totalAmount,inv.amountReceived,inv.outstandingBalance,inv.status]);
+    } else if (activeReport === 'advances') {
+      headers = ['Date','Helper ID','Helper Name','Payment Type','Amount (LKR)','Method','Reference','Notes'];
+      rows = selectedPayments.map((payment) => [payment.createdAt.slice(0,10),payment.employeeId,payment.employeeName,payment.paymentType,payment.amount,payment.method || '',payment.reference || '',payment.notes || '']);
+    } else {
+      headers = ['Payroll Number','Period Start','Period End','Generated At','Total Gross (LKR)','Total Deductions (LKR)','Total Net (LKR)'];
+      rows = payrollRuns.filter((run) => run.periodStart >= startDate && run.periodEnd <= endDate && (filterFactory === 'all' || run.items.some((item) => item.factoryId === filterFactory))).map((run) => [run.payrollNumber,run.periodStart,run.periodEnd,run.generatedAt,run.totalGross,run.totalDeductions,run.totalNet]);
     }
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.href = encodedUri;
-    link.download = `Report_${activeReport}_${startDate}_${endDate}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(quote).join(',')).join('\r\n');
+    const fileName = 'RoyalPay_' + activeReport + '_' + startDate + '_' + endDate + '.csv';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const saved = await Filesystem.writeFile({ path: fileName, data: csv, directory: Directory.Cache, recursive: true });
+        await Share.share({ title: 'Royal Pay report export', text: 'Report: ' + activeReport, url: saved.uri, dialogTitle: 'Save or share Excel-compatible CSV' });
+      } else {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = fileName; link.style.display = 'none';
+        document.body.appendChild(link); link.click(); link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+    } catch (error) {
+      console.error('Report export failed:', error);
+      alert('Report export failed. Please try again or choose Save to device in the Android share menu.');
+    }
   };
 
   return (
