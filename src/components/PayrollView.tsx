@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PayrollItem, PayrollRun, EmployeePayment } from '../types';
 import { PayrollService } from '../services/payrollService';
+import { jsPDF } from 'jspdf';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   Calculator,
   Calendar,
