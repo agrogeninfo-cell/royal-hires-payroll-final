@@ -117,16 +117,21 @@ export const PayrollView: React.FC = () => {
     frameDoc.open();
     frameDoc.write(printDocument);
     frameDoc.close();
-    try {
-      frameWindow.focus();
-      frameWindow.print();
-      window.setTimeout(() => frame.remove(), 1500);
-      setFeedback('Print dialog requested. Choose “Save as PDF” to create a PDF copy.');
-    } catch (error) {
-      frame.remove();
-      setFeedback('This Android WebView could not open the print dialog. Try opening the app in Chrome and choose Print / Save as PDF.');
-      console.error('Payslip print failed:', error);
-    }
+    // Let Android WebView finish laying out the generated payslip before invoking
+    // print. Calling print immediately after document.close() can produce a blank
+    // or missing print sheet on slower phones.
+    window.setTimeout(() => {
+      try {
+        frameWindow.focus();
+        frameWindow.print();
+        window.setTimeout(() => frame.remove(), 1500);
+        setFeedback('Payslip print view opened. Choose “Save as PDF” in the print dialog.');
+      } catch (error) {
+        frame.remove();
+        setFeedback('Print is not supported in this app view. Open Pay Royal in Chrome and use Print → Save as PDF.');
+        console.error('Payslip print failed:', error);
+      }
+    }, 450);
   };
 
   const handleGeneratePayroll = () => {
@@ -363,7 +368,7 @@ export const PayrollView: React.FC = () => {
                 className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 flex items-center space-x-1 transition cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export CSV</span>
+                <span>Export Excel (CSV)</span>
               </button>
               </>
             )}
