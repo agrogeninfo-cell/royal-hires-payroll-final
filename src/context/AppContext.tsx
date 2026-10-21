@@ -159,8 +159,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       setReceipts(isSupervisor ? [] : recData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
       const allBoarding = await dbService.getAll<BoardingLocation>('boarding_locations');
-      const targetBoardingIds = new Set(eData.map((employee) => employee.boardingLocationId).filter(Boolean));
-      const bData = allBoarding.filter((location) => targetBoardingIds.has(location.id));
+      // Keep every active boarding location visible to Admin/Office Staff, including
+      // newly created locations that have not been assigned to an employee yet.
+      // Filtering only by employee.boardingLocationId made new locations appear unsaved.
+      const bData = allBoarding.filter((location) => location.active !== false);
       setBoardingLocations(isSupervisor ? [] : bData);
 
       const allAuditLogs = await dbService.getAll<AuditLog>('audit_logs');
