@@ -4,6 +4,9 @@ import { useApp } from '../context/AppContext';
 import { PayrollItem, PayrollRun, EmployeePayment } from '../types';
 import { PayrollService } from '../services/payrollService';
 import { Printer } from '@capgo/capacitor-printer';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   Calculator,
   Calendar,
