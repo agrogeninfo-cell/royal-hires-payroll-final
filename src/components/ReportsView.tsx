@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { todayLocalDate } from '../utils/date';
 import { MillenniumMonthEndSummaryView } from './MillenniumMonthEndSummaryView';
 import { useApp } from '../context/AppContext';
 import { Capacitor } from '@capacitor/core';
@@ -36,7 +37,7 @@ export const ReportsView: React.FC = () => {
 
   const [filterFactory, setFilterFactory] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('2026-01-01');
-  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState<string>(todayLocalDate());
 
   // P&L calculation factory-wise
   const targetFactories = filterFactory === 'all'
