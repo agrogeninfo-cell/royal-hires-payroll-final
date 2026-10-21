@@ -4,7 +4,7 @@ import { PayrollItem, PayrollRun, EmployeePayment } from '../types';
 import { PayrollService } from '../services/payrollService';
 import { jsPDF } from 'jspdf';
 import { Capacitor } from '@capacitor/core';
-import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
+import { Directory, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import {
   Calculator,
@@ -126,7 +126,7 @@ export const PayrollView: React.FC = () => {
       if (Capacitor.isNativePlatform()) {
         const dataUri = pdf.output('datauristring');
         const base64 = dataUri.substring(dataUri.indexOf(',') + 1);
-        const saved = await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Cache, encoding: Encoding.BASE64, recursive: true });
+        const saved = await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Cache, recursive: true });
         await Share.share({ title: 'Pay Royal Payslips', text: 'Employee payslip PDF for payroll ' + previewRun.payrollNumber, url: saved.uri, dialogTitle: 'Save or share payslip PDF' });
         setFeedback('Payslip PDF prepared. Choose a destination in the Android share sheet.');
       } else {
