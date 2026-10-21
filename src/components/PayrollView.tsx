@@ -54,7 +54,10 @@ export const PayrollView: React.FC = () => {
 
   const [payslipPeriodType, setPayslipPeriodType] = useState<'weekly' | 'monthly'>('monthly');
 
-  const escapeHtml = (value: unknown): string => String(value ?? '').replace(/[&<>\"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[char] || char));
+  const escapeHtml = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (char) => {
+    const entities: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return entities[char] || char;
+  });
 
   const printPayslips = async (items: PayrollItem[]) => {
     if (!previewRun || items.length === 0) return;
