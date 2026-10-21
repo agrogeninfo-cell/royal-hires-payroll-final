@@ -311,34 +311,30 @@ export const PayrollView: React.FC = () => {
       'Remaining Balance',
     ];
 
+    const csvCell = (value: unknown) => {
+      const text = String(value ?? '');
+      return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
     const rows = previewRun.items.map((it) => [
-      it.employeeId,
-      `"${it.employeeName}"`,
-      it.employeeGender,
-      `"${it.factoryName}"`,
-      it.snapshotWageRate,
-      it.daysWorked,
-      it.normalWage,
-      it.approvedOtHours,
-      it.otWage,
-      it.grossEarnings,
-      it.totalMealDeductions,
-      it.totalBoardingDeductions,
-      it.advancesDeducted,
-      it.totalDeductions,
-      it.netPayable,
-      it.amountPaid,
-      it.remainingBalance,
+      it.employeeId, it.employeeName, it.employeeGender, it.factoryName,
+      it.snapshotWageRate, it.daysWorked, it.normalWage, it.approvedOtHours,
+      it.otWage, it.grossEarnings, it.totalMealDeductions, it.totalBoardingDeductions,
+      it.advancesDeducted, it.totalDeductions, it.netPayable, it.amountPaid, it.remainingBalance,
     ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    // Blob downloads are more reliable than a large data: URI in Android WebView;
+    // RFC-style escaping preserves commas, quotes and line breaks in names.
+    const csvContent = '\uFEFF' + [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Payroll_${previewRun.payrollNumber}.csv`);
+    link.href = url;
+    link.download = `Payroll_${previewRun.payrollNumber}.csv`;
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setFeedback('Payroll CSV export requested. Check your Downloads folder.');
   };
 
   return (
