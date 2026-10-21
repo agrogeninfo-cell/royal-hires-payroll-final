@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { todayLocalDate } from '../utils/date';
 import { useApp } from '../context/AppContext';
 import { FactoryInvoice, InvoiceLineItem } from '../types';
 import { ROYAL_HIRES_LETTERHEAD_DATA_URI } from '../assets/royalHiresLetterhead';
@@ -35,7 +36,7 @@ export const InvoicesView: React.FC = () => {
   // Generation parameters
   const [targetFactoryId, setTargetFactoryId] = useState<string>(factories[0]?.id || '');
   const [periodStart, setPeriodStart] = useState<string>(() => `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`);
-  const [periodEnd, setPeriodEnd] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [periodEnd, setPeriodEnd] = useState<string>(todayLocalDate());
   const [invoiceNumber, setInvoiceNumber] = useState<string>(`INV-2026-00${invoices.length + 1}`);
   const [feedback, setFeedback] = useState<string>('');
 
