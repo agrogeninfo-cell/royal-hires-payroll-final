@@ -116,3 +116,10 @@ export async function verifyPin(pin: string): Promise<boolean> {
   if (lockedUntil) throw new Error('Too many incorrect PIN attempts. Try again in 60 seconds.');
   return false;
 }
+
+
+/** Clear only PIN metadata after the user signs out; payroll records remain untouched. */
+export async function clearPersonalPin(): Promise<void> {
+  await SecureStorage.removeItem(CONFIG_KEY);
+  await SecureStorage.removeItem(ATTEMPTS_KEY);
+}
