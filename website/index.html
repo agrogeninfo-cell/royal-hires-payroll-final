@@ -173,6 +173,7 @@
         if (!reduce && !a.closest('.navlinks') && !a.closest('.drawer-links')) return;
         e.preventDefault(); target.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
         if(location.hash!==id) history.pushState(null,'',id);
+        updateActive();
       }));
       // Visual prototype only: prepares an email draft without collecting data on a server.
       document.getElementById('contact-form').addEventListener('submit', e => {
