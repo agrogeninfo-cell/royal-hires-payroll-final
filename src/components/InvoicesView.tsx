@@ -114,7 +114,9 @@ export const InvoicesView: React.FC = () => {
     // Escape every field consistently so commas, quotes, and line breaks in text
     // fields cannot shift the financial columns when opened in Excel.
     const escapeCsvCell = (value: unknown): string => {
-      const text = value == null ? '' : String(value);
+      let text = value == null ? '' : String(value);
+      // Prevent formula execution when user-controlled text is opened in Excel.
+      if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = "'" + text;
       return `"${text.replace(/"/g, '""')}"`;
     };
 
