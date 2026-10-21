@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { MillenniumMonthEndSummaryView } from './MillenniumMonthEndSummaryView';
 import { useApp } from '../context/AppContext';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   BarChart3,
   Download,
@@ -99,7 +102,7 @@ export const ReportsView: React.FC = () => {
   const grandTotalLabor = pnlData.reduce((s, p) => s + p.totalLaborCost, 0);
   const grandTotalProfit = pnlData.reduce((s, p) => s + p.estimatedGrossProfit, 0);
 
-  const exportCurrentReport = () => {
+  const exportCurrentReport = async () => {
     // Millennium Month-End owns its own CSV export button; avoid generating an empty report.
     if (activeReport === 'millennium_summary') return;
     let headers: string[] = [];
@@ -122,16 +125,37 @@ export const ReportsView: React.FC = () => {
       return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
     };
     const csvContent = '\uFEFF' + [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'Report_' + activeReport + '_' + startDate + '_' + endDate + '.csv';
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const fileName = 'Pay_Royal_Report_' + activeReport + '_' + startDate + '_' + endDate + '.csv';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const saved = await Filesystem.writeFile({
+          path: fileName,
+          data: csvContent,
+          directory: Directory.Cache,
+          recursive: true,
+        });
+        await Share.share({
+          title: 'Pay Royal Report Export',
+          text: 'CSV report: ' + activeReport,
+          url: saved.uri,
+          dialogTitle: 'Save or share report CSV',
+        });
+      } else {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+    } catch (error) {
+      console.error('Report CSV export failed:', error);
+      window.alert('Could not export this report. Please retry or check Android share/save options.');
+    }
   };
 
   return (
