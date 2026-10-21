@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: 'Royal Hires - Manpower Payroll System',
-          short_name: 'Royal Hires',
-          description: 'Royal Hires (Pvt) Ltd - Industrial Factory Manpower Attendance, Overtime & Billing Management System',
+          name: 'Pay Royal — Manpower Payroll System',
+          short_name: 'Pay Royal',
+          description: 'Pay Royal — Royal Hires attendance, overtime, billing and payroll management',
           theme_color: '#090F15',
           background_color: '#090F15',
           display: 'standalone',
