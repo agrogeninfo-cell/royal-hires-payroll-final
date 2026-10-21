@@ -1,7 +1,7 @@
 {
-  "name": "Royal Hires Manpower Payroll Management System",
-  "short_name": "Royal Hires",
-  "description": "Royal Hires workforce, attendance and payroll management.",
+  "name": "Pay Royal",
+  "short_name": "Pay Royal",
+  "description": "Pay Royal workforce, attendance, billing and payroll management.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8F8F5",
