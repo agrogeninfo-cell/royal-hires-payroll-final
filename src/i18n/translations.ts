@@ -2,8 +2,8 @@ import { Language } from '../types';
 
 export const translations = {
   en: {
-    appName: 'Royal Hires',
-    tagline: 'Manpower Payroll Management System — Royal Hires (Pvt) Ltd',
+    appName: 'Pay Royal',
+    tagline: 'Manpower Payroll Management — Royal Hires (Pvt) Ltd',
     helperDesignation: 'Helper (Fixed)',
     currency: 'LKR',
     roles: {
