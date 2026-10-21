@@ -1,4 +1,5 @@
 import {
+import { formatLocalDate } from '../utils/date';
   Factory,
   AttendanceRecord,
   FactoryInvoice,
@@ -81,7 +82,7 @@ export class InvoicingService {
     // Due date standard 14 days after period end
     const dueDateObj = new Date(periodEnd);
     dueDateObj.setDate(dueDateObj.getDate() + 14);
-    const dueDate = dueDateObj.toISOString().split('T')[0];
+    const dueDate = formatLocalDate(dueDateObj);
 
     return {
       id: `INV-${Date.now()}`,
