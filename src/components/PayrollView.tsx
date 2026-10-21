@@ -52,88 +52,88 @@ export const PayrollView: React.FC = () => {
 
   const [payslipPeriodType, setPayslipPeriodType] = useState<'weekly' | 'monthly'>('monthly');
 
-  const escapeHtml = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[char] || char));
-
-  const printPayslips = (items: PayrollItem[]) => {
+  const printPayslips = async (items: PayrollItem[]) => {
     if (!previewRun || items.length === 0) return;
-    const money = (amount: number) => `LKR ${Number(amount || 0).toLocaleString('en-LK')}`;
-    const slipMarkup = items.map((item, index) => `
-      <section class="payslip ${index > 0 ? 'page-break' : ''}">
-        <header><div class="brand">ROYAL HIRES PRIVATE LIMITED</div><h1>EMPLOYEE PAYSLIP</h1>
-          <div class="period">${payslipPeriodType.toUpperCase()} PAYSLIP · ${escapeHtml(previewRun.periodStart)} to ${escapeHtml(previewRun.periodEnd)}</div></header>
-        <div class="details">
-          <div><span>Employee Name</span><strong>${escapeHtml(item.employeeName)}</strong></div>
-          <div><span>Employee ID</span><strong>${escapeHtml(item.employeeId)}</strong></div>
-          <div><span>Factory</span><strong>${escapeHtml(item.factoryName)}</strong></div>
-          <div><span>Wage Arrangement</span><strong>${escapeHtml(item.wageArrangement)}</strong></div>
-          <div><span>Payroll No.</span><strong>${escapeHtml(previewRun.payrollNumber)}</strong></div>
-          <div><span>Days Worked</span><strong>${escapeHtml(item.daysWorked)}</strong></div>
-        </div>
-        <table><thead><tr><th>Earnings</th><th>Amount</th><th>Deductions</th><th>Amount</th></tr></thead><tbody>
-          <tr><td>Normal Wages</td><td>${money(item.normalWage)}</td><td>Meals</td><td>${money(item.totalMealDeductions)}</td></tr>
-          <tr><td>Approved Overtime (${escapeHtml(item.approvedOtHours)} hrs)</td><td>${money(item.otWage)}</td><td>Boarding</td><td>${money(item.totalBoardingDeductions)}</td></tr>
-          <tr><td>Other Earnings</td><td>${money(0)}</td><td>Salary Advances</td><td>${money(item.advancesDeducted)}</td></tr>
-          <tr class="total"><td>Gross Earnings</td><td>${money(item.grossEarnings)}</td><td>Total Deductions</td><td>${money(item.totalDeductions)}</td></tr>
-        </tbody></table>
-        <div class="net"><span>NET PAYABLE</span><strong>${money(item.netPayable)}</strong></div>
-        <div class="payment">
-          <div><span>Amount Paid</span><strong>${money(item.amountPaid)}</strong></div>
-          <div><span>Remaining Balance</span><strong>${money(item.remainingBalance)}</strong></div>
-          <div><span>Payment Status</span><strong>${escapeHtml(item.paymentStatus)}</strong></div>
-        </div>
-        <footer><span>Generated: ${escapeHtml(new Date().toLocaleDateString())}</span><span>Employee Signature: __________________</span><span>Authorized By: __________________</span></footer>
-      </section>
-    `).join('');
-
-    // Avoid window.open('', '_blank'): Android WebView/Chrome can block the
-    // blank popup, leaving the user on about:blank#blocked. Print an isolated
-    // same-origin iframe instead so the payroll screen and current state remain.
-    const frame = document.createElement('iframe');
-    frame.setAttribute('title', 'Royal Hires payslip print preview');
-    frame.setAttribute('aria-hidden', 'true');
-    Object.assign(frame.style, {
-      position: 'fixed',
-      right: '0',
-      bottom: '0',
-      width: '1px',
-      height: '1px',
-      border: '0',
-      opacity: '0',
-      pointerEvents: 'none',
+    const money = (amount: number) => 'LKR ' + Number(amount || 0).toLocaleString('en-LK');
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const left = 14;
+    const right = pageWidth - 14;
+    const labelValue = (label: string, value: string, x: number, y: number, width: number) => {
+      pdf.setFillColor(246, 249, 247); pdf.setDrawColor(220, 229, 223); pdf.roundedRect(x, y, width, 16, 1.5, 1.5, 'FD');
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(90, 105, 98); pdf.text(label.toUpperCase(), x + 3, y + 5);
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(25, 42, 34);
+      pdf.text(pdf.splitTextToSize(String(value || '-'), width - 6).slice(0, 2), x + 3, y + 10);
+    };
+    items.forEach((item, index) => {
+      if (index > 0) pdf.addPage();
+      let y = 14;
+      pdf.setFillColor(7, 62, 44); pdf.roundedRect(left, y, pageWidth - 28, 28, 2, 2, 'F');
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15); pdf.setTextColor(255, 255, 255); pdf.text('PAY ROYAL', left + 5, y + 9);
+      pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.text('ROYAL HIRES PRIVATE LIMITED', left + 5, y + 15);
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12); pdf.text('EMPLOYEE PAYSLIP', right - 5, y + 9, { align: 'right' });
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.text(payslipPeriodType.toUpperCase() + ' · ' + previewRun.periodStart + ' to ' + previewRun.periodEnd, right - 5, y + 16, { align: 'right' });
+      y += 34;
+      pdf.setDrawColor(212, 179, 106); pdf.setLineWidth(0.8); pdf.line(left, y, right, y); y += 5;
+      const gap = 4; const cardWidth = (pageWidth - 28 - gap) / 2;
+      labelValue('Employee Name', item.employeeName, left, y, cardWidth);
+      labelValue('Employee ID', item.employeeId, left + cardWidth + gap, y, cardWidth); y += 19;
+      labelValue('Factory', item.factoryName, left, y, cardWidth);
+      labelValue('Wage Arrangement', item.wageArrangement, left + cardWidth + gap, y, cardWidth); y += 19;
+      labelValue('Payroll Number', previewRun.payrollNumber, left, y, cardWidth);
+      labelValue('Days Worked', String(item.daysWorked), left + cardWidth + gap, y, cardWidth); y += 24;
+      const col = [left, left + 83, left + 111, left + 166];
+      const tableWidth = pageWidth - 28;
+      pdf.setFillColor(235, 245, 239); pdf.rect(left, y, tableWidth, 9, 'F');
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(20, 65, 45);
+      pdf.text('EARNINGS', col[0] + 2, y + 6); pdf.text('AMOUNT', col[1] + 2, y + 6); pdf.text('DEDUCTIONS', col[2] + 2, y + 6); pdf.text('AMOUNT', col[3] + 2, y + 6);
+      y += 9;
+      const lineItems = [
+        ['Normal Wages', money(item.normalWage), 'Meals', money(item.totalMealDeductions)],
+        ['Approved OT (' + item.approvedOtHours + ' hrs)', money(item.otWage), 'Boarding', money(item.totalBoardingDeductions)],
+        ['Other Earnings', money(0), 'Salary Advances', money(item.advancesDeducted)],
+        ['Gross Earnings', money(item.grossEarnings), 'Total Deductions', money(item.totalDeductions)],
+      ];
+      lineItems.forEach((row, rowIndex) => {
+        pdf.setFillColor(rowIndex === 3 ? 246 : 255, rowIndex === 3 ? 249 : 255, rowIndex === 3 ? 247 : 255);
+        pdf.rect(left, y, tableWidth, 10, 'F'); pdf.setDrawColor(220, 226, 222); pdf.rect(left, y, tableWidth, 10, 'S');
+        pdf.setFont('helvetica', rowIndex === 3 ? 'bold' : 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(35, 45, 39);
+        pdf.text(pdf.splitTextToSize(row[0], 78).slice(0, 1), col[0] + 2, y + 6.5);
+        pdf.text(row[1], col[1] + 2, y + 6.5);
+        pdf.text(pdf.splitTextToSize(row[2], 52).slice(0, 1), col[2] + 2, y + 6.5);
+        pdf.text(row[3], col[3] + 2, y + 6.5); y += 10;
+      });
+      y += 8;
+      pdf.setFillColor(7, 62, 44); pdf.roundedRect(left, y, tableWidth, 20, 2, 2, 'F');
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(255, 255, 255); pdf.setFontSize(10); pdf.text('NET PAYABLE', left + 5, y + 8);
+      pdf.setFontSize(16); pdf.text(money(item.netPayable), right - 5, y + 13, { align: 'right' }); y += 26;
+      labelValue('Amount Paid', money(item.amountPaid), left, y, cardWidth);
+      labelValue('Remaining Balance', money(item.remainingBalance), left + cardWidth + gap, y, cardWidth); y += 20;
+      labelValue('Payment Status', String(item.paymentStatus), left, y, pageWidth - 28);
+      y += 26; pdf.setDrawColor(180, 190, 184); pdf.line(left, y, right, y);
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(90, 100, 94);
+      pdf.text('Generated: ' + new Date().toLocaleDateString(), left, y + 6);
+      pdf.text('Employee Signature: __________________', right, y + 6, { align: 'right' });
+      pdf.text('Authorized By: __________________', right, y + 12, { align: 'right' });
     });
-    const printDocument = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Royal Hires Payslips - ${escapeHtml(previewRun.payrollNumber)}</title><style>
-      *{box-sizing:border-box}html,body{width:100%;max-width:100%;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#17212b;font-size:11px;overflow-wrap:anywhere}.payslip{width:100%;max-width:100%;min-height:250mm;display:flex;flex-direction:column;padding:0}.page-break{page-break-before:always;break-before:page}.brand{font-size:18px;font-weight:800;color:#065f46;letter-spacing:.4px}header{border-bottom:3px solid #d4b36a;padding-bottom:12px}h1{font-size:17px;margin:12px 0 5px}.period{color:#475569;font-size:10px}.details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:20px 0}.details div,.payment div{min-width:0;background:#f8fafc;padding:9px;border:1px solid #e2e8f0}.details span,.payment span{display:block;color:#64748b;font-size:9px;margin-bottom:4px;text-transform:uppercase}.details strong,.payment strong{font-size:11px;overflow-wrap:anywhere}table{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-top:4px}th,td{padding:8px 6px;border:1px solid #cbd5e1;text-align:left;overflow-wrap:anywhere;word-break:normal}th{background:#ecfdf5;color:#065f46}th:nth-child(2),th:nth-child(4),td:nth-child(2),td:nth-child(4){width:19%}.total{font-weight:700;background:#f8fafc}.net{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;padding:16px;background:#065f46;color:white}.net span{font-weight:700;letter-spacing:.5px}.net strong{font-size:20px}.payment{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:auto;padding-top:32px;color:#475569;font-size:9px}@page{size:A4;margin:12mm}@media screen{body{padding:12px;background:#f1f5f9}.payslip{max-width:760px;margin:0 auto 18px;padding:16px;background:white;box-shadow:0 1px 6px #0002}}@media print{html,body{width:auto;max-width:none}.payslip{min-height:260mm;padding:0}.page-break{break-before:page;page-break-before:always}}
-    </style></head><body>${slipMarkup}</body></html>`;
-    document.body.appendChild(frame);
-    const frameWindow = frame.contentWindow;
-    const frameDoc = frame.contentDocument;
-    if (!frameWindow || !frameDoc) {
-      frame.remove();
-      setFeedback('Could not prepare the payslip print view on this device. Please try Chrome or the desktop print option.');
-      return;
-    }
-    frameDoc.open();
-    frameDoc.write(printDocument);
-    frameDoc.close();
-    // Let Android WebView finish laying out the generated payslip before invoking
-    // print. Calling print immediately after document.close() can produce a blank
-    // or missing print sheet on slower phones.
-    window.setTimeout(() => {
-      try {
-        frameWindow.focus();
-        frameWindow.print();
-        window.setTimeout(() => frame.remove(), 1500);
-        setFeedback('Payslip print view opened. Choose “Save as PDF” in the print dialog.');
-      } catch (error) {
-        frame.remove();
-        setFeedback('Print is not supported in this app view. Open Pay Royal in Chrome and use Print → Save as PDF.');
-        console.error('Payslip print failed:', error);
+    const safeNumber = previewRun.payrollNumber.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fileName = 'Pay_Royal_Payslips_' + safeNumber + '.pdf';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const dataUri = pdf.output('datauristring');
+        const base64 = dataUri.substring(dataUri.indexOf(',') + 1);
+        const saved = await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Cache, encoding: Encoding.BASE64, recursive: true });
+        await Share.share({ title: 'Pay Royal Payslips', text: 'Employee payslip PDF for payroll ' + previewRun.payrollNumber, url: saved.uri, dialogTitle: 'Save or share payslip PDF' });
+        setFeedback('Payslip PDF prepared. Choose a destination in the Android share sheet.');
+      } else {
+        pdf.save(fileName);
+        setFeedback('Payslip PDF download requested. Check your Downloads folder.');
       }
-    }, 450);
+    } catch (error) {
+      console.error('Payslip PDF export failed:', error);
+      setFeedback('Could not export payslip PDF. Please retry or check the Android share/save options.');
+    }
   };
-
   const handleGeneratePayroll = () => {
     const targetEmployees = employees.filter((e) => {
       if (e.status !== 'active') return false;
