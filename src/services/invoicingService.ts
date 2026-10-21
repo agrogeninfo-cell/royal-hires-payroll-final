@@ -1,5 +1,4 @@
 import {
-import { formatLocalDate } from '../utils/date';
   Factory,
   AttendanceRecord,
   FactoryInvoice,
@@ -7,6 +6,7 @@ import { formatLocalDate } from '../utils/date';
   FactoryReceipt,
   ReceiptAllocation,
 } from '../types';
+import { formatLocalDate } from '../utils/date';
 import { BillingService } from './billingService';
 
 export class InvoicingService {
