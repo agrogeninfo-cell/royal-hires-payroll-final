@@ -38,7 +38,7 @@ async function deriveVerifier(pin: string, salt: Uint8Array): Promise<string> {
     ['deriveBits'],
   );
   const derived = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength) as ArrayBuffer, iterations: ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
     256,
   );

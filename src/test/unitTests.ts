@@ -3,6 +3,7 @@ import { BillingService } from '../services/billingService';
 import { PayrollService } from '../services/payrollService';
 import { InvoicingService } from '../services/invoicingService';
 import { getMissingRequiredFactories } from '../db/indexedDb';
+import { getMillenniumBillingPeriod, buildMillenniumMonthEndSummary } from '../services/millenniumMonthEndSummaryService';
 
 export interface TestResult {
   id: number;
@@ -140,6 +141,35 @@ export class SystemTestSuite {
       catch (err: any) { rejected = /night-shift.*not configured/i.test(err.message); }
       results.push({ id: 25, title: 'Millennium combined shift is blocked without night rate', category: 'Billing', passed: rejected, message: rejected ? 'Millennium combined Day + Night billing is blocked; no night rate is invented.' : 'Combined shift was not blocked.' });
     } catch (err: any) { results.push({ id: 25, title: 'Millennium shift restriction', category: 'Billing', passed: false, message: err.message }); }
+
+    
+    // Test 26: Millennium billing month is the 25th-to-24th cycle and summary math is deterministic.
+    try {
+      const period = getMillenniumBillingPeriod('2026-08');
+      const millennium: Factory = { ...factoryB, id: 'fac-millennium-teas', name: 'Millennium Teas', maleRate: 3000, femaleRate: 2500 };
+      const makeAttendance = (id: string, date: string, gender: 'male' | 'female', lateHours: number, otHours: number): AttendanceRecord => ({
+        id, employeeId: id, employeeName: id, employeeGender: gender, factoryId: millennium.id, factoryName: millennium.name,
+        date, shift: 'Day Shift', status: 'present', payableUnits: 1, otHours: Math.floor(otHours), otMinutes: Math.round((otHours % 1) * 60),
+        totalOtHours: otHours, lateHours, hadBreakfast: false, hadLunch: false, hadDinner: false, hadBoarding: false,
+        recordedBy: 'test', supervisorName: 'test', submissionStatus: 'approved', billable: true, syncStatus: 'synced',
+        createdAt: date, updatedAt: date,
+      });
+      const attendance = [
+        makeAttendance('before', '2026-07-24', 'male', 0, 0),
+        makeAttendance('start', '2026-07-25', 'male', 1, 2),
+        makeAttendance('end', '2026-08-24', 'female', 0, 1),
+        makeAttendance('after', '2026-08-25', 'female', 0, 0),
+        makeAttendance('unapproved', '2026-08-01', 'male', 0, 0),
+      ].map((record) => record.id === 'unapproved' ? { ...record, submissionStatus: 'submitted' as const } : record);
+      const summary = buildMillenniumMonthEndSummary(millennium, attendance, '2026-08');
+      const passed = period.start === '2026-07-25' && period.end === '2026-08-24' &&
+        summary.male.lines.length === 1 && summary.female.lines.length === 1 &&
+        summary.male.total === 3000 + 450 - 150 && summary.female.total === 2500 + 225 &&
+        summary.grandTotal === 6025;
+      results.push({ id: 26, title: 'Millennium month-end period and billing calculations', category: 'Invoicing', passed,
+        message: passed ? '25 Jul–24 Aug boundaries, approval filtering, male/female subtotals, OT and late deduction verified.' :
+          `Unexpected period/totals: ${period.start}–${period.end}; male ${summary.male.total}; female ${summary.female.total}; grand ${summary.grandTotal}` });
+    } catch (err: any) { results.push({ id: 26, title: 'Millennium month-end summary', category: 'Invoicing', passed: false, message: err.message }); }
 
     // Test 1: Factory A SAME_RATE_FOR_ALL equal male and female
     try {

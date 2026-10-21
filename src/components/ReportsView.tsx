@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { MillenniumMonthEndSummaryView } from './MillenniumMonthEndSummaryView';
 import { useApp } from '../context/AppContext';
 import {
   BarChart3,
@@ -27,7 +28,7 @@ export const ReportsView: React.FC = () => {
   } = useApp();
 
   const [activeReport, setActiveReport] = useState<
-    'pnl' | 'attendance' | 'payroll_summary' | 'invoices' | 'advances'
+    'pnl' | 'attendance' | 'payroll_summary' | 'invoices' | 'advances' | 'millennium_summary'
   >('pnl');
 
   const [filterFactory, setFilterFactory] = useState<string>('all');
@@ -187,6 +188,7 @@ export const ReportsView: React.FC = () => {
             { id: 'attendance', label: 'Attendance Audit Register' },
             { id: 'invoices', label: 'Invoices & Receivables' },
             { id: 'advances', label: 'Employee Advances Ledger' },
+            { id: 'millennium_summary', label: 'Millennium Month-End' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -238,6 +240,8 @@ export const ReportsView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {activeReport === 'millennium_summary' && <MillenniumMonthEndSummaryView factories={factories} attendance={attendance} />}
 
       {/* REPORT CONTENT: P&L */}
       {activeReport === 'pnl' && (
