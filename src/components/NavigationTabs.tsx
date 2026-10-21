@@ -176,7 +176,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
               <button onClick={toggleOnlineStatus}><span className="rh-preference-icon">{isOnline ? <Wifi size={17} /> : <WifiOff size={17} />}</span><span><strong>Network status</strong><small>Automatically follows device connectivity</small></span><span className="rh-preference-value">{isOnline ? 'Online' : 'Offline'}</span></button>
               <button onClick={() => void syncOfflineQueue().catch((error) => window.alert(error instanceof Error ? error.message : 'Cloud sync failed.'))} disabled={!isOnline || pendingSyncCount === 0}><span className="rh-preference-icon"><RefreshCw size={17} /></span><span><strong>Sync pending changes</strong><small>{pendingSyncCount} item(s) waiting</small></span><span className="rh-preference-value">{!isOnline ? 'Offline' : pendingSyncCount ? 'Sync' : 'Up to date'}</span></button>
             </div>
-            <div className="rh-sheet-footer">Royal Hires Payroll Management <span>·</span> Cloud-connected workspace with offline fallback</div>
+            <div className="rh-sheet-footer">Pay Royal <span>·</span> Royal Hires cloud-connected payroll workspace</div>
           </section>
         </div>
       )}
