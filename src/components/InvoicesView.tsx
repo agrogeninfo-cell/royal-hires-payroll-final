@@ -4,8 +4,9 @@ import { FactoryInvoice, InvoiceLineItem } from '../types';
 import { ROYAL_HIRES_LETTERHEAD_DATA_URI } from '../assets/royalHiresLetterhead';
 import { InvoicingService } from '../services/invoicingService';
 import { Capacitor } from '@capacitor/core';
-import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { jsPDF } from 'jspdf';
 import {
   FileText,
   Plus,
@@ -172,14 +173,135 @@ export const InvoicesView: React.FC = () => {
       setFeedback(`CSV export prepared: ${fileName}`);
       window.setTimeout(() => setFeedback(''), 4000);
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/cancel(?:led|ed)?/i.test(message)) return;
       console.error('Invoice CSV export failed', error);
-      alert('Could not export the invoice CSV. Please try again or check Android sharing permissions.');
+      alert('The invoice CSV could not be shared. Please try again and choose Save to device from the Android share menu.');
     }
   };
 
   const htmlEscape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
 
-  const exportInvoiceLetterheadPdf = (inv: FactoryInvoice) => {
+  const exportInvoiceLetterheadPdf = async (inv: FactoryInvoice) => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const left = 12;
+        let y = 14;
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(17);
+        pdf.setTextColor(6, 75, 55);
+        pdf.text('ROYAL HIRES PRIVATE LIMITED', left, y);
+        y += 7;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.setTextColor(60, 70, 65);
+        pdf.text('Manpower & Workforce Solutions | No.235/S Artigala Road, Meegoda | Tel: 071 144 244 5', left, y);
+        y += 8;
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(13);
+        pdf.text('SERVICE INVOICE', left, y);
+        y += 6;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.text('Invoice: ' + inv.invoiceNumber + ' | Date: ' + inv.invoiceDate + ' | Status: ' + inv.status.toUpperCase(), left, y);
+        y += 5;
+        pdf.text('Billed To: ' + inv.factoryName + ' | Period: ' + inv.periodStart + ' to ' + inv.periodEnd + ' | Due: ' + inv.dueDate, left, y);
+        y += 8;
+        const columns = [
+          { label: 'Date', x: left, width: 23 },
+          { label: 'Employee', x: left + 23, width: 55 },
+          { label: 'Shift', x: left + 78, width: 23 },
+          { label: 'Days', x: left + 101, width: 13 },
+          { label: 'Rate', x: left + 114, width: 25 },
+          { label: 'Day Total', x: left + 139, width: 27 },
+          { label: 'OT Hrs', x: left + 166, width: 19 },
+          { label: 'OT Total', x: left + 185, width: 27 },
+          { label: 'Line Total', x: left + 212, width: 27 },
+        ];
+        const drawHeader = () => {
+          pdf.setFillColor(6, 75, 55);
+          pdf.rect(left, y - 4, 239, 8, 'F');
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(8);
+          pdf.setTextColor(255, 255, 255);
+          columns.forEach((column) => pdf.text(column.label, column.x + 1, y + 1));
+          y += 8;
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(8);
+          pdf.setTextColor(25, 35, 30);
+        };
+        drawHeader();
+        inv.lineItems.forEach((line) => {
+          if (y > 185) { pdf.addPage(); y = 16; drawHeader(); }
+          const values = [
+            line.date,
+            line.employeeName + ' (' + (line.employeeGender === 'male' ? 'M' : 'F') + ')',
+            line.shift,
+            String(line.billableDays),
+            line.snapshotBillingRate.toLocaleString('en-LK'),
+            line.dayBillingTotal.toLocaleString('en-LK'),
+            String(line.approvedOtHours),
+            line.otBillingTotal.toLocaleString('en-LK'),
+            line.lineTotal.toLocaleString('en-LK'),
+          ];
+          pdf.setDrawColor(215, 225, 220);
+          pdf.line(left, y + 3, left + 239, y + 3);
+          values.forEach((value, index) => pdf.text(String(value).slice(0, index === 1 ? 31 : 14), columns[index].x + 1, y));
+          y += 7;
+        });
+        if (y > 180) { pdf.addPage(); y = 18; }
+        y += 5;
+        pdf.setDrawColor(6, 75, 55);
+        pdf.line(190, y, left + 239, y);
+        y += 7;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(10);
+        pdf.text('Subtotal: LKR ' + inv.subtotal.toLocaleString('en-LK'), 190, y);
+        y += 6;
+        pdf.text('Adjustments: LKR ' + inv.adjustments.toLocaleString('en-LK'), 190, y);
+        y += 7;
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(12);
+        pdf.setTextColor(6, 75, 55);
+        pdf.text('TOTAL: LKR ' + inv.totalAmount.toLocaleString('en-LK'), 190, y);
+        y += 7;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.setTextColor(25, 35, 30);
+        pdf.text('Received: LKR ' + inv.amountReceived.toLocaleString('en-LK'), 190, y);
+        y += 6;
+        pdf.text('Outstanding: LKR ' + inv.outstandingBalance.toLocaleString('en-LK'), 190, y);
+        if (inv.notes) { y += 8; pdf.text(pdf.splitTextToSize('Notes: ' + inv.notes, 170), left, y); }
+        const bytes = new Uint8Array(pdf.output('arraybuffer'));
+        let binary = '';
+        for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+          binary += String.fromCharCode(...bytes.subarray(offset, Math.min(offset + 0x8000, bytes.length)));
+        }
+        const fileName = 'Invoice_' + inv.invoiceNumber.replace(/[^a-zA-Z0-9._-]/g, '_') + '.pdf';
+        const saved = await Filesystem.writeFile({
+          path: fileName,
+          data: btoa(binary),
+          directory: Directory.Cache,
+          encoding: Encoding.BASE64,
+          recursive: true,
+        });
+        await Share.share({
+          title: 'Invoice ' + inv.invoiceNumber + ' PDF',
+          text: 'Royal Hires invoice ' + inv.invoiceNumber,
+          url: saved.uri,
+          dialogTitle: 'Save or share invoice PDF',
+        });
+        setFeedback('PDF prepared: ' + fileName);
+        window.setTimeout(() => setFeedback(''), 4000);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (/cancel(?:led|ed)?/i.test(message)) return;
+        console.error('Invoice PDF export failed', error);
+        alert('The invoice PDF could not be shared. Please try again and choose Save to device from the Android share menu.');
+      }
+      return;
+    }
     const printWindow = window.open('', '_blank');
     if (!printWindow) { alert('Allow pop-ups to export the invoice as a PDF.'); return; }
     const lineRows = inv.lineItems.map((line) => `<tr><td>${htmlEscape(line.date)}</td><td>${htmlEscape(line.employeeName)} (${line.employeeGender === 'male' ? 'M' : 'F'})</td><td>${htmlEscape(line.shift)}</td><td class="num">${line.billableDays}</td><td class="num">${line.snapshotBillingRate.toLocaleString('en-LK')}</td><td class="num">${line.dayBillingTotal.toLocaleString('en-LK')}</td><td class="num">${line.approvedOtHours}</td><td class="num">${line.otBillingTotal.toLocaleString('en-LK')}</td><td class="num">${line.lineTotal.toLocaleString('en-LK')}</td></tr>`).join('');
@@ -228,7 +350,12 @@ export const InvoicesView: React.FC = () => {
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url);
       }
       setFeedback(`Millennium Teas summary exported: ${fileName}`);
-    } catch (error) { console.error('Millennium summary export failed', error); alert('Could not export the Millennium Teas summary CSV.'); }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/cancel(?:led|ed)?/i.test(message)) return;
+      console.error('Millennium summary export failed', error);
+      alert('The Millennium Teas summary CSV could not be shared. Please try again and choose Save to device from the Android share menu.');
+    }
   };
 
   return (
