@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { getSupabaseClient } from '../services/authService';
 import { Employee, WageArrangement, EmployeePayment } from '../types';
 import {
   Users,
@@ -64,6 +65,10 @@ export const EmployeesView: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [portalPinEmployee, setPortalPinEmployee] = useState<Employee | null>(null);
+  const [portalPin, setPortalPin] = useState('');
+  const [portalPinError, setPortalPinError] = useState('');
+  const [portalPinSaving, setPortalPinSaving] = useState(false);
 
   const getFactoryWage = (factoryId: string, workerGender: 'male' | 'female') => {
     const factory = factories.find((item) => item.id === factoryId);
@@ -194,6 +199,39 @@ export const EmployeesView: React.FC = () => {
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
       setErrorMsg(err.message);
+    }
+  };
+
+  const openPortalPinModal = (employee: Employee) => {
+    setPortalPinEmployee(employee);
+    const digits = new Uint32Array(1);
+    crypto.getRandomValues(digits);
+    setPortalPin(String(100000 + (digits[0] % 900000)));
+    setPortalPinError('');
+  };
+
+  const handleSetPortalPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!portalPinEmployee || currentUser.role !== 'admin') return;
+    if (!/^\\d{6,10}$/.test(portalPin)) {
+      setPortalPinError('PIN must contain 6–10 digits.');
+      return;
+    }
+    setPortalPinSaving(true);
+    setPortalPinError('');
+    try {
+      const { data, error } = await getSupabaseClient().functions.invoke('worker-portal', {
+        body: { action: 'admin-set-pin', memberId: portalPinEmployee.id, pin: portalPin },
+      });
+      if (error) throw new Error('Unable to reach the portal service. Check the portal migration and function deployment.');
+      if (!data?.ok) throw new Error(data?.error || 'PIN could not be saved.');
+      setSuccessMsg('Portal PIN set for ' + portalPinEmployee.fullName + '. Share the PIN privately; it cannot be retrieved later.');
+      setPortalPinEmployee(null);
+      setTimeout(() => setSuccessMsg(''), 8000);
+    } catch (err: any) {
+      setPortalPinError(err?.message || 'Could not set worker PIN.');
+    } finally {
+      setPortalPinSaving(false);
     }
   };
 
@@ -403,6 +441,14 @@ export const EmployeesView: React.FC = () => {
                   >
                     + Record Advance
                   </button>
+                  {currentUser.role === 'admin' && (
+                    <button
+                      onClick={() => openPortalPinModal(emp)}
+                      className="px-2.5 py-1 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded border border-emerald-200 transition cursor-pointer"
+                    >
+                      Set Portal PIN
+                    </button>
+                  )}
                   <button
                     onClick={() => printIdCard(emp, fac?.name || 'Royal Hires')}
                     className="px-2.5 py-1 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 rounded border border-amber-200 transition cursor-pointer flex items-center gap-1"
@@ -421,6 +467,38 @@ export const EmployeesView: React.FC = () => {
           );
         })}
       </div>
+
+      {portalPinEmployee && currentUser.role === 'admin' && (
+        <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div>
+              <h3 className="font-bold text-lg text-slate-900">Worker Portal PIN</h3>
+              <p className="text-sm text-slate-600 mt-1">Issue a private PIN for {portalPinEmployee.fullName} ({portalPinEmployee.id}). The worker can use it to view only their own approved salary slips and meal bill.</p>
+            </div>
+            <form onSubmit={handleSetPortalPin} className="space-y-3">
+              <label className="block text-sm font-semibold text-slate-700">6-digit temporary PIN</label>
+              <input
+                type="password"
+                inputMode="numeric"
+                autoComplete="new-password"
+                pattern="[0-9]{6,10}"
+                minLength={6}
+                maxLength={10}
+                required
+                value={portalPin}
+                onChange={(e) => setPortalPin(e.target.value.replace(/\\D/g, '').slice(0, 10))}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-lg tracking-[0.25em]"
+              />
+              <p className="text-xs text-slate-500">A random 6-digit PIN is generated. You may change it before saving. The PIN is stored as a salted hash and cannot be recovered later.</p>
+              {portalPinError && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">{portalPinError}</div>}
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => { setPortalPinEmployee(null); setPortalPin(''); setPortalPinError(''); }} className="px-4 py-2 border border-slate-300 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" disabled={portalPinSaving} className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50">{portalPinSaving ? 'Saving…' : 'Set PIN'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Helper Registration / Edit Modal */}
       {isModalOpen && (
