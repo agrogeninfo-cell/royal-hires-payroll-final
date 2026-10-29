@@ -57,7 +57,7 @@ export const EmployeesView: React.FC = () => {
   const [status, setStatus] = useState<Employee['status']>('active');
   const [currentFactoryId, setCurrentFactoryId] = useState('');
   const [wageArrangement, setWageArrangement] = useState<WageArrangement>('daily');
-  const [wageRate, setWageRate] = useState<number>(2200);
+  const [wageRate, setWageRate] = useState<number>(0);
   const [eligibleForMeals, setEligibleForMeals] = useState(true);
   const [eligibleForBoarding, setEligibleForBoarding] = useState(false);
   const [boardingLocationId, setBoardingLocationId] = useState('');
@@ -102,7 +102,7 @@ export const EmployeesView: React.FC = () => {
     setStatus('active');
     setCurrentFactoryId(factories[0]?.id || '');
     setWageArrangement('daily');
-    setWageRate(getFactoryWage(factories[0]?.id || '', 'male') || 2200);
+    setWageRate(getFactoryWage(factories[0]?.id || '', 'male'));
     setEligibleForMeals(true);
     setEligibleForBoarding(false);
     setBoardingLocationId(boardingLocations[0]?.id || '');
@@ -190,7 +190,7 @@ export const EmployeesView: React.FC = () => {
 
       await saveEmployee(employeeToSave);
       setIsModalOpen(false);
-      setSuccessMsg(`Saved helper ${employeeToSave.fullName} successfully.`);
+      setSuccessMsg(`Saved worker ${employeeToSave.fullName} successfully.`);
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
       setErrorMsg(err.message);
@@ -499,7 +499,7 @@ export const EmployeesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Gender *</label>
                   <select
                     value={gender}
-                    onChange={(e) => { const nextGender = e.target.value as 'male' | 'female'; setGender(nextGender); if (!editingEmployee) setWageRate(getFactoryWage(currentFactoryId, nextGender) || wageRate); }}
+                    onChange={(e) => { const nextGender = e.target.value as 'male' | 'female'; setGender(nextGender); if (!editingEmployee) setWageRate(getFactoryWage(currentFactoryId, nextGender)); }}
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
                   >
                     <option value="male">Male Helper</option>
@@ -550,7 +550,7 @@ export const EmployeesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Assigned Factory *</label>
                   <select
                     value={currentFactoryId}
-                    onChange={(e) => { const nextFactoryId = e.target.value; setCurrentFactoryId(nextFactoryId); if (!editingEmployee) setWageRate(getFactoryWage(nextFactoryId, gender) || wageRate); }}
+                    onChange={(e) => { const nextFactoryId = e.target.value; setCurrentFactoryId(nextFactoryId); if (!editingEmployee) setWageRate(getFactoryWage(nextFactoryId, gender)); }}
                     className="w-full bg-white border border-slate-300 rounded-lg p-2"
                   >
                     {factories.map((f) => (
