@@ -69,6 +69,15 @@ export default defineConfig(() => {
         },
       }),
     ],
+    build: {
+      // Build the standalone worker self-service page alongside the admin SPA.
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+          workerPortal: path.resolve(__dirname, 'worker-portal.html'),
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
