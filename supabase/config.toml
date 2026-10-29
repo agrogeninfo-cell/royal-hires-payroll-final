@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.royal-pay-login-v2]
 verify_jwt = false
+
+[functions.worker-portal]
+verify_jwt = false
