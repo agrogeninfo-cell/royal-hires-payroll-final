@@ -909,6 +909,25 @@ export class SystemTestSuite {
       results.push({ id: 24, title: 'Non-destructive factory initialization', category: 'Security & Sync', passed: false, message: err.message });
     }
 
+    // Test 25: Late deductions are calculated at LKR 150 per recorded hour.
+    try {
+      const employee: Employee = {
+        id: 'EMP-LATE-TEST', fullName: 'Late Deduction Test', nic: 'LATE-TEST', phone: '', address: '',
+        gender: 'male', startDate: '2026-01-01', status: 'active', designation: 'Helper',
+        currentFactoryId: factoryA.id, wageArrangement: 'daily', wageRate: 2000,
+        eligibleForMeals: false, eligibleForBoarding: false, createdAt: '', updatedAt: '',
+      };
+      const attendance: AttendanceRecord[] = [
+        { id: 'late-1', employeeId: employee.id, employeeName: employee.fullName, employeeGender: 'male', factoryId: factoryA.id, factoryName: factoryA.name, date: '2026-01-10', shift: 'Day', status: 'present', payableUnits: 1, otHours: 0, otMinutes: 0, totalOtHours: 0, lateHours: 0.5, hadBreakfast: false, hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester', supervisorName: 'tester', submissionStatus: 'approved', billable: true, syncStatus: 'synced', createdAt: '', updatedAt: '' },
+        { id: 'late-2', employeeId: employee.id, employeeName: employee.fullName, employeeGender: 'male', factoryId: factoryA.id, factoryName: factoryA.name, date: '2026-01-11', shift: 'Day', status: 'present', payableUnits: 0.5, otHours: 0, otMinutes: 0, totalOtHours: 0, lateHours: 0.1, hadBreakfast: false, hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester', supervisorName: 'tester', submissionStatus: 'approved', billable: true, syncStatus: 'synced', createdAt: '', updatedAt: '' },
+      ];
+      const item = PayrollService.calculateEmployeePayrollItem(employee, factoryA, attendance, null, [], 'RUN-LATE-TEST');
+      const passed = item.lateHours === 0.6 && item.lateDeduction === 90 && item.totalDeductions === 90 && item.netPayable === 2910;
+      results.push({ id: 25, title: 'Late deduction is applied at LKR 150 per hour', category: 'Payroll', passed, message: passed ? 'Verified: 0.6 late hours × LKR 150 = LKR 90 deduction; net payable LKR 2,910.' : `Unexpected result: lateHours=${item.lateHours}, lateDeduction=${item.lateDeduction}, deductions=${item.totalDeductions}, net=${item.netPayable}` });
+    } catch (err: any) {
+      results.push({ id: 25, title: 'Late deduction calculation', category: 'Payroll', passed: false, message: err.message });
+    }
+
     return results;
   }
 }
