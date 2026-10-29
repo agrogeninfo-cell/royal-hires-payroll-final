@@ -10,7 +10,13 @@
 - Dev schema has the new company/profile/factory/app_records foundation and 151 app_records; these are Dev records and must not be copied to Production without reconciliation.
 - Dev also has worker portal credentials/sessions tables, but Production does not.
 - Production Security Advisor reports RLS disabled on `employees`, `attendance`, and `settlements`, with permissive policies; `meals` has RLS enabled but no policies.
-- GitHub PR #40 is still a draft and explicitly says it has not been deployed to Production.
+- GitHub PR #40 remains a draft and explicitly says it has not been deployed to Production.
+
+## Validation results — 2026-10-29
+- Worker Portal Validation workflow for commit `177a119a8ec03307789d08a19a215e600e90f67d`: **PASS**. TypeScript validation, payroll/billing unit tests, and build with non-production placeholders all passed.
+- Android APK workflow for the same commit: **PASS**. Production configuration guard, TypeScript validation, payroll/billing/invoicing unit checks, production web build, Capacitor sync, callback/branding steps, debug APK build, and artifact upload all passed.
+- APK artifact: `royal-hires-payroll-production-debug-apk`, approximately 7.1 MB. Artifact ID `12934449129`, SHA-256 `2d073cc89cee2e1aea04aec244de0de2076a4d601ae727dd5cc0fe22fcb54af5`, expires 2026-11-12.
+- These are CI/build checks only. They do not prove production login, live cloud sync, worker isolation, or physical-device workflows.
 
 ## Blockers
 1. Production company ID and authorised Admin Auth user have not been verified.
