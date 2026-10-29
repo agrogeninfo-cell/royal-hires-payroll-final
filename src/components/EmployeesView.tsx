@@ -503,7 +503,7 @@ export const EmployeesView: React.FC = () => {
                 maxLength={10}
                 required
                 value={portalPin}
-                onChange={(e) => setPortalPin(e.target.value.replace(/\\D/g, '').slice(0, 10))}
+                onChange={(e) => setPortalPin(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 className="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-lg tracking-[0.25em]"
               />
               <p className="text-xs text-slate-500">A random 6-digit PIN is generated. You may change it before saving. The PIN is stored as a salted hash and cannot be recovered later.</p>
