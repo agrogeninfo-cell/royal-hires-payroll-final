@@ -14,8 +14,9 @@
 
 ## Validation results — 2026-10-29
 - Worker Portal Validation workflow for commit `177a119a8ec03307789d08a19a215e600e90f67d`: **PASS**. TypeScript validation, payroll/billing unit tests, and build with non-production placeholders all passed.
-- Android APK workflow for the same commit: **PASS**. Production configuration guard, TypeScript validation, payroll/billing/invoicing unit checks, production web build, Capacitor sync, callback/branding steps, debug APK build, and artifact upload all passed.
-- APK artifact: `royal-hires-payroll-production-debug-apk`, approximately 7.1 MB. Artifact ID `12934449129`, SHA-256 `2d073cc89cee2e1aea04aec244de0de2076a4d601ae727dd5cc0fe22fcb54af5`, expires 2026-11-12.
+- Latest Worker Portal Validation for commit `c6328d5c9206b12c393cb4d9c0c6fa33819f0a4f`: **PASS** (run `40969660636`).
+- Latest Android APK workflow for commit `c6328d5c9206b12c393cb4d9c0c6fa33819f0a4f`: **PASS** (run `40969660600`). Production configuration guard, TypeScript validation, payroll/billing/invoicing unit checks, production web build, Capacitor sync, callback/branding steps, debug APK build, and artifact upload all passed.
+- Latest APK artifact: `royal-hires-payroll-production-debug-apk`, artifact ID `12939342600`, created 2026-10-29, expires 2026-11-12. Downloaded archive size ~6.8 MB; archive digest reported by GitHub: `sha256:60f5cb741dc40cdda1b562e12d8777816c67aaffd3c3680184c0e11ed46e96e3`. The extracted APK at `/mnt/data/Royal-Hires-Payroll-debug.apk` was identified as an Android package; its SHA-256 is `37075fdd46f6fc302c1d5f4d147bddecb41e75d98863aeb9646d01fb513751b4`.
 - These are CI/build checks only. They do not prove production login, live cloud sync, worker isolation, or physical-device workflows.
 
 ## Blockers
