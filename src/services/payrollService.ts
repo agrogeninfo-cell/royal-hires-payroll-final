@@ -1,3 +1,5 @@
+const LATE_DEDUCTION_RATE_PER_HOUR = 150;
+
 import {
   Employee,
   Factory,
@@ -54,7 +56,11 @@ export class PayrollService {
 
     const grossEarnings = normalWage + otWage;
 
-    // 3. Meal Deductions
+    // 3. Late deductions: Rs. 150 per recorded late hour, rounded to whole rupees.
+    const lateHours = attendanceList.reduce((sum, att) => sum + Math.max(0, att.lateHours || 0), 0);
+    const lateDeduction = Math.round(lateHours * LATE_DEDUCTION_RATE_PER_HOUR);
+
+    // 4. Meal Deductions
     // Applied ONLY if eligible for meals AND meal was actually recorded
     let breakfastCount = 0;
     let lunchCount = 0;
@@ -73,7 +79,7 @@ export class PayrollService {
     const dinnerCost = dinnerCount * (factory.dinnerRate || 0);
     const totalMealDeductions = breakfastCost + lunchCost + dinnerCost;
 
-    // 4. Boarding Deductions
+    // 5. Boarding Deductions
     // Applied ONLY if eligible for boarding AND boarding utilized
     let boardingDays = 0;
     let boardingCost = 0;
@@ -85,11 +91,11 @@ export class PayrollService {
     }
     const totalBoardingDeductions = boardingCost;
 
-    // 5. Salary Advances deduction
+    // 6. Salary Advances deduction
     const advancesDeducted = advances.reduce((sum, adv) => sum + (adv.amount || 0), 0);
 
     const otherDeductions = 0;
-    const totalDeductions = totalMealDeductions + totalBoardingDeductions + advancesDeducted + otherDeductions;
+    const totalDeductions = totalMealDeductions + lateDeduction + totalBoardingDeductions + advancesDeducted + otherDeductions;
 
     const netPayable = Math.max(0, grossEarnings - totalDeductions);
 
@@ -116,6 +122,8 @@ export class PayrollService {
       dinnerCount,
       dinnerCost,
       totalMealDeductions,
+      lateDeduction,
+      lateHours,
       boardingDays,
       boardingCost,
       totalBoardingDeductions,
