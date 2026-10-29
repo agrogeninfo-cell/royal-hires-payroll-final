@@ -32,9 +32,9 @@ export const FactoriesView: React.FC = () => {
   const [factoryOvertimeRateHourly, setFactoryOvertimeRateHourly] = useState<number>(500);
 
   // Employee wage rates paid to workers; separate from customer billing rates.
-  const [wageSameRate, setWageSameRate] = useState<number>(2200);
-  const [wageMaleRate, setWageMaleRate] = useState<number>(2500);
-  const [wageFemaleRate, setWageFemaleRate] = useState<number>(2100);
+  const [wageSameRate, setWageSameRate] = useState<number>(0);
+  const [wageMaleRate, setWageMaleRate] = useState<number>(0);
+  const [wageFemaleRate, setWageFemaleRate] = useState<number>(0);
 
   // Billing Rate Form State (CRITICAL)
   const [billingMethod, setBillingMethod] = useState<BillingRateMethod>('SAME_RATE_FOR_ALL');
@@ -71,9 +71,9 @@ export const FactoriesView: React.FC = () => {
     setOvertimeEnabled(true);
     setEmployeeOvertimeRateHourly(350);
     setFactoryOvertimeRateHourly(500);
-    setWageSameRate(2200);
-    setWageMaleRate(2500);
-    setWageFemaleRate(2100);
+    setWageSameRate(0);
+    setWageMaleRate(0);
+    setWageFemaleRate(0);
     setBillingMethod('SAME_RATE_FOR_ALL');
     setSameRate(3000);
     setMaleRate(3200);
@@ -104,9 +104,9 @@ export const FactoriesView: React.FC = () => {
     setOvertimeEnabled(fac.overtimeEnabled);
     setEmployeeOvertimeRateHourly(fac.employeeOvertimeRateHourly);
     setFactoryOvertimeRateHourly(fac.factoryOvertimeRateHourly);
-    setWageSameRate(fac.wageSameRate ?? 2200);
-    setWageMaleRate(fac.wageMaleRate ?? 2500);
-    setWageFemaleRate(fac.wageFemaleRate ?? 2100);
+    setWageSameRate(fac.wageSameRate ?? 0);
+    setWageMaleRate(fac.wageMaleRate ?? 0);
+    setWageFemaleRate(fac.wageFemaleRate ?? 0);
     setBillingMethod(fac.billingMethod);
     setSameRate(fac.sameRate ?? 3000);
     setMaleRate(fac.maleRate ?? 3200);
@@ -134,6 +134,11 @@ export const FactoriesView: React.FC = () => {
     }
     if (!rateReviewConfirmed) {
       setErrorMsg('Confirm that rates, shifts, overtime, meal charges and effective dates match the approved factory rate sheet before saving to cloud.');
+      return;
+    }
+
+    if (wageSameRate <= 0 || wageMaleRate <= 0 || wageFemaleRate <= 0) {
+      setErrorMsg('Enter the approved worker wage rate(s) for this factory. Do not save placeholder wage rates.');
       return;
     }
 
