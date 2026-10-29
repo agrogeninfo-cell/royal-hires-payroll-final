@@ -7,6 +7,7 @@
 - Production legacy schema: employees (20), attendance (6), settlements (0), meals (0).
 - Production has no `companies`, `profiles`, `factories`, `user_factory_assignments`, or `app_records` foundation tables.
 - Production has a legacy `royal-pay-login-v2` function that uses a different auth flow from the Dev version.
+- Source review of `src/App.tsx` and `src/context/AppContext.tsx` confirms the operational app uses authenticated access profiles, company-scoped `app_records`/`factories` cloud sync and realtime subscriptions; it also loads operational data from local IndexedDB. A database-only RLS toggle cannot make this client compatible with the legacy Production schema.
 - Dev schema has the new company/profile/factory/app_records foundation and 151 app_records; these are Dev records and must not be copied to Production without reconciliation.
 - Dev also has worker portal credentials/sessions tables, but Production does not.
 - Production Security Advisor reports RLS disabled on `employees`, `attendance`, and `settlements`, with permissive policies; `meals` has RLS enabled but no policies.
@@ -23,7 +24,7 @@
 1. Production company ID and authorised Admin Auth user have not been verified.
 2. Production factory IDs and employee/attendance payload mappings have not been reconciled.
 3. No verified migration has been tested against a Production-equivalent staging copy.
-4. Replacement least-privilege RLS policies have not been proven against the existing client and the new app.
+4. Replacement least-privilege RLS policies have not been proven against the existing client and the new app. Production currently has permissive `Allow all for anon` policies on `employees`, `attendance`, and `settlements` (`qual=true`, `with_check=true`), so these must be removed/replaced as part of a tested access migration rather than simply toggling RLS.
 5. Updated Edge Function secrets and all login/recovery flows have not been validated for Production.
 6. Worker portal has no Production schema or worker PIN setup.
 
