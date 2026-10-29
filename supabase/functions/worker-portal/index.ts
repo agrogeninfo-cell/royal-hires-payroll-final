@@ -66,16 +66,28 @@ Deno.serve(async (req: Request) => {
     if (!validMemberId(memberId) || !validPin(pin)) return reply({ error: 'Use a valid Member ID and a 6–10 digit PIN.' }, 400, origin);
     const { data: employee } = await db.from('app_records').select('record_id,payload')
       .eq('company_id', profile.company_id).eq('collection_name', 'employees').eq('record_id', memberId).maybeSingle();
-    if (!employee || employee.payload?.id !== memberId) return reply({ error: 'Worker record not found in your company. Sync and verify the Member ID first.' }, 404, origin);
+    if (!employee || String(employee.payload?.id || employee.record_id).toUpperCase() !== memberId) {
+      return reply({ error: 'Worker record not found in your company. Sync and verify the Member ID first.' }, 404, origin);
+    }
     const salt = b64(randomBytes(16));
     const hash = await pinHash(pin, salt);
-    const { error: upsertError } = await db.from('worker_portal_credentials').upsert({
+    const { data: savedCredential, error: upsertError } = await db.from('worker_portal_credentials').upsert({
       company_id: profile.company_id, member_id: memberId, employee_record_id: employee.record_id,
       pin_salt: salt, pin_hash: hash, is_active: true, failed_attempts: 0, locked_until: null,
       pin_changed_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: authData.user.id,
-    }, { onConflict: 'company_id,member_id' });
-    if (upsertError) return reply({ error: 'Could not save the worker PIN. Ensure the portal migration has been applied.' }, 500, origin);
-    return reply({ ok: true, memberId, message: 'PIN set. Share it privately with the worker; it cannot be retrieved later.' }, 200, origin);
+    }, { onConflict: 'company_id,member_id' }).select('id').single();
+    if (upsertError || !savedCredential?.id) {
+      return reply({ error: 'Could not save the worker PIN. Ensure the portal migration has been applied.' }, 500, origin);
+    }
+    // A PIN reset invalidates every previous session for this credential immediately.
+    // If revocation fails, fail the request rather than claiming the reset is complete.
+    const { error: revokeError } = await db.from('worker_portal_sessions')
+      .update({ revoked_at: new Date().toISOString() })
+      .eq('credential_id', savedCredential.id).is('revoked_at', null);
+    if (revokeError) {
+      return reply({ error: 'PIN was updated, but session revocation could not be confirmed. Contact support before the worker signs in again.' }, 503, origin);
+    }
+    return reply({ ok: true, memberId, message: 'PIN set. Previous sessions were revoked. Share the PIN privately; it cannot be retrieved later.' }, 200, origin);
   }
 
   if (action === 'login') {
@@ -95,9 +107,8 @@ Deno.serve(async (req: Request) => {
     }
     const candidate = await pinHash(pin, credential.pin_salt);
     if (candidate !== credential.pin_hash) {
-      // Use a database-side atomic update so concurrent bad PIN attempts cannot
-      // overwrite one another and bypass the five-attempt lockout threshold.
-      await db.rpc('record_worker_portal_failed_attempt', { p_credential_id: credential.id });
+      const { error: lockoutError } = await db.rpc('record_worker_portal_failed_attempt', { p_credential_id: credential.id });
+      if (lockoutError) return reply({ error: 'Sign-in is temporarily unavailable. Please contact the office.' }, 503, origin);
       await new Promise(resolve => setTimeout(resolve, 350));
       return reply({ error: 'Invalid Member ID or PIN.' }, 401, origin);
     }
@@ -108,7 +119,12 @@ Deno.serve(async (req: Request) => {
       credential_id: credential.id, token_hash: tokenHash, expires_at: expiresAt,
     });
     if (sessionError) return reply({ error: 'Could not start a secure session. Please try again.' }, 500, origin);
-    await db.from('worker_portal_credentials').update({ failed_attempts: 0, locked_until: null }).eq('id', credential.id);
+    const { error: resetError } = await db.from('worker_portal_credentials')
+      .update({ failed_attempts: 0, locked_until: null }).eq('id', credential.id);
+    if (resetError) {
+      await db.from('worker_portal_sessions').update({ revoked_at: new Date().toISOString() }).eq('token_hash', tokenHash);
+      return reply({ error: 'Could not complete sign-in securely. Please try again.' }, 503, origin);
+    }
     return reply({ token, expiresAt }, 200, origin);
   }
 
@@ -122,7 +138,9 @@ Deno.serve(async (req: Request) => {
   if (!session || !credential || !credential.is_active) return reply({ error: 'Session expired. Please sign in again.' }, 401, origin);
 
   if (action === 'logout') {
-    await db.from('worker_portal_sessions').update({ revoked_at: new Date().toISOString() }).eq('id', session.id);
+    const { error: logoutError } = await db.from('worker_portal_sessions')
+      .update({ revoked_at: new Date().toISOString() }).eq('id', session.id);
+    if (logoutError) return reply({ error: 'Could not confirm logout. Close the portal and contact the office.' }, 503, origin);
     return reply({ ok: true }, 200, origin);
   }
   if (action !== 'me') return reply({ error: 'Unsupported action.' }, 400, origin);
