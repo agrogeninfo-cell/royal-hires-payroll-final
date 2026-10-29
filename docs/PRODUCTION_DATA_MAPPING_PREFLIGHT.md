@@ -43,6 +43,22 @@ group by status
 order by status;
 ```
 
+## Read-only Production audit results — 2026-10-30
+
+The following read-only SQL checks were run against canonical Production (`royal-hires`). No data was changed.
+
+- Employees: **20 rows**, 20 distinct labour codes, no blank labour codes/names, no invalid/non-positive daily rates, and no negative/null OT rates.
+- Employee factory grouping: `Empire Tea Factory` = 1 employee, `Millennium Estate` = 14 employees, and **5 employees have no factory name**. `factory_id` is null for all 20 employees.
+- Attendance: **6 rows**; no null employee IDs, no orphan employee IDs, and no missing dates. **All 6 rows have a null/blank `factory_id`.**
+- Settlements: 0 rows. Meals: 0 rows.
+
+### Mapping blockers confirmed
+1. Existing `employees.factory_id` values cannot be used to map employees to the new `factories` table because all are null.
+2. Attendance also lacks factory IDs. Factory membership must be reconciled from verified source records; it must not be guessed from employee name or a broad factory label.
+3. Five employee rows have no factory label at all and need owner confirmation before they can be assigned to a factory.
+4. The two labels present (`Empire Tea Factory`, `Millennium Estate`) must be reconciled with the intended approved app factory names (`Empire Teas`, `Millennium Teas`) before any mapping is written. Similar wording is not proof of identity.
+5. Dev RLS policies are scoped to the `authenticated` role and use company/role/factory checks; they are a reference design only and must not be copied blindly onto the legacy Production schema.
+
 ## Required validation before any write
 - Row counts reconcile before and after migration.
 - Every attendance employee ID maps to a known employee.
