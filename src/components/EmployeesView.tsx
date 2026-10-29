@@ -477,7 +477,7 @@ export const EmployeesView: React.FC = () => {
                   type="text"
                   required
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => { setFullName(e.target.value); if (!editingEmployee) setId(generateMemberId(e.target.value, employees)); }}
                   placeholder="e.g. Kasun Bandara"
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
                 />
