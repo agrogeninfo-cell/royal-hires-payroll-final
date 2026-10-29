@@ -23,6 +23,17 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Verify production Supabase configuration
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          test -n "$VITE_SUPABASE_URL" || (echo "::error::Set repository variable VITE_SUPABASE_URL before building a production APK." && exit 1)
+          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || (echo "::error::Set repository variable VITE_SUPABASE_PUBLISHABLE_KEY before building a production APK." && exit 1)
+          case "$VITE_SUPABASE_URL" in
+            https://*.supabase.co) ;;
+            *) echo "::error::VITE_SUPABASE_URL must be the intended Supabase project URL." && exit 1 ;;
+          esac
       - name: TypeScript validation
         run: npm run lint
       - name: Payroll, billing and invoicing unit checks
