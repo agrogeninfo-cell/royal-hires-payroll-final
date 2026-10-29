@@ -50,6 +50,7 @@ The following read-only SQL checks were run against canonical Production (`royal
 - Employees: **20 rows**, 20 distinct labour codes, no blank labour codes/names, no invalid/non-positive daily rates, and no negative/null OT rates.
 - Employee factory grouping: `Empire Tea Factory` = 1 employee, `Millennium Estate` = 14 employees, and **5 employees have no factory name**. `factory_id` is null for all 20 employees.
 - Attendance: **6 rows**; no null employee IDs, no orphan employee IDs, and no missing dates. **All 6 rows have a null/blank `factory_id`.**
+- Wage/rate grouping: 1 `Empire Tea Factory` female row has daily rate Rs. 2,000 and OT rate Rs. 0; 14 `Millennium Estate` male rows have daily rate Rs. 2,500 and OT rate Rs. 180; the 5 rows with no factory/gender have daily rate Rs. 3,000 and OT rate Rs. 225. The last group matches the database column defaults and must be treated as **unverified rates**, not assumed valid payroll values.
 - Settlements: 0 rows. Meals: 0 rows.
 
 ### Mapping blockers confirmed
@@ -57,7 +58,8 @@ The following read-only SQL checks were run against canonical Production (`royal
 2. Attendance also lacks factory IDs. Factory membership must be reconciled from verified source records; it must not be guessed from employee name or a broad factory label.
 3. Five employee rows have no factory label at all and need owner confirmation before they can be assigned to a factory.
 4. The two labels present (`Empire Tea Factory`, `Millennium Estate`) must be reconciled with the intended approved app factory names (`Empire Teas`, `Millennium Teas`) before any mapping is written. Similar wording is not proof of identity.
-5. Dev RLS policies are scoped to the `authenticated` role and use company/role/factory checks; they are a reference design only and must not be copied blindly onto the legacy Production schema.
+5. Five rows without factory/gender have rates Rs. 3,000 / Rs. 225, which match the column defaults; confirm each worker's true factory, gender and wage/OT rates before payroll use.
+6. Dev RLS policies are scoped to the `authenticated` role and use company/role/factory checks; they are a reference design only and must not be copied blindly onto the legacy Production schema.
 
 ## Required validation before any write
 - Row counts reconcile before and after migration.
