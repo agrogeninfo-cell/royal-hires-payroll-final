@@ -36,6 +36,10 @@ export interface Factory {
   employeeOvertimeRateHourly: number; // in LKR paid to worker
   factoryOvertimeRateHourly: number; // in LKR billed to factory
   billingMethod: BillingRateMethod;
+  /** Employee wage rates are separate from factory billing rates. */
+  wageSameRate?: number;
+  wageMaleRate?: number;
+  wageFemaleRate?: number;
   sameRate?: number; // Standard daily billing rate for all Helpers in LKR
   maleRate?: number; // Male Helper daily rate in LKR
   femaleRate?: number; // Female Helper daily rate in LKR

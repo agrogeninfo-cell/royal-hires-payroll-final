@@ -31,6 +31,11 @@ export const FactoriesView: React.FC = () => {
   const [employeeOvertimeRateHourly, setEmployeeOvertimeRateHourly] = useState<number>(350);
   const [factoryOvertimeRateHourly, setFactoryOvertimeRateHourly] = useState<number>(500);
 
+  // Employee wage rates paid to workers; separate from customer billing rates.
+  const [wageSameRate, setWageSameRate] = useState<number>(2200);
+  const [wageMaleRate, setWageMaleRate] = useState<number>(2500);
+  const [wageFemaleRate, setWageFemaleRate] = useState<number>(2100);
+
   // Billing Rate Form State (CRITICAL)
   const [billingMethod, setBillingMethod] = useState<BillingRateMethod>('SAME_RATE_FOR_ALL');
   const [sameRate, setSameRate] = useState<number>(3000);
@@ -66,6 +71,9 @@ export const FactoriesView: React.FC = () => {
     setOvertimeEnabled(true);
     setEmployeeOvertimeRateHourly(350);
     setFactoryOvertimeRateHourly(500);
+    setWageSameRate(2200);
+    setWageMaleRate(2500);
+    setWageFemaleRate(2100);
     setBillingMethod('SAME_RATE_FOR_ALL');
     setSameRate(3000);
     setMaleRate(3200);
@@ -96,6 +104,9 @@ export const FactoriesView: React.FC = () => {
     setOvertimeEnabled(fac.overtimeEnabled);
     setEmployeeOvertimeRateHourly(fac.employeeOvertimeRateHourly);
     setFactoryOvertimeRateHourly(fac.factoryOvertimeRateHourly);
+    setWageSameRate(fac.wageSameRate ?? 2200);
+    setWageMaleRate(fac.wageMaleRate ?? 2500);
+    setWageFemaleRate(fac.wageFemaleRate ?? 2100);
     setBillingMethod(fac.billingMethod);
     setSameRate(fac.sameRate ?? 3000);
     setMaleRate(fac.maleRate ?? 3200);
@@ -165,6 +176,9 @@ export const FactoriesView: React.FC = () => {
         overtimeEnabled,
         employeeOvertimeRateHourly: Number(employeeOvertimeRateHourly),
         factoryOvertimeRateHourly: Number(factoryOvertimeRateHourly),
+        wageSameRate: Number(wageSameRate),
+        wageMaleRate: Number(wageMaleRate),
+        wageFemaleRate: Number(wageFemaleRate),
         billingMethod,
         sameRate: billingMethod === 'SAME_RATE_FOR_ALL' ? Number(sameRate) : undefined,
         maleRate: billingMethod === 'SEPARATE_MALE_FEMALE_RATES' ? Number(maleRate) : undefined,
@@ -400,6 +414,16 @@ export const FactoriesView: React.FC = () => {
                     placeholder="+94 11 291 5566"
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
                   />
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
+                <h4 className="font-bold text-sm text-slate-900">Worker Wage Rates (Paid to Labour)</h4>
+                <p className="text-[11px] text-slate-600">Separate from factory invoice rates. These rates auto-fill when registering a worker.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div><label className="block font-semibold text-slate-700 mb-1">Same wage (LKR/day)</label><input type="number" min="1" required value={wageSameRate} onChange={(e) => setWageSameRate(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Male wage (LKR/day)</label><input type="number" min="1" required value={wageMaleRate} onChange={(e) => setWageMaleRate(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Female wage (LKR/day)</label><input type="number" min="1" required value={wageFemaleRate} onChange={(e) => setWageFemaleRate(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                 </div>
               </div>
 

@@ -13,6 +13,7 @@ import {
   Filter,
   CheckCircle2,
   ShieldAlert,
+  CreditCard,
 } from 'lucide-react';
 
 export const EmployeesView: React.FC = () => {
@@ -64,9 +65,33 @@ export const EmployeesView: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  const getFactoryWage = (factoryId: string, workerGender: 'male' | 'female') => {
+    const factory = factories.find((item) => item.id === factoryId);
+    if (!factory) return 0;
+    const specificRate = workerGender === 'male' ? factory.wageMaleRate : factory.wageFemaleRate;
+    return Number(specificRate ?? factory.wageSameRate ?? 0);
+  };
+
+  const generateMemberId = (name: string, existing: Employee[]) => {
+    const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('') || 'XX';
+    const used = new Set(existing.map((employee) => employee.id.toUpperCase()));
+    let sequence = 200;
+    let candidate = 'RH' + initials + sequence;
+    while (used.has(candidate)) { sequence += 1; candidate = 'RH' + initials + sequence; }
+    return candidate;
+  };
+
+  const printIdCard = (employee: Employee, factoryName: string) => {
+    const popup = window.open('', '_blank', 'width=900,height=600');
+    if (!popup) { setErrorMsg('Please allow pop-ups to preview/print the ID card.'); return; }
+    const escapeHtml = (value: string) => value.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch] || ch));
+    popup.document.write('<!doctype html><html><head><title>Royal Hires ID Card</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#f1f5f9;font-family:Arial,sans-serif}.card{width:856px;height:540px;max-width:100%;margin:auto;border-radius:24px;overflow:hidden;background:#062d27;color:#fff;border:5px solid #d7ad63}.head{padding:28px 34px;background:#0a3d34;border-bottom:3px solid #d7ad63}.brand{font-size:30px;font-weight:800;letter-spacing:1px}.sub{color:#e8d4a6;font-size:13px;letter-spacing:2px;margin-top:5px}.body{padding:30px 36px}.id{font-size:34px;font-weight:900;color:#d7ad63;letter-spacing:2px}.name{font-size:32px;font-weight:800;margin:16px 0 8px}.role{font-size:17px;color:#e8d4a6}.details{font-size:16px;line-height:1.8;margin-top:20px}.factory{padding:16px 36px;background:#d7ad63;color:#062d27;font-weight:700}@media print{body{padding:0;background:white}.card{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><div class="card"><div class="head"><div class="brand">ROYAL HIRES PRIVATE LIMITED</div><div class="sub">EMPLOYEE IDENTIFICATION CARD</div></div><div class="body"><div class="id">' + escapeHtml(employee.id) + '</div><div class="name">' + escapeHtml(employee.fullName) + '</div><div class="role">FACTORY WORKER</div><div class="details">Phone: ' + escapeHtml(employee.phone || '-') + '<br>NIC: ' + escapeHtml(employee.nic || '-') + '<br>Valid while employment is active</div></div><div class="factory">' + escapeHtml(factoryName) + ' · MALABE, SRI LANKA</div></div><script>window.onload=function(){window.print()}</script></body></html>');
+    popup.document.close();
+  };
+
   const openCreateModal = () => {
     setEditingEmployee(null);
-    setId(`EMP-${100 + employees.length + 1}`);
+    setId(generateMemberId('', employees));
     setFullName('');
     setNic('');
     setPhone('+94 7');
@@ -77,7 +102,7 @@ export const EmployeesView: React.FC = () => {
     setStatus('active');
     setCurrentFactoryId(factories[0]?.id || '');
     setWageArrangement('daily');
-    setWageRate(2200);
+    setWageRate(getFactoryWage(factories[0]?.id || '', 'male') || 2200);
     setEligibleForMeals(true);
     setEligibleForBoarding(false);
     setBoardingLocationId(boardingLocations[0]?.id || '');
@@ -121,7 +146,16 @@ export const EmployeesView: React.FC = () => {
     setErrorMsg('');
 
     if (!fullName.trim() || !nic.trim() || !id.trim()) {
-      setErrorMsg('Full name, NIC, and Employee ID are required.');
+      setErrorMsg('Full name, NIC, and Member ID are required.');
+      return;
+    }
+
+    if (employees.some((employee) => employee.id.toUpperCase() === id.trim().toUpperCase() && employee.id !== editingEmployee?.id)) {
+      setErrorMsg('This Member ID already exists. Please use a unique ID.');
+      return;
+    }
+    if (employees.some((employee) => employee.nic.trim().toUpperCase() === nic.trim().toUpperCase() && employee.id !== editingEmployee?.id)) {
+      setErrorMsg('This NIC is already registered to another worker.');
       return;
     }
 
@@ -331,7 +365,7 @@ export const EmployeesView: React.FC = () => {
                 {/* Wage and Benefits Specs */}
                 <div className="mt-2.5 p-2.5 bg-emerald-50/50 rounded-lg border border-emerald-100 text-xs space-y-1">
                   <div className="flex justify-between items-center text-emerald-950 font-bold">
-                    <span>Agreed Wage:</span>
+                    <span>Worker Wage:</span>
                     <span>
                       LKR {emp.wageRate.toLocaleString()} /{' '}
                       <span className="capitalize font-normal text-slate-600">{emp.wageArrangement}</span>
@@ -368,6 +402,12 @@ export const EmployeesView: React.FC = () => {
                     className="px-2.5 py-1 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 rounded border border-amber-200 transition cursor-pointer"
                   >
                     + Record Advance
+                  </button>
+                  <button
+                    onClick={() => printIdCard(emp, fac?.name || 'Royal Hires')}
+                    className="px-2.5 py-1 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 rounded border border-amber-200 transition cursor-pointer flex items-center gap-1"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" /> ID Card
                   </button>
                   <button
                     onClick={() => openEditModal(emp)}
@@ -415,7 +455,7 @@ export const EmployeesView: React.FC = () => {
                     required
                     value={id}
                     onChange={(e) => setId(e.target.value)}
-                    placeholder="e.g. EMP-101"
+                    placeholder="e.g. RHTD200"
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold uppercase"
                   />
                 </div>
@@ -437,7 +477,7 @@ export const EmployeesView: React.FC = () => {
                   type="text"
                   required
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => { setFullName(e.target.value); if (!editingEmployee) setId(generateMemberId(e.target.value, employees)); }}
                   placeholder="e.g. Kasun Bandara"
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
                 />
@@ -459,7 +499,7 @@ export const EmployeesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Gender *</label>
                   <select
                     value={gender}
-                    onChange={(e) => setGender(e.target.value as any)}
+                    onChange={(e) => { const nextGender = e.target.value as 'male' | 'female'; setGender(nextGender); if (!editingEmployee) setWageRate(getFactoryWage(currentFactoryId, nextGender) || wageRate); }}
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
                   >
                     <option value="male">Male Helper</option>
@@ -510,7 +550,7 @@ export const EmployeesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Assigned Factory *</label>
                   <select
                     value={currentFactoryId}
-                    onChange={(e) => setCurrentFactoryId(e.target.value)}
+                    onChange={(e) => { const nextFactoryId = e.target.value; setCurrentFactoryId(nextFactoryId); if (!editingEmployee) setWageRate(getFactoryWage(nextFactoryId, gender) || wageRate); }}
                     className="w-full bg-white border border-slate-300 rounded-lg p-2"
                   >
                     {factories.map((f) => (
@@ -536,7 +576,7 @@ export const EmployeesView: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Agreed Rate in LKR *
+                      Auto-filled Worker Wage (LKR) *
                     </label>
                     <input
                       type="number"
