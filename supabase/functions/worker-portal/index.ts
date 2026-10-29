@@ -95,11 +95,9 @@ Deno.serve(async (req: Request) => {
     }
     const candidate = await pinHash(pin, credential.pin_salt);
     if (candidate !== credential.pin_hash) {
-      const failed = Number(credential.failed_attempts || 0) + 1;
-      const lockedUntil = failed >= 5 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
-      await db.from('worker_portal_credentials').update({
-        failed_attempts: failed >= 5 ? 0 : failed, locked_until: lockedUntil, updated_at: new Date().toISOString(),
-      }).eq('id', credential.id);
+      // Use a database-side atomic update so concurrent bad PIN attempts cannot
+      // overwrite one another and bypass the five-attempt lockout threshold.
+      await db.rpc('record_worker_portal_failed_attempt', { p_credential_id: credential.id });
       await new Promise(resolve => setTimeout(resolve, 350));
       return reply({ error: 'Invalid Member ID or PIN.' }, 401, origin);
     }
