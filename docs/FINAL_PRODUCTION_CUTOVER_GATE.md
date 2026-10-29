@@ -22,11 +22,12 @@
 
 ## Blockers
 1. Production company ID and authorised Admin Auth user have not been verified.
-2. Production factory IDs and employee/attendance payload mappings have not been reconciled.
-3. No verified migration has been tested against a Production-equivalent staging copy.
-4. Replacement least-privilege RLS policies have not been proven against the existing client and the new app. Production currently has permissive `Allow all for anon` policies on `employees`, `attendance`, and `settlements` (`qual=true`, `with_check=true`), so these must be removed/replaced as part of a tested access migration rather than simply toggling RLS.
-5. Updated Edge Function secrets and all login/recovery flows have not been validated for Production.
-6. Worker portal has no Production schema or worker PIN setup.
+2. Read-only mapping audit on 2026-10-30 found all 20 employees have null `factory_id`; 6/6 attendance rows also have null `factory_id`; five employees have no factory label or gender and have rates matching DB defaults (Rs. 3,000/day and Rs. 225/OT hour). These rows require authoritative reconciliation before migration or payroll use.
+3. Existing factory labels `Empire Tea Factory` and `Millennium Estate` must be explicitly reconciled to the new app factory identities; name similarity is not enough.
+4. No verified migration has been tested against a Production-equivalent staging copy.
+5. Replacement least-privilege RLS policies have not been proven against the existing client and the new app. Production currently has permissive `Allow all for anon` policies on `employees`, `attendance`, and `settlements` (`qual=true`, `with_check=true`), so these must be removed/replaced as part of a tested access migration rather than simply toggling RLS.
+6. Updated Edge Function secrets and all login/recovery flows have not been validated for Production.
+7. Worker portal has no Production schema or worker PIN setup.
 
 ## Final execution order
 1. Verify authorized company/Admin identities and factory mapping.
