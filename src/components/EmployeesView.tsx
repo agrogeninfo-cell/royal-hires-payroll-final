@@ -69,6 +69,7 @@ export const EmployeesView: React.FC = () => {
   const [portalPin, setPortalPin] = useState('');
   const [portalPinError, setPortalPinError] = useState('');
   const [portalPinSaving, setPortalPinSaving] = useState(false);
+  const [portalPinIssued, setPortalPinIssued] = useState(false);
 
   const getFactoryWage = (factoryId: string, workerGender: 'male' | 'female') => {
     const factory = factories.find((item) => item.id === factoryId);
@@ -208,6 +209,7 @@ export const EmployeesView: React.FC = () => {
     crypto.getRandomValues(digits);
     setPortalPin(String(100000 + (digits[0] % 900000)));
     setPortalPinError('');
+    setPortalPinIssued(false);
   };
 
   const handleSetPortalPin = async (e: React.FormEvent) => {
@@ -225,8 +227,8 @@ export const EmployeesView: React.FC = () => {
       });
       if (error) throw new Error('Unable to reach the portal service. Check the portal migration and function deployment.');
       if (!data?.ok) throw new Error(data?.error || 'PIN could not be saved.');
-      setSuccessMsg('Portal PIN set for ' + portalPinEmployee.fullName + '. Share the PIN privately; it cannot be retrieved later.');
-      setPortalPinEmployee(null);
+      setPortalPinIssued(true);
+      setSuccessMsg('Portal PIN set for ' + portalPinEmployee.fullName + '.');
       setTimeout(() => setSuccessMsg(''), 8000);
     } catch (err: any) {
       setPortalPinError(err?.message || 'Could not set worker PIN.');
@@ -475,6 +477,21 @@ export const EmployeesView: React.FC = () => {
               <h3 className="font-bold text-lg text-slate-900">Worker Portal PIN</h3>
               <p className="text-sm text-slate-600 mt-1">Issue a private PIN for {portalPinEmployee.fullName} ({portalPinEmployee.id}). The worker can use it to view only their own approved salary slips and meal bill.</p>
             </div>
+            {portalPinIssued ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-sm font-semibold text-emerald-900">PIN created successfully</p>
+                  <p className="text-xs text-emerald-800 mt-1">This is the only time the PIN is shown. Share it privately with the worker. If you close this window, it cannot be retrieved.</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <code className="flex-1 rounded-lg bg-white border border-emerald-200 p-3 text-xl font-black tracking-[0.25em]">{portalPin}</code>
+                    <button type="button" onClick={() => navigator.clipboard?.writeText(portalPin)} className="px-3 py-2 bg-white border border-emerald-300 rounded-lg font-semibold text-sm">Copy</button>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button type="button" onClick={() => { setPortalPinEmployee(null); setPortalPin(''); setPortalPinError(''); setPortalPinIssued(false); }} className="px-4 py-2 bg-emerald-700 text-white rounded-lg font-bold">Done</button>
+                </div>
+              </div>
+            ) : (
             <form onSubmit={handleSetPortalPin} className="space-y-3">
               <label className="block text-sm font-semibold text-slate-700">6-digit temporary PIN</label>
               <input
@@ -496,6 +513,7 @@ export const EmployeesView: React.FC = () => {
                 <button type="submit" disabled={portalPinSaving} className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50">{portalPinSaving ? 'Saving…' : 'Set PIN'}</button>
               </div>
             </form>
+            )}
           </div>
         </div>
       )}
