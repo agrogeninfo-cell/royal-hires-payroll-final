@@ -4,11 +4,14 @@ import { Capacitor } from '@capacitor/core';
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import type { User, UserRole } from '../types';
 
-// Safe client-side defaults for the authorized development project. Supabase publishable
-// keys are designed for browser/mobile use; database RLS remains the security boundary.
-// Override both values at build time when targeting a different environment.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() || 'https://dgoibyoxpuvmvscpdamz.supabase.co';
-const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || 'sb_publishable_vjf07PPacjxuRWAjgNqksQ_XtHNwGM8';
+// Use the development project's public client configuration only during local Vite development.
+// Production web and Android builds must explicitly provide the intended project's URL and
+// publishable key; never ship a production artifact silently pointed at the development project.
+const isDevelopment = import.meta.env.DEV;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
+  || (isDevelopment ? 'https://dgoibyoxpuvmvscpdamz.supabase.co' : '');
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()
+  || (isDevelopment ? 'sb_publishable_vjf07PPacjxuRWAjgNqksQ_XtHNwGM8' : '');
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
 export const AUTH_CALLBACK_URL = 'lk.royalhires.payroll://auth/callback';
@@ -18,7 +21,7 @@ let client: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient {
   if (!supabaseUrl || !supabasePublishableKey) {
-    throw new Error('Royal Pay authentication is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY, then rebuild the app.');
+    throw new Error('Royal Pay authentication is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY for this build, then rebuild the app.');
   }
   if (!client) {
     client = createClient(supabaseUrl, supabasePublishableKey, {
