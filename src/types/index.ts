@@ -215,6 +215,8 @@ export interface PayrollItem {
   dinnerCount: number;
   dinnerCost: number;
   totalMealDeductions: number;
+  lateDeduction: number;
+  lateHours: number;
   boardingDays: number;
   boardingCost: number;
   totalBoardingDeductions: number;
