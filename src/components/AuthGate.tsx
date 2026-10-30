@@ -39,7 +39,13 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
         }
         setErrorMessage('');
       } catch (error) {
-        if (mounted) setErrorMessage(error instanceof Error ? error.message : 'Could not verify your account access.');
+        // Supabase/PostgREST errors are plain objects, not always Error instances.
+        // Preserve their message so access failures are diagnosable instead of
+        // hiding the actual database/authentication reason behind a generic alert.
+        const detail = error && typeof error === 'object' && 'message' in error
+          ? String((error as { message?: unknown }).message || '')
+          : error instanceof Error ? error.message : '';
+        if (mounted) setErrorMessage(detail || 'Could not verify your account access. Check your connection and account permissions.');
       } finally {
         if (mounted) setLoading(false);
       }
