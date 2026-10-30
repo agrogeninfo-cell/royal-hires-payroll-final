@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#062d27"><title>Royal Hires | Worker Portal</title>
+<style>
+:root{color-scheme:light;--green:#062d27;--gold:#d7ad63;--ink:#16231f;--muted:#64736d;--line:#dce5e0;--paper:#fff;--bg:#f3f6f3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+header{background:var(--green);color:white;padding:24px max(20px,calc((100vw - 920px)/2));border-bottom:4px solid var(--gold)}
+.brand{font-weight:850;letter-spacing:.04em;font-size:clamp(18px,4vw,24px)}.sub{font-size:12px;letter-spacing:.16em;color:#e7d4a9;margin-top:3px}
+main{max-width:920px;margin:28px auto;padding:0 16px 48px}.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:clamp(18px,4vw,28px);box-shadow:0 10px 30px #062d270b;margin-bottom:16px}
+h1{font-size:clamp(24px,5vw,32px);line-height:1.2;margin:0 0 8px}h2{font-size:19px;margin:0 0 14px}p{margin:6px 0;color:var(--muted)}label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}
+input{width:100%;min-height:48px;padding:12px 14px;border:1px solid #cbd7d0;border-radius:12px;font:inherit;background:white;color:var(--ink)}input:focus{outline:3px solid #d7ad6370;border-color:var(--gold)}
+button{min-height:48px;border:0;border-radius:12px;padding:12px 18px;font:700 15px system-ui;cursor:pointer}.primary{background:var(--green);color:white;width:100%;margin-top:18px}.secondary{background:#edf2ee;color:var(--green)}button:disabled{opacity:.55;cursor:wait}
+.error{background:#fff1ef;border:1px solid #f2c2ba;color:#8b2115;padding:12px;border-radius:10px;margin-top:14px}.notice{background:#fff8e8;border:1px solid #ead4a3;color:#644b19;padding:12px;border-radius:10px;margin-top:14px}.hidden{display:none!important}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.stat{background:#f5f8f5;border:1px solid var(--line);border-radius:14px;padding:14px}.stat small{display:block;color:var(--muted);font-size:12px}.stat strong{display:block;font-size:20px;margin-top:4px;overflow-wrap:anywhere}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.pill{display:inline-block;border-radius:999px;background:#e8f1eb;color:#20533b;padding:4px 10px;font-size:12px;font-weight:700}
+.payroll{border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:12px}.payroll h3{font-size:16px;margin:0 0 8px}.money{font-variant-numeric:tabular-nums}.mealgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.meal{background:#f5f8f5;border-radius:10px;padding:10px}.meal small{display:block;color:var(--muted)}footer{text-align:center;color:var(--muted);font-size:12px;padding:0 16px 28px}
+@media(max-width:480px){main{margin:18px auto}.mealgrid{grid-template-columns:1fr 1fr}.row .secondary{flex:1}}
+</style>
+</head>
+<body>
+<header><div class="brand">ROYAL HIRES PRIVATE LIMITED</div><div class="sub">WORKER SELF-SERVICE PORTAL</div></header>
+<main>
+<section id="loginCard" class="card">
+<h1>Welcome back</h1><p>Sign in with the Member ID and PIN issued by the Royal Hires office.</p>
+<form id="loginForm" autocomplete="on">
+<label for="memberId">Member ID</label><input id="memberId" name="username" autocomplete="username" autocapitalize="characters" maxlength="40" placeholder="e.g. RHTD200" required>
+<label for="pin">PIN (6–10 digits)</label><input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{6,10}" minlength="6" maxlength="10" autocomplete="current-password" placeholder="Enter your PIN" required>
+<button id="loginButton" class="primary" type="submit">Sign in securely</button><div id="loginError" class="error hidden" role="alert"></div>
+</form><div class="notice">For your privacy, this portal only shows your own profile, approved salary slips and meal deductions. Never share your PIN.</div>
+</section>
+<section id="dashboard" class="hidden">
+<div class="card"><div class="row"><div><p>Signed in as</p><h1 id="workerName">Worker</h1><p id="workerId"></p></div><button id="logoutButton" class="secondary">Sign out</button></div><div class="grid" style="margin-top:18px"><div class="stat"><small>Factory</small><strong id="workerFactory">—</strong></div><div class="stat"><small>Worker status</small><strong id="workerStatus">—</strong></div><div class="stat"><small>Contact number</small><strong id="workerPhone">—</strong></div></div></div>
+<div class="card"><div class="row"><h2>My salary slips</h2><span class="pill">Approved records only</span></div><p>Salary details appear after the office approves the payroll period.</p><div id="payrollList"></div><div id="noPayroll" class="notice hidden">No approved salary slips are available yet. Please contact the Royal Hires office if you think this is incorrect.</div></div>
+</section>
+<div id="generalError" class="error hidden" role="alert"></div>
+</main>
+<footer>Royal Hires Private Limited · Keep your Member ID and PIN private.</footer>
+<script>
+const API_URL = '%VITE_SUPABASE_URL%'.replace(/\/$/, '') + '/functions/v1/worker-portal';
+const API_KEY = '%VITE_SUPABASE_PUBLISHABLE_KEY%';
+const $ = (id) => document.getElementById(id);
+let token = '';
+let expiry = '';
+const money = (v) => 'LKR ' + Number(v || 0).toLocaleString('en-LK',{minimumFractionDigits:2,maximumFractionDigits:2});
+function showError(id,msg){$(id).textContent=msg;$(id).classList.remove('hidden')}
+function hideError(id){$(id).textContent='';$(id).classList.add('hidden')}
+async function api(action, extra={}) {
+ const response = await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':API_KEY},body:JSON.stringify({action,token,...extra})});
+ let data={};try{data=await response.json()}catch{}
+ if(!response.ok) throw new Error(data.error || 'Request failed. Please try again.');
+ return data;
+}
+function renderPayroll(rows){
+ const host=$('payrollList');host.replaceChildren();
+ $('noPayroll').classList.toggle('hidden',rows.length!==0);
+ for(const p of rows){
+  const card=document.createElement('article');card.className='payroll';
+  const title=document.createElement('h3');title.textContent=(p.periodStart||'—')+' to '+(p.periodEnd||'—');card.append(title);
+  const status=document.createElement('span');status.className='pill';status.textContent=String(p.status||'approved').toUpperCase();card.append(status);
+  const grid=document.createElement('div');grid.className='grid';grid.style.marginTop='12px';
+  const stats=[['Payroll reference',p.payrollNumber],['Days worked',p.daysWorked],['Gross earnings',money(p.grossEarnings)],['Meal deductions',money(p.totalMealDeductions)],['Total deductions',money(p.totalDeductions)],['Net payable',money(p.netPayable)],['Paid so far',money(p.amountPaid)],['Balance',money(p.remainingBalance)]];
+  for(const [label,value] of stats){const s=document.createElement('div');s.className='stat';const sm=document.createElement('small');sm.textContent=label;const strong=document.createElement('strong');strong.className='money';strong.textContent=String(value??'—');s.append(sm,strong);grid.append(s)}
+  card.append(grid);
+  const meals=document.createElement('h3');meals.textContent='Meal bill';meals.style.marginTop='18px';card.append(meals);
+  const mealgrid=document.createElement('div');mealgrid.className='mealgrid';
+  for(const [label,count,cost] of [['Breakfast',p.breakfastCount,p.breakfastCost],['Lunch',p.lunchCount,p.lunchCost],['Dinner',p.dinnerCount,p.dinnerCost]]){const m=document.createElement('div');m.className='meal';const small=document.createElement('small');small.textContent=label+' · '+Number(count||0)+' meals';const strong=document.createElement('strong');strong.textContent=money(cost);m.append(small,strong);mealgrid.append(m)}
+  card.append(mealgrid);host.append(card);
+ }
+}
+async function loadDashboard(){
+ const data=await api('me');
+ $('workerName').textContent=data.profile.fullName||'Worker';
+ $('workerId').textContent='Member ID: '+data.profile.memberId;
+ $('workerFactory').textContent=data.profile.factory||'Not assigned';
+ $('workerStatus').textContent=data.profile.status||'—';
+ $('workerPhone').textContent=data.profile.phone||'—';
+ renderPayroll(Array.isArray(data.payrolls)?data.payrolls:[]);
+ $('loginCard').classList.add('hidden');$('dashboard').classList.remove('hidden');
+}
+$('loginForm').addEventListener('submit',async(e)=>{
+ e.preventDefault();hideError('loginError');hideError('generalError');
+ const button=$('loginButton');button.disabled=true;button.textContent='Signing in…';
+ try{
+  const data=await api('login',{memberId:$('memberId').value.trim().toUpperCase(),pin:$('pin').value});
+  token=data.token;expiry=data.expiresAt;$('pin').value='';
+  await loadDashboard();
+ }catch(err){token='';showError('loginError',err.message||'Sign-in failed.')}
+ finally{button.disabled=false;button.textContent='Sign in securely'}
+});
+$('logoutButton').addEventListener('click',async()=>{
+ try{if(token)await api('logout')}catch{}
+ token='';expiry='';$('dashboard').classList.add('hidden');$('loginCard').classList.remove('hidden');$('memberId').value='';$('pin').value='';hideError('generalError');
+});
+window.addEventListener('pagehide',()=>{if(token){try{fetch(API_URL,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json','apikey':API_KEY},body:JSON.stringify({action:'logout',token})})}catch{}}});
+if(API_URL.includes('%VITE_SUPABASE_URL%')||API_KEY.includes('%VITE_SUPABASE_PUBLISHABLE_KEY%')) showError('loginError','Portal configuration is missing. Please contact the Royal Hires administrator.');
+</script>
+</body></html>

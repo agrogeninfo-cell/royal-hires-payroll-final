@@ -1,0 +1,32 @@
+name: Worker Portal Validation
+
+on:
+  pull_request:
+    branches: [main, feature/factory-wages-member-cards]
+  push:
+    branches: [feature/worker-portal-secure-foundation]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: TypeScript validation
+        run: npm run lint
+      - name: Payroll and billing unit tests
+        run: npm run test:unit
+      - name: Build app and worker portal with non-production placeholders
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+        run: npm run build
