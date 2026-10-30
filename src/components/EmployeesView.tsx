@@ -215,7 +215,7 @@ export const EmployeesView: React.FC = () => {
   const handleSetPortalPin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!portalPinEmployee || currentUser.role !== 'admin') return;
-    if (!/^\\d{6,10}$/.test(portalPin)) {
+    if (!/^\d{6,10}$/.test(portalPin)) {
       setPortalPinError('PIN must contain 6–10 digits.');
       return;
     }
