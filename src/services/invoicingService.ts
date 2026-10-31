@@ -111,7 +111,7 @@ export class InvoicingService {
     const bonusPerEmployee = Math.max(0, Number(factory.attendanceBonus ?? 0));
     const dateCreditsByEmployee = new Map<string, Map<string, number>>();
     validAttendance.forEach((att) => {
-      const units = Math.max(0, Number(att.payableUnits ?? (att.status === 'half_day' ? 0.5 : att.status === 'present' ? 1 : 0)));
+      const units = att.status === 'half_day' ? 0.5 : att.status === 'present' ? 1 : 0;
       if (units <= 0) return;
       const dateCredits = dateCreditsByEmployee.get(att.employeeId) || new Map<string, number>();
       // Multiple shifts on one calendar date (D+N) are capped at one bonus day.
