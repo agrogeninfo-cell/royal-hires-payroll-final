@@ -118,7 +118,7 @@ export const AttendanceView: React.FC = () => {
       return {
         employee: emp,
         status: 'present',
-        payableUnits: 1.0,
+        payableUnits: isDoubleShiftSelected ? 2 : 1,
         otHours: 0,
         otMinutes: 0,
         lateHours: 0,
@@ -140,9 +140,11 @@ export const AttendanceView: React.FC = () => {
     );
   };
 
+  const isDoubleShiftSelected = /d\\+n|day\\+night|dayandnight|double/i.test(selectedShift.replace(/\\s+/g, ''));
+
   const setStatusForEmployee = (empId: string, status: AttendanceStatus) => {
-    let units = 1.0;
-    if (status === 'half_day') units = 0.5;
+    let units = isDoubleShiftSelected ? 2 : 1;
+    if (status === 'half_day') units = isDoubleShiftSelected ? 1 : 0.5;
     if (status === 'absent' || status === 'leave') units = 0;
 
     updateRow(empId, { status, payableUnits: units });
@@ -178,7 +180,9 @@ export const AttendanceView: React.FC = () => {
           date: selectedDate,
           shift: selectedShift,
           status: row.status,
-          payableUnits: row.payableUnits,
+          payableUnits: isDoubleShiftSelected
+            ? (row.status === 'present' ? 2 : row.status === 'half_day' ? 1 : 0)
+            : row.payableUnits,
           otHours: Number(row.otHours) || 0,
           otMinutes: Number(row.otMinutes) || 0,
           totalOtHours,
@@ -300,7 +304,16 @@ export const AttendanceView: React.FC = () => {
             </label>
             <select
               value={selectedShift}
-              onChange={(e) => setSelectedShift(e.target.value)}
+              onChange={(e) => {
+                const nextShift = e.target.value;
+                const nextIsDouble = /d\\+n|day\\+night|dayandnight|double/i.test(nextShift.replace(/\\s+/g, ''));
+                setSelectedShift(nextShift);
+                setEntryRows((prev) => prev.map((row) => ({
+                  ...row,
+                  payableUnits: row.status === 'present' ? (nextIsDouble ? 2 : 1)
+                    : row.status === 'half_day' ? (nextIsDouble ? 1 : 0.5) : 0,
+                })));
+              }}
               className="w-full text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             >
               {selectedFactory?.shifts.map((s) => (
