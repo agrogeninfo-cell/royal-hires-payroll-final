@@ -1078,7 +1078,7 @@ export class SystemTestSuite {
         attendanceBonus: 0,
       };
       const employeeId = 'EMP-MANDATORY-OT';
-      const makeAttendance = (id: string, date: string, shift: string, payableUnits: number, gender = 'male'): AttendanceRecord => ({
+      const makeAttendance = (id: string, date: string, shift: string, payableUnits: number, gender: 'male' | 'female' = 'male'): AttendanceRecord => ({
         id, employeeId, employeeName: 'Mandatory OT Test', employeeGender: gender,
         factoryId: empire.id, factoryName: empire.name, date, shift, status: 'present',
         payableUnits, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
