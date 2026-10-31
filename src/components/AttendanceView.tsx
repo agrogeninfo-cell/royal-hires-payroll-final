@@ -140,7 +140,7 @@ export const AttendanceView: React.FC = () => {
     );
   };
 
-  const isDoubleShiftSelected = /d\\+n|day\\+night|dayandnight|double/i.test(selectedShift.replace(/\\s+/g, ''));
+  const isDoubleShiftSelected = /d\+n|day\+night|dayandnight|double/i.test(selectedShift.replace(/\s+/g, ''));
 
   const setStatusForEmployee = (empId: string, status: AttendanceStatus) => {
     let units = isDoubleShiftSelected ? 2 : 1;
@@ -306,7 +306,7 @@ export const AttendanceView: React.FC = () => {
               value={selectedShift}
               onChange={(e) => {
                 const nextShift = e.target.value;
-                const nextIsDouble = /d\\+n|day\\+night|dayandnight|double/i.test(nextShift.replace(/\\s+/g, ''));
+                const nextIsDouble = /d\+n|day\+night|dayandnight|double/i.test(nextShift.replace(/\s+/g, ''));
                 setSelectedShift(nextShift);
                 setEntryRows((prev) => prev.map((row) => ({
                   ...row,
