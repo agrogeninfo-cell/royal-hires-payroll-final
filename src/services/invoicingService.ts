@@ -48,7 +48,23 @@ export class InvoicingService {
 
       // Overtime charge using factory overtime billing rate
       const approvedOtHours = att.totalOtHours || 0;
-      const overtimeCharge = BillingService.calculateOvertimeBillingCharge(factory, approvedOtHours, att.date);
+      const normalizedShift = String(att.shift || '').toLowerCase().replace(/\\s+/g, '');
+      const isDoubleShift = normalizedShift.includes('d+n')
+        || normalizedShift.includes('day+night')
+        || normalizedShift.includes('dayandnight')
+        || normalizedShift.includes('double');
+      const shiftCount = isDoubleShift
+        ? Math.max(2, Number(att.payableUnits ?? 1))
+        : Math.max(0, Number(att.payableUnits ?? 1));
+      const dateValue = new Date(`${att.date}T12:00:00`);
+      const isSundayOrPoya = dateValue.getDay() === 0
+        || Boolean(factory.specialBillingDates?.includes(att.date));
+      const mandatoryOtHoursPerShift = isSundayOrPoya
+        ? Number(factory.sundayPoyaOtHoursPerShift ?? factory.mandatoryOtHoursPerShift ?? 0)
+        : Number(factory.mandatoryOtHoursPerShift ?? 0);
+      const mandatoryBillableOtHours = mandatoryOtHoursPerShift * shiftCount;
+      const billableOtHours = Math.max(approvedOtHours, mandatoryBillableOtHours);
+      const overtimeCharge = BillingService.calculateOvertimeBillingCharge(factory, billableOtHours, att.date);
       const snapshotOtBillingRateHourly = overtimeCharge.otBillingRateHourly;
       const otBillingTotal = overtimeCharge.amount;
 
@@ -67,6 +83,7 @@ export class InvoicingService {
         billableDays,
         dayBillingTotal,
         approvedOtHours,
+        billableOtHours,
         snapshotOtBillingRateHourly,
         otBillingTotal,
         lineTotal,
