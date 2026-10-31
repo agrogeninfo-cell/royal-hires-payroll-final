@@ -928,6 +928,70 @@ export class SystemTestSuite {
       results.push({ id: 25, title: 'Late deduction calculation', category: 'Payroll', passed: false, message: err.message });
     }
 
+
+    // Test 26: Empire Teas wages follow weekday, Saturday and Sunday/Poya rates.
+    try {
+      const empire: Factory = {
+        ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas',
+        wageSameRate: 2000, wageMaleRate: 2000, wageFemaleRate: 2000,
+        weekdayWage: 2000, saturdayWage: 2000, sundayPoyaWage: 2300,
+        attendanceBonus: 0, attendanceBonusDays: 21,
+        specialBillingDates: ['2026-10-21'],
+      };
+      const employee: Employee = {
+        id: 'EMP-EMPIRE-WAGE', fullName: 'Empire Wage Test', nic: 'EMPIRE-WAGE', phone: '', address: '',
+        gender: 'male', startDate: '2026-01-01', status: 'active', designation: 'Helper',
+        currentFactoryId: empire.id, wageArrangement: 'daily', wageRate: 2000,
+        eligibleForMeals: false, eligibleForBoarding: false, createdAt: '', updatedAt: '',
+      };
+      const makeAttendance = (id: string, date: string): AttendanceRecord => ({
+        id, employeeId: employee.id, employeeName: employee.fullName, employeeGender: 'male',
+        factoryId: empire.id, factoryName: empire.name, date, shift: 'Day', status: 'present',
+        payableUnits: 1, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
+        hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester',
+        supervisorName: 'tester', submissionStatus: 'approved', billable: true,
+        syncStatus: 'synced', createdAt: '', updatedAt: '',
+      });
+      const attendance = [
+        makeAttendance('emp-weekday', '2026-10-19'),
+        makeAttendance('emp-saturday', '2026-10-17'),
+        makeAttendance('emp-sunday', '2026-10-18'),
+        makeAttendance('emp-poya', '2026-10-21'),
+      ];
+      const item = PayrollService.calculateEmployeePayrollItem(employee, empire, attendance, null, [], 'RUN-EMPIRE-WAGE');
+      const passed = item.normalWage === 8600 && item.attendanceBonus === 0;
+      results.push({ id: 26, title: 'Empire Teas weekday, Saturday and Sunday/Poya worker wage rules', category: 'Payroll', passed, message: passed ? 'Verified LKR 2,000 weekday + LKR 2,000 Saturday + LKR 2,300 Sunday + LKR 2,300 Poya.' : 'Unexpected wage total: ' + item.normalWage });
+    } catch (err: any) {
+      results.push({ id: 26, title: 'Empire Teas wage schedule', category: 'Payroll', passed: false, message: err.message });
+    }
+
+    // Test 27: LKR 5,500 attendance bonus is earned from 21 payable days.
+    try {
+      const employee: Employee = {
+        id: 'EMP-BONUS-TEST', fullName: 'Attendance Bonus Test', nic: 'BONUS-TEST', phone: '', address: '',
+        gender: 'female', startDate: '2026-01-01', status: 'active', designation: 'Helper',
+        currentFactoryId: factoryA.id, wageArrangement: 'daily', wageRate: 2000,
+        eligibleForMeals: false, eligibleForBoarding: false, createdAt: '', updatedAt: '',
+      };
+      const attendance: AttendanceRecord[] = Array.from({ length: 21 }, (_, index) => ({
+        id: 'bonus-' + (index + 1), employeeId: employee.id, employeeName: employee.fullName,
+        employeeGender: 'female', factoryId: factoryA.id, factoryName: factoryA.name,
+        date: '2026-10-' + String(index + 1).padStart(2, '0'), shift: 'Day', status: 'present',
+        payableUnits: 1, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
+        hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester',
+        supervisorName: 'tester', submissionStatus: 'approved', billable: true,
+        syncStatus: 'synced', createdAt: '', updatedAt: '',
+      }));
+      const bonusFactory = { ...factoryA, attendanceBonus: 5500, attendanceBonusDays: 21 };
+      const eligible = PayrollService.calculateEmployeePayrollItem(employee, bonusFactory, attendance, null, [], 'RUN-BONUS-21');
+      const ineligible = PayrollService.calculateEmployeePayrollItem(employee, bonusFactory, attendance.slice(0, 20), null, [], 'RUN-BONUS-20');
+      const passed = eligible.attendanceBonus === 5500 && ineligible.attendanceBonus === 0
+        && eligible.grossEarnings === 47500 && ineligible.grossEarnings === 40000;
+      results.push({ id: 27, title: 'Attendance bonus threshold is 21 payable days', category: 'Payroll', passed, message: passed ? 'Verified: LKR 5,500 bonus at 21 days; no bonus at 20 days.' : 'Unexpected bonus/gross: ' + eligible.attendanceBonus + '/' + eligible.grossEarnings + '; ' + ineligible.attendanceBonus + '/' + ineligible.grossEarnings });
+    } catch (err: any) {
+      results.push({ id: 27, title: 'Attendance bonus threshold', category: 'Payroll', passed: false, message: err.message });
+    }
+
     return results;
   }
 }
