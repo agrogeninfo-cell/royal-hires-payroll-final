@@ -33,6 +33,7 @@ export const FactoriesView: React.FC = () => {
   const [sundayPoyaOvertimeRateHourly, setSundayPoyaOvertimeRateHourly] = useState<number>(0);
   const [mandatoryOtHoursPerShift, setMandatoryOtHoursPerShift] = useState<number>(0);
   const [sundayPoyaOtHoursPerShift, setSundayPoyaOtHoursPerShift] = useState<number>(0);
+  const [femaleNightAllowance, setFemaleNightAllowance] = useState<number>(0);
 
   // Employee wage rates paid to workers; separate from customer billing rates.
   const [wageSameRate, setWageSameRate] = useState<number>(0);
@@ -83,6 +84,7 @@ export const FactoriesView: React.FC = () => {
     setSundayPoyaOvertimeRateHourly(0);
     setMandatoryOtHoursPerShift(0);
     setSundayPoyaOtHoursPerShift(0);
+    setFemaleNightAllowance(0);
     setWageSameRate(0);
     setWageMaleRate(0);
     setWageFemaleRate(0);
@@ -125,6 +127,7 @@ export const FactoriesView: React.FC = () => {
     setSundayPoyaOvertimeRateHourly(fac.sundayPoyaOvertimeRateHourly ?? fac.factoryOvertimeRateHourly ?? 0);
     setMandatoryOtHoursPerShift(fac.mandatoryOtHoursPerShift ?? 0);
     setSundayPoyaOtHoursPerShift(fac.sundayPoyaOtHoursPerShift ?? fac.mandatoryOtHoursPerShift ?? 0);
+    setFemaleNightAllowance(fac.femaleNightAllowance ?? 0);
     setWageSameRate(fac.wageSameRate ?? 0);
     setWageMaleRate(fac.wageMaleRate ?? 0);
     setWageFemaleRate(fac.wageFemaleRate ?? 0);
@@ -168,7 +171,7 @@ export const FactoriesView: React.FC = () => {
       setErrorMsg('Enter the approved male and female worker wage rates for this factory.');
       return;
     }
-    if (!Number.isInteger(attendanceBonusDays) || attendanceBonusDays < 1 || attendanceBonus < 0 || lateDeductionPerHour < 0 || mandatoryOtHoursPerShift < 0 || sundayPoyaOtHoursPerShift < 0) {
+    if (!Number.isInteger(attendanceBonusDays) || attendanceBonusDays < 1 || attendanceBonus < 0 || lateDeductionPerHour < 0 || mandatoryOtHoursPerShift < 0 || sundayPoyaOtHoursPerShift < 0 || femaleNightAllowance < 0) {
       setErrorMsg('Attendance bonus days must be at least 1; bonus and late deduction rates cannot be negative.');
       return;
     }
@@ -220,6 +223,7 @@ export const FactoriesView: React.FC = () => {
         sundayPoyaOvertimeRateHourly: sundayPoyaOvertimeRateHourly > 0 ? Number(sundayPoyaOvertimeRateHourly) : undefined,
         mandatoryOtHoursPerShift: Number(mandatoryOtHoursPerShift),
         sundayPoyaOtHoursPerShift: Number(sundayPoyaOtHoursPerShift),
+        femaleNightAllowance: Number(femaleNightAllowance),
         wageSameRate: Number(wageSameRate),
         wageMaleRate: Number(wageMaleRate),
         wageFemaleRate: Number(wageFemaleRate),
@@ -484,6 +488,7 @@ export const FactoriesView: React.FC = () => {
                   <div><label className="block font-semibold text-slate-700 mb-1">Factory invoice attendance bonus (LKR)</label><input type="number" min="0" value={attendanceBonus} onChange={(e) => setAttendanceBonus(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                   <div><label className="block font-semibold text-slate-700 mb-1">Bonus minimum days</label><input type="number" min="1" value={attendanceBonusDays} onChange={(e) => setAttendanceBonusDays(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                   <div><label className="block font-semibold text-slate-700 mb-1">Late deduction (LKR/hour)</label><input type="number" min="0" value={lateDeductionPerHour} onChange={(e) => setLateDeductionPerHour(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Female night allowance (invoice only, LKR/night)</label><input type="number" min="0" value={femaleNightAllowance} onChange={(e) => setFemaleNightAllowance(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                 </div>
                 <p className="text-[11px] text-slate-500">If weekday/Saturday/Sunday-Poya wages are entered, payroll uses the attendance date to select the applicable daily wage. Poya dates are maintained in the special billing dates list.</p>
               </div>
