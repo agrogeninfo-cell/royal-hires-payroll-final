@@ -40,6 +40,13 @@ export interface Factory {
   wageSameRate?: number;
   wageMaleRate?: number;
   wageFemaleRate?: number;
+  /** Daily employee wage schedule for factories with different weekday/Saturday/Sunday-Poya pay. */
+  weekdayWage?: number;
+  saturdayWage?: number;
+  sundayPoyaWage?: number;
+  attendanceBonus?: number;
+  attendanceBonusDays?: number;
+  lateDeductionPerHour?: number;
   sameRate?: number; // Standard daily billing rate for all Helpers in LKR
   maleRate?: number; // Male Helper daily rate in LKR
   femaleRate?: number; // Female Helper daily rate in LKR
@@ -204,6 +211,7 @@ export interface PayrollItem {
   snapshotWageRate: number; // rate used at approval time
   daysWorked: number;
   normalWage: number;
+  attendanceBonus: number;
   approvedOtHours: number;
   snapshotOtRateHourly: number;
   otWage: number;
