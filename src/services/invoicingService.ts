@@ -79,15 +79,19 @@ export class InvoicingService {
     // per employee so a D+N double shift on one date still counts as one attendance day.
     const bonusThreshold = Math.max(1, Number(factory.attendanceBonusDays ?? 21));
     const bonusPerEmployee = Math.max(0, Number(factory.attendanceBonus ?? 0));
-    const datesByEmployee = new Map<string, Set<string>>();
+    const dateCreditsByEmployee = new Map<string, Map<string, number>>();
     validAttendance.forEach((att) => {
-      if (att.payableUnits <= 0) return;
-      const dates = datesByEmployee.get(att.employeeId) || new Set<string>();
-      dates.add(att.date);
-      datesByEmployee.set(att.employeeId, dates);
+      const units = Math.max(0, Number(att.payableUnits ?? (att.status === 'half_day' ? 0.5 : att.status === 'present' ? 1 : 0)));
+      if (units <= 0) return;
+      const dateCredits = dateCreditsByEmployee.get(att.employeeId) || new Map<string, number>();
+      // Multiple shifts on one calendar date (D+N) are capped at one bonus day.
+      dateCredits.set(att.date, Math.max(dateCredits.get(att.date) || 0, Math.min(1, units)));
+      dateCreditsByEmployee.set(att.employeeId, dateCredits);
     });
     const attendanceBonusEligibleEmployees = bonusPerEmployee > 0
-      ? Array.from(datesByEmployee.values()).filter((dates) => dates.size >= bonusThreshold).length
+      ? Array.from(dateCreditsByEmployee.values()).filter((dates) =>
+          Array.from(dates.values()).reduce((sum, units) => sum + units, 0) >= bonusThreshold
+        ).length
       : 0;
     const attendanceBonusTotal = attendanceBonusEligibleEmployees * bonusPerEmployee;
     const adjustments = 0;
