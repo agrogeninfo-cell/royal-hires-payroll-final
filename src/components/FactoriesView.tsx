@@ -461,7 +461,7 @@ export const FactoriesView: React.FC = () => {
 
               <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
                 <h4 className="font-bold text-sm text-slate-900">Worker Wage Rates (Paid to Labour)</h4>
-                <p className="text-[11px] text-slate-600">Separate from factory invoice rates. These rates auto-fill when registering a worker.</p>
+                <p className="text-[11px] text-slate-600">Worker wage rates are separate from customer billing. The attendance bonus below is an invoice-only factory charge and is never added to a worker salary slip.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div><label className="block font-semibold text-slate-700 mb-1">Same wage (LKR/day, optional)</label><input type="number" min="0" value={wageSameRate} onChange={(e) => setWageSameRate(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                   <div><label className="block font-semibold text-slate-700 mb-1">Male wage (LKR/day)</label><input type="number" min="1" required value={wageMaleRate} onChange={(e) => setWageMaleRate(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
@@ -473,7 +473,7 @@ export const FactoriesView: React.FC = () => {
                   <div><label className="block font-semibold text-slate-700 mb-1">Sunday / Poya wage (LKR/day)</label><input type="number" min="0" value={sundayPoyaWage} onChange={(e) => setSundayPoyaWage(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div><label className="block font-semibold text-slate-700 mb-1">Attendance bonus (LKR)</label><input type="number" min="0" value={attendanceBonus} onChange={(e) => setAttendanceBonus(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Factory invoice attendance bonus (LKR)</label><input type="number" min="0" value={attendanceBonus} onChange={(e) => setAttendanceBonus(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                   <div><label className="block font-semibold text-slate-700 mb-1">Bonus minimum days</label><input type="number" min="1" value={attendanceBonusDays} onChange={(e) => setAttendanceBonusDays(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                   <div><label className="block font-semibold text-slate-700 mb-1">Late deduction (LKR/hour)</label><input type="number" min="0" value={lateDeductionPerHour} onChange={(e) => setLateDeductionPerHour(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                 </div>
