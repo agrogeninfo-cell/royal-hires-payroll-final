@@ -1018,6 +1018,53 @@ export class SystemTestSuite {
       results.push({ id: 28, title: 'Invoice attendance bonus', category: 'Invoicing', passed: false, message: err.message });
     }
 
+
+    // Test 29: Empire factory OT billing uses LKR 225 weekday/Saturday and LKR 300 Sunday/Poya.
+    try {
+      const empire: Factory = {
+        ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas',
+        overtimeEnabled: true, factoryOvertimeRateHourly: 225,
+        sundayPoyaOvertimeRateHourly: 300, specialBillingDates: ['2026-10-21'],
+      };
+      const weekday = BillingService.calculateOvertimeBillingCharge(empire, 3, '2026-10-19');
+      const sunday = BillingService.calculateOvertimeBillingCharge(empire, 12, '2026-10-18');
+      const poya = BillingService.calculateOvertimeBillingCharge(empire, 12, '2026-10-21');
+      const passed = weekday.otBillingRateHourly === 225 && weekday.amount === 675
+        && sunday.otBillingRateHourly === 300 && sunday.amount === 3600
+        && poya.otBillingRateHourly === 300 && poya.amount === 3600;
+      results.push({ id: 29, title: 'Empire weekday/Saturday and Sunday/Poya OT billing rates', category: 'Billing', passed, message: passed ? 'Verified LKR 225/hour weekday/Saturday and LKR 300/hour Sunday/Poya.' : 'Factory OT billing rate selection is incorrect.' });
+    } catch (err: any) {
+      results.push({ id: 29, title: 'Empire OT billing rates', category: 'Billing', passed: false, message: err.message });
+    }
+
+    // Test 30: Do not settle employee OT until the employee OT pay rate is configured.
+    try {
+      const employee: Employee = {
+        id: 'EMP-OT-RATE-MISSING', fullName: 'OT Rate Validation', nic: 'OT-RATE', phone: '', address: '',
+        gender: 'male', startDate: '2026-01-01', status: 'active', designation: 'Helper',
+        currentFactoryId: 'fac-empire-teas', wageArrangement: 'daily', wageRate: 2000,
+        eligibleForMeals: false, eligibleForBoarding: false, createdAt: '', updatedAt: '',
+      };
+      const empire: Factory = {
+        ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas',
+        overtimeEnabled: true, employeeOvertimeRateHourly: 0, factoryOvertimeRateHourly: 225,
+      };
+      const att: AttendanceRecord = {
+        id: 'empire-ot-approved', employeeId: employee.id, employeeName: employee.fullName,
+        employeeGender: 'male', factoryId: empire.id, factoryName: empire.name,
+        date: '2026-10-19', shift: 'Day', status: 'present', payableUnits: 1,
+        otHours: 3, otMinutes: 0, totalOtHours: 3, hadBreakfast: false, hadLunch: false,
+        hadDinner: false, hadBoarding: false, recordedBy: 'tester', supervisorName: 'tester',
+        submissionStatus: 'approved', billable: true, syncStatus: 'synced', createdAt: '', updatedAt: '',
+      };
+      let blocked = false;
+      try { PayrollService.calculateEmployeePayrollItem(employee, empire, [att], null, [], 'RUN-OT-RATE'); }
+      catch (err: any) { blocked = /employee OT pay rate is not configured/i.test(err.message); }
+      results.push({ id: 30, title: 'Block payroll when worker OT pay rate is not configured', category: 'Payroll', passed: blocked, message: blocked ? 'Approved OT cannot be silently paid at LKR 0.' : 'Payroll did not block an unconfigured worker OT rate.' });
+    } catch (err: any) {
+      results.push({ id: 30, title: 'Worker OT rate validation', category: 'Payroll', passed: false, message: err.message });
+    }
+
     return results;
   }
 }
