@@ -2,9 +2,6 @@ name: Deploy Royal Pay Web to GitHub Pages
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 permissions:
   contents: read
