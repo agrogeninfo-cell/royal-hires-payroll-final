@@ -8,8 +8,6 @@ import {
 } from '../types';
 
 const DEFAULT_LATE_DEDUCTION_RATE_PER_HOUR = 150;
-const DEFAULT_ATTENDANCE_BONUS = 5500;
-const DEFAULT_ATTENDANCE_BONUS_DAYS = 21;
 
 export class PayrollService {
   /**
@@ -69,13 +67,17 @@ export class PayrollService {
     const approvedOtHours = attendanceList.reduce((sum, att) => (
       att.submissionStatus === 'approved' ? sum + (att.totalOtHours || 0) : sum
     ), 0);
+    if (approvedOtHours > 0 && !factory.overtimeEnabled) {
+      throw new Error('Approved overtime exists, but overtime is disabled for ' + factory.name + '. Configure the factory OT rules before payroll.');
+    }
+    if (approvedOtHours > 0 && (!factory.employeeOvertimeRateHourly || factory.employeeOvertimeRateHourly <= 0)) {
+      throw new Error('Employee OT pay rate is not configured for ' + factory.name + '. Payroll is blocked to prevent underpaying workers.');
+    }
     const snapshotOtRateHourly = factory.employeeOvertimeRateHourly || 0;
     const otWage = Math.round(approvedOtHours * snapshotOtRateHourly);
 
-    const attendanceBonusDays = Number(factory.attendanceBonusDays ?? DEFAULT_ATTENDANCE_BONUS_DAYS);
-    const attendanceBonusRate = Number(factory.attendanceBonus ?? DEFAULT_ATTENDANCE_BONUS);
-    const attendanceBonus = payableDaysWorked >= attendanceBonusDays ? attendanceBonusRate : 0;
-    const grossEarnings = normalWage + otWage + attendanceBonus;
+    // Attendance bonuses are factory invoice charges only. They are deliberately excluded from worker salary.
+    const grossEarnings = normalWage + otWage;
 
     // LKR 150 per hour by default; a factory may explicitly configure another rate.
     const lateHours = attendanceList.reduce((sum, att) => sum + Math.max(0, att.lateHours || 0), 0);
@@ -121,7 +123,6 @@ export class PayrollService {
       snapshotWageRate: employee.wageRate,
       daysWorked: payableDaysWorked,
       normalWage,
-      attendanceBonus,
       approvedOtHours,
       snapshotOtRateHourly,
       otWage,
