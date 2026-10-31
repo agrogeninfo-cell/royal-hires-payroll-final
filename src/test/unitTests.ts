@@ -97,10 +97,12 @@ export class SystemTestSuite {
       const weekday = BillingService.getApplicableDailyBillingRate(empire, 'male', '2026-10-19', 'Day Shift').rate;
       const saturday = BillingService.getApplicableDailyBillingRate(empire, 'male', '2026-10-17', 'Day Shift').rate;
       const sundayFemale = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-18', 'Day Shift').rate;
+      const sundayFemaleNight = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-18', 'Night Shift').rate;
       const poyaFemale = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-21', 'Night Shift').rate;
       const femaleNight = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-19', 'Night Shift').rate;
-      const passed = weekday === 1525 && saturday === 1875 && sundayFemale === 3700 && poyaFemale === 3700 && femaleNight === 1625;
-      results.push({ id: 21, title: 'Empire Teas shift and special-day billing rules', category: 'Billing', passed, message: passed ? 'Verified weekday 1525, Saturday 1875, Sunday/Poya female 3700, female night 1625.' : `Unexpected rates: ${[weekday, saturday, sundayFemale, poyaFemale, femaleNight].join(', ')}` });
+      const saturdayFemaleNight = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-17', 'Night Shift').rate;
+      const passed = weekday === 1525 && saturday === 1875 && sundayFemale === 3600 && sundayFemaleNight === 3700 && poyaFemale === 3700 && femaleNight === 1625 && saturdayFemaleNight === 1975;
+      results.push({ id: 21, title: 'Empire Teas shift and special-day billing rules', category: 'Billing', passed, message: passed ? 'Verified weekday 1525, Saturday 1875, Sunday/Poya day 3600, and female night allowance +100 per night.' : `Unexpected rates: ${[weekday, saturday, sundayFemale, sundayFemaleNight, poyaFemale, femaleNight, saturdayFemaleNight].join(', ')}` });
     } catch (err: any) { results.push({ id: 21, title: 'Empire Teas billing rules', category: 'Billing', passed: false, message: err.message }); }
 
     // Test 22: Millennium Teas reference rates.
@@ -907,6 +909,198 @@ export class SystemTestSuite {
       });
     } catch (err: any) {
       results.push({ id: 24, title: 'Non-destructive factory initialization', category: 'Security & Sync', passed: false, message: err.message });
+    }
+
+    // Test 25: Late deductions are calculated at LKR 150 per recorded hour.
+    try {
+      const employee: Employee = {
+        id: 'EMP-LATE-TEST', fullName: 'Late Deduction Test', nic: 'LATE-TEST', phone: '', address: '',
+        gender: 'male', startDate: '2026-01-01', status: 'active', designation: 'Helper',
+        currentFactoryId: factoryA.id, wageArrangement: 'daily', wageRate: 2000,
+        eligibleForMeals: false, eligibleForBoarding: false, createdAt: '', updatedAt: '',
+      };
+      const attendance: AttendanceRecord[] = [
+        { id: 'late-1', employeeId: employee.id, employeeName: employee.fullName, employeeGender: 'male', factoryId: factoryA.id, factoryName: factoryA.name, date: '2026-01-10', shift: 'Day', status: 'present', payableUnits: 1, otHours: 0, otMinutes: 0, totalOtHours: 0, lateHours: 0.5, hadBreakfast: false, hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester', supervisorName: 'tester', submissionStatus: 'approved', billable: true, syncStatus: 'synced', createdAt: '', updatedAt: '' },
+        { id: 'late-2', employeeId: employee.id, employeeName: employee.fullName, employeeGender: 'male', factoryId: factoryA.id, factoryName: factoryA.name, date: '2026-01-11', shift: 'Day', status: 'present', payableUnits: 0.5, otHours: 0, otMinutes: 0, totalOtHours: 0, lateHours: 0.1, hadBreakfast: false, hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester', supervisorName: 'tester', submissionStatus: 'approved', billable: true, syncStatus: 'synced', createdAt: '', updatedAt: '' },
+      ];
+      const item = PayrollService.calculateEmployeePayrollItem(employee, factoryA, attendance, null, [], 'RUN-LATE-TEST');
+      const passed = item.lateHours === 0.6 && item.lateDeduction === 90 && item.totalDeductions === 90 && item.netPayable === 2910;
+      results.push({ id: 25, title: 'Late deduction is applied at LKR 150 per hour', category: 'Payroll', passed, message: passed ? 'Verified: 0.6 late hours × LKR 150 = LKR 90 deduction; net payable LKR 2,910.' : `Unexpected result: lateHours=${item.lateHours}, lateDeduction=${item.lateDeduction}, deductions=${item.totalDeductions}, net=${item.netPayable}` });
+    } catch (err: any) {
+      results.push({ id: 25, title: 'Late deduction calculation', category: 'Payroll', passed: false, message: err.message });
+    }
+
+
+    // Test 26: Empire Teas wages follow weekday, Saturday and Sunday/Poya rates.
+    try {
+      const empire: Factory = {
+        ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas',
+        wageSameRate: 2000, wageMaleRate: 2000, wageFemaleRate: 2000,
+        weekdayWage: 2000, saturdayWage: 2000, sundayPoyaWage: 2300,
+        attendanceBonus: 0, attendanceBonusDays: 21,
+        specialBillingDates: ['2026-10-21'],
+      };
+      const employee: Employee = {
+        id: 'EMP-EMPIRE-WAGE', fullName: 'Empire Wage Test', nic: 'EMPIRE-WAGE', phone: '', address: '',
+        gender: 'male', startDate: '2026-01-01', status: 'active', designation: 'Helper',
+        currentFactoryId: empire.id, wageArrangement: 'daily', wageRate: 2000,
+        eligibleForMeals: false, eligibleForBoarding: false, createdAt: '', updatedAt: '',
+      };
+      const makeAttendance = (id: string, date: string, shift = 'Day', payableUnits = 1): AttendanceRecord => ({
+        id, employeeId: employee.id, employeeName: employee.fullName, employeeGender: 'male',
+        factoryId: empire.id, factoryName: empire.name, date, shift, status: 'present',
+        payableUnits, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
+        hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester',
+        supervisorName: 'tester', submissionStatus: 'approved', billable: true,
+        syncStatus: 'synced', createdAt: '', updatedAt: '',
+      });
+      const attendance = [
+        makeAttendance('emp-weekday', '2026-10-19'),
+        makeAttendance('emp-saturday', '2026-10-17'),
+        makeAttendance('emp-sunday', '2026-10-18'),
+        makeAttendance('emp-poya', '2026-10-21'),
+        makeAttendance('emp-double', '2026-10-20', 'D+N', 2),
+      ];
+      const item = PayrollService.calculateEmployeePayrollItem(employee, empire, attendance, null, [], 'RUN-EMPIRE-WAGE');
+      const passed = item.normalWage === 12600 && !('attendanceBonus' in (item as any));
+      results.push({ id: 26, title: 'Empire weekday, Saturday, Sunday/Poya and D+N worker wages', category: 'Payroll', passed, message: passed ? 'Verified D+N is paid as two shifts; invoice-only bonus and night allowance are excluded from worker salary.' : 'Unexpected wage total or invoice-only amount in worker payroll: ' + item.normalWage });
+    } catch (err: any) {
+      results.push({ id: 26, title: 'Empire Teas wage schedule', category: 'Payroll', passed: false, message: err.message });
+    }
+
+
+    // Test 27: Factory invoice bonus is never included in employee salary.
+    try {
+      const employee: Employee = {
+        id: 'EMP-BONUS-TEST', fullName: 'Attendance Bonus Test', nic: 'BONUS-TEST', phone: '', address: '',
+        gender: 'female', startDate: '2026-01-01', status: 'active', designation: 'Helper',
+        currentFactoryId: factoryA.id, wageArrangement: 'daily', wageRate: 2000,
+        eligibleForMeals: false, eligibleForBoarding: false, createdAt: '', updatedAt: '',
+      };
+      const attendance: AttendanceRecord[] = Array.from({ length: 21 }, (_, index) => ({
+        id: 'bonus-' + (index + 1), employeeId: employee.id, employeeName: employee.fullName,
+        employeeGender: 'female', factoryId: factoryA.id, factoryName: factoryA.name,
+        date: '2026-10-' + String(index + 1).padStart(2, '0'), shift: index === 0 ? 'Night Shift' : 'Day', status: 'present',
+        payableUnits: 1, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
+        hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester',
+        supervisorName: 'tester', submissionStatus: 'approved', billable: true,
+        syncStatus: 'synced', createdAt: '', updatedAt: '',
+      }));
+      const invoiceBonusFactory = { ...factoryA, attendanceBonus: 5500, attendanceBonusDays: 21 };
+      const item = PayrollService.calculateEmployeePayrollItem(employee, invoiceBonusFactory, attendance, null, [], 'RUN-BONUS-21');
+      const passed = item.grossEarnings === 42000 && !('attendanceBonus' in (item as any));
+      results.push({ id: 27, title: 'Factory attendance bonus is excluded from worker payroll', category: 'Payroll', passed, message: passed ? 'Verified: worker gross pay remains LKR 42,000; invoice-only bonus is not included in the salary item.' : 'Factory invoice bonus leaked into worker payroll.' });
+    } catch (err: any) {
+      results.push({ id: 27, title: 'Worker salary excludes factory bonus', category: 'Payroll', passed: false, message: err.message });
+    }
+
+    // Test 28: Factory invoice bonus counts distinct dates, not D+N shift rows.
+    try {
+      const bonusFactory: Factory = { ...factoryA, attendanceBonus: 5500, attendanceBonusDays: 21 };
+      const employeeId = 'EMP-INVOICE-BONUS';
+      const makeAttendance = (id: string, date: string, shift: string, payableUnits = 1): AttendanceRecord => ({
+        id, employeeId, employeeName: 'Invoice Bonus Test', employeeGender: 'male',
+        factoryId: bonusFactory.id, factoryName: bonusFactory.name, date, shift, status: 'present',
+        payableUnits, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
+        hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester',
+        supervisorName: 'tester', submissionStatus: 'approved', billable: true,
+        syncStatus: 'synced', createdAt: '', updatedAt: '',
+      });
+      const records: AttendanceRecord[] = Array.from({ length: 21 }, (_, index) =>
+        makeAttendance('invoice-bonus-' + index, '2026-10-' + String(index + 1).padStart(2, '0'), 'Day')
+      );
+      records.push(makeAttendance('invoice-bonus-dn', '2026-10-02', 'D+N', 2));
+      const invoice = InvoicingService.generateInvoiceFromAttendance(
+        bonusFactory, '2026-10-01', '2026-10-31', records, 'INV-BONUS-TEST', 'tester'
+      );
+      const passed = invoice.attendanceBonusEligibleEmployees === 1
+        && invoice.attendanceBonusTotal === 5500
+        && invoice.totalAmount === invoice.subtotal + 5500;
+      results.push({ id: 28, title: 'Invoice attendance bonus counts 21 unique dates and counts D+N once', category: 'Invoicing', passed, message: passed ? 'Verified: 21 distinct dates qualify; the second shift on one date does not create an extra bonus day.' : 'Invoice attendance bonus or unique-date counting is incorrect.' });
+    } catch (err: any) {
+      results.push({ id: 28, title: 'Invoice attendance bonus', category: 'Invoicing', passed: false, message: err.message });
+    }
+
+
+    // Test 29: Empire factory OT billing uses LKR 225 weekday/Saturday and LKR 300 Sunday/Poya.
+    try {
+      const empire: Factory = {
+        ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas',
+        overtimeEnabled: true, factoryOvertimeRateHourly: 225,
+        sundayPoyaOvertimeRateHourly: 300, specialBillingDates: ['2026-10-21'],
+      };
+      const weekday = BillingService.calculateOvertimeBillingCharge(empire, 3, '2026-10-19');
+      const sunday = BillingService.calculateOvertimeBillingCharge(empire, 12, '2026-10-18');
+      const poya = BillingService.calculateOvertimeBillingCharge(empire, 12, '2026-10-21');
+      const passed = weekday.otBillingRateHourly === 225 && weekday.amount === 675
+        && sunday.otBillingRateHourly === 300 && sunday.amount === 3600
+        && poya.otBillingRateHourly === 300 && poya.amount === 3600;
+      results.push({ id: 29, title: 'Empire weekday/Saturday and Sunday/Poya OT billing rates', category: 'Billing', passed, message: passed ? 'Verified LKR 225/hour weekday/Saturday and LKR 300/hour Sunday/Poya.' : 'Factory OT billing rate selection is incorrect.' });
+    } catch (err: any) {
+      results.push({ id: 29, title: 'Empire OT billing rates', category: 'Billing', passed: false, message: err.message });
+    }
+
+    // Test 30: Do not settle employee OT until the employee OT pay rate is configured.
+    try {
+      const employee: Employee = {
+        id: 'EMP-OT-RATE-MISSING', fullName: 'OT Rate Validation', nic: 'OT-RATE', phone: '', address: '',
+        gender: 'male', startDate: '2026-01-01', status: 'active', designation: 'Helper',
+        currentFactoryId: 'fac-empire-teas', wageArrangement: 'daily', wageRate: 2000,
+        eligibleForMeals: false, eligibleForBoarding: false, createdAt: '', updatedAt: '',
+      };
+      const empire: Factory = {
+        ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas',
+        overtimeEnabled: true, employeeOvertimeRateHourly: 0, factoryOvertimeRateHourly: 225,
+      };
+      const att: AttendanceRecord = {
+        id: 'empire-ot-approved', employeeId: employee.id, employeeName: employee.fullName,
+        employeeGender: 'male', factoryId: empire.id, factoryName: empire.name,
+        date: '2026-10-19', shift: 'Day', status: 'present', payableUnits: 1,
+        otHours: 3, otMinutes: 0, totalOtHours: 3, hadBreakfast: false, hadLunch: false,
+        hadDinner: false, hadBoarding: false, recordedBy: 'tester', supervisorName: 'tester',
+        submissionStatus: 'approved', billable: true, syncStatus: 'synced', createdAt: '', updatedAt: '',
+      };
+      let blocked = false;
+      try { PayrollService.calculateEmployeePayrollItem(employee, empire, [att], null, [], 'RUN-OT-RATE'); }
+      catch (err: any) { blocked = /employee OT pay rate is not configured/i.test(err.message); }
+      results.push({ id: 30, title: 'Block payroll when worker OT pay rate is not configured', category: 'Payroll', passed: blocked, message: blocked ? 'Approved OT cannot be silently paid at LKR 0.' : 'Payroll did not block an unconfigured worker OT rate.' });
+    } catch (err: any) {
+      results.push({ id: 30, title: 'Worker OT rate validation', category: 'Payroll', passed: false, message: err.message });
+    }
+
+
+    // Test 31: Mandatory OT billing is per shift; D+N is two shifts and Sunday/Poya is 12 hours each.
+    try {
+      const empire: Factory = {
+        ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas',
+        sameRate: 1525, overtimeEnabled: true, factoryOvertimeRateHourly: 225,
+        sundayPoyaOvertimeRateHourly: 300, mandatoryOtHoursPerShift: 3,
+        sundayPoyaOtHoursPerShift: 12, femaleNightAllowance: 100, specialBillingDates: ['2026-10-21'],
+        attendanceBonus: 0,
+      };
+      const employeeId = 'EMP-MANDATORY-OT';
+      const makeAttendance = (id: string, date: string, shift: string, payableUnits: number, gender: 'male' | 'female' = 'male'): AttendanceRecord => ({
+        id, employeeId, employeeName: 'Mandatory OT Test', employeeGender: gender,
+        factoryId: empire.id, factoryName: empire.name, date, shift, status: 'present',
+        payableUnits, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
+        hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester',
+        supervisorName: 'tester', submissionStatus: 'approved', billable: true,
+        syncStatus: 'synced', createdAt: '', updatedAt: '',
+      });
+      const invoice = InvoicingService.generateInvoiceFromAttendance(
+        empire, '2026-10-01', '2026-10-31', [
+          makeAttendance('ot-weekday-dn', '2026-10-19', 'D+N', 2, 'female'),
+          makeAttendance('ot-sunday-dn', '2026-10-18', 'D+N', 2),
+          makeAttendance('ot-poya-day', '2026-10-21', 'Day Shift', 1),
+        ], 'INV-MANDATORY-OT', 'tester'
+      );
+      const otHours = invoice.lineItems.map((line) => line.billableOtHours);
+      const otTotal = invoice.lineItems.reduce((sum, line) => sum + line.otBillingTotal, 0);
+      const passed = otHours[0] === 6 && otHours[1] === 24 && otHours[2] === 12 && otTotal === 12150
+        && invoice.lineItems[0].dayBillingTotal === 3150;
+      results.push({ id: 31, title: 'Empire mandatory OT billing: 3 hours weekday/Saturday, 12 hours Sunday/Poya', category: 'Invoicing', passed, message: passed ? 'Verified D+N bills two shifts; female night allowance is applied once; weekday/Saturday OT 3 hours per shift and Sunday/Poya 12 hours per shift.' : 'Mandatory invoice OT calculation is incorrect: ' + otHours.join(', ') + ' / ' + otTotal });
+    } catch (err: any) {
+      results.push({ id: 31, title: 'Empire mandatory OT invoice rules', category: 'Invoicing', passed: false, message: err.message });
     }
 
     return results;

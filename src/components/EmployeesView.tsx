@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { getSupabaseClient } from '../services/authService';
 import { Employee, WageArrangement, EmployeePayment } from '../types';
 import {
   Users,
@@ -13,6 +14,7 @@ import {
   Filter,
   CheckCircle2,
   ShieldAlert,
+  CreditCard,
 } from 'lucide-react';
 
 export const EmployeesView: React.FC = () => {
@@ -56,17 +58,46 @@ export const EmployeesView: React.FC = () => {
   const [status, setStatus] = useState<Employee['status']>('active');
   const [currentFactoryId, setCurrentFactoryId] = useState('');
   const [wageArrangement, setWageArrangement] = useState<WageArrangement>('daily');
-  const [wageRate, setWageRate] = useState<number>(2200);
+  const [wageRate, setWageRate] = useState<number>(0);
   const [eligibleForMeals, setEligibleForMeals] = useState(true);
   const [eligibleForBoarding, setEligibleForBoarding] = useState(false);
   const [boardingLocationId, setBoardingLocationId] = useState('');
   const [notes, setNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [portalPinEmployee, setPortalPinEmployee] = useState<Employee | null>(null);
+  const [portalPin, setPortalPin] = useState('');
+  const [portalPinError, setPortalPinError] = useState('');
+  const [portalPinSaving, setPortalPinSaving] = useState(false);
+  const [portalPinIssued, setPortalPinIssued] = useState(false);
+
+  const getFactoryWage = (factoryId: string, workerGender: 'male' | 'female') => {
+    const factory = factories.find((item) => item.id === factoryId);
+    if (!factory) return 0;
+    const specificRate = workerGender === 'male' ? factory.wageMaleRate : factory.wageFemaleRate;
+    return Number(specificRate ?? factory.wageSameRate ?? 0);
+  };
+
+  const generateMemberId = (name: string, existing: Employee[]) => {
+    const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('') || 'XX';
+    const used = new Set(existing.map((employee) => employee.id.toUpperCase()));
+    let sequence = 200;
+    let candidate = 'RH' + initials + sequence;
+    while (used.has(candidate)) { sequence += 1; candidate = 'RH' + initials + sequence; }
+    return candidate;
+  };
+
+  const printIdCard = (employee: Employee, factoryName: string) => {
+    const popup = window.open('', '_blank', 'width=900,height=600');
+    if (!popup) { setErrorMsg('Please allow pop-ups to preview/print the ID card.'); return; }
+    const escapeHtml = (value: string) => value.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch] || ch));
+    popup.document.write('<!doctype html><html><head><title>Royal Hires ID Card</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#f1f5f9;font-family:Arial,sans-serif}.card{width:856px;height:540px;max-width:100%;margin:auto;border-radius:24px;overflow:hidden;background:#062d27;color:#fff;border:5px solid #d7ad63}.head{padding:28px 34px;background:#0a3d34;border-bottom:3px solid #d7ad63}.brand{font-size:30px;font-weight:800;letter-spacing:1px}.sub{color:#e8d4a6;font-size:13px;letter-spacing:2px;margin-top:5px}.body{padding:30px 36px}.id{font-size:34px;font-weight:900;color:#d7ad63;letter-spacing:2px}.name{font-size:32px;font-weight:800;margin:16px 0 8px}.role{font-size:17px;color:#e8d4a6}.details{font-size:16px;line-height:1.8;margin-top:20px}.factory{padding:16px 36px;background:#d7ad63;color:#062d27;font-weight:700}@media print{body{padding:0;background:white}.card{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><div class="card"><div class="head"><div class="brand">ROYAL HIRES PRIVATE LIMITED</div><div class="sub">EMPLOYEE IDENTIFICATION CARD</div></div><div class="body"><div class="id">' + escapeHtml(employee.id) + '</div><div class="name">' + escapeHtml(employee.fullName) + '</div><div class="role">FACTORY WORKER</div><div class="details">Phone: ' + escapeHtml(employee.phone || '-') + '<br>NIC: ' + escapeHtml(employee.nic || '-') + '<br>Valid while employment is active</div></div><div class="factory">' + escapeHtml(factoryName) + ' · MALABE, SRI LANKA</div></div><script>window.onload=function(){window.print()}</script></body></html>');
+    popup.document.close();
+  };
 
   const openCreateModal = () => {
     setEditingEmployee(null);
-    setId(`EMP-${100 + employees.length + 1}`);
+    setId(generateMemberId('', employees));
     setFullName('');
     setNic('');
     setPhone('+94 7');
@@ -77,7 +108,7 @@ export const EmployeesView: React.FC = () => {
     setStatus('active');
     setCurrentFactoryId(factories[0]?.id || '');
     setWageArrangement('daily');
-    setWageRate(2200);
+    setWageRate(getFactoryWage(factories[0]?.id || '', 'male'));
     setEligibleForMeals(true);
     setEligibleForBoarding(false);
     setBoardingLocationId(boardingLocations[0]?.id || '');
@@ -121,7 +152,16 @@ export const EmployeesView: React.FC = () => {
     setErrorMsg('');
 
     if (!fullName.trim() || !nic.trim() || !id.trim()) {
-      setErrorMsg('Full name, NIC, and Employee ID are required.');
+      setErrorMsg('Full name, NIC, and Member ID are required.');
+      return;
+    }
+
+    if (employees.some((employee) => employee.id.toUpperCase() === id.trim().toUpperCase() && employee.id !== editingEmployee?.id)) {
+      setErrorMsg('This Member ID already exists. Please use a unique ID.');
+      return;
+    }
+    if (employees.some((employee) => employee.nic.trim().toUpperCase() === nic.trim().toUpperCase() && employee.id !== editingEmployee?.id)) {
+      setErrorMsg('This NIC is already registered to another worker.');
       return;
     }
 
@@ -156,10 +196,44 @@ export const EmployeesView: React.FC = () => {
 
       await saveEmployee(employeeToSave);
       setIsModalOpen(false);
-      setSuccessMsg(`Saved helper ${employeeToSave.fullName} successfully.`);
+      setSuccessMsg(`Saved worker ${employeeToSave.fullName} successfully.`);
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
       setErrorMsg(err.message);
+    }
+  };
+
+  const openPortalPinModal = (employee: Employee) => {
+    setPortalPinEmployee(employee);
+    const digits = new Uint32Array(1);
+    crypto.getRandomValues(digits);
+    setPortalPin(String(100000 + (digits[0] % 900000)));
+    setPortalPinError('');
+    setPortalPinIssued(false);
+  };
+
+  const handleSetPortalPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!portalPinEmployee || currentUser.role !== 'admin') return;
+    if (!/^\\d{6,10}$/.test(portalPin)) {
+      setPortalPinError('PIN must contain 6–10 digits.');
+      return;
+    }
+    setPortalPinSaving(true);
+    setPortalPinError('');
+    try {
+      const { data, error } = await getSupabaseClient().functions.invoke('worker-portal', {
+        body: { action: 'admin-set-pin', memberId: portalPinEmployee.id, pin: portalPin },
+      });
+      if (error) throw new Error('Unable to reach the portal service. Check the portal migration and function deployment.');
+      if (!data?.ok) throw new Error(data?.error || 'PIN could not be saved.');
+      setPortalPinIssued(true);
+      setSuccessMsg('Portal PIN set for ' + portalPinEmployee.fullName + '.');
+      setTimeout(() => setSuccessMsg(''), 8000);
+    } catch (err: any) {
+      setPortalPinError(err?.message || 'Could not set worker PIN.');
+    } finally {
+      setPortalPinSaving(false);
     }
   };
 
@@ -331,7 +405,7 @@ export const EmployeesView: React.FC = () => {
                 {/* Wage and Benefits Specs */}
                 <div className="mt-2.5 p-2.5 bg-emerald-50/50 rounded-lg border border-emerald-100 text-xs space-y-1">
                   <div className="flex justify-between items-center text-emerald-950 font-bold">
-                    <span>Agreed Wage:</span>
+                    <span>Worker Wage:</span>
                     <span>
                       LKR {emp.wageRate.toLocaleString()} /{' '}
                       <span className="capitalize font-normal text-slate-600">{emp.wageArrangement}</span>
@@ -369,6 +443,20 @@ export const EmployeesView: React.FC = () => {
                   >
                     + Record Advance
                   </button>
+                  {currentUser.role === 'admin' && (
+                    <button
+                      onClick={() => openPortalPinModal(emp)}
+                      className="px-2.5 py-1 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded border border-emerald-200 transition cursor-pointer"
+                    >
+                      Set Portal PIN
+                    </button>
+                  )}
+                  <button
+                    onClick={() => printIdCard(emp, fac?.name || 'Royal Hires')}
+                    className="px-2.5 py-1 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 rounded border border-amber-200 transition cursor-pointer flex items-center gap-1"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" /> ID Card
+                  </button>
                   <button
                     onClick={() => openEditModal(emp)}
                     className="px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition cursor-pointer"
@@ -381,6 +469,54 @@ export const EmployeesView: React.FC = () => {
           );
         })}
       </div>
+
+      {portalPinEmployee && currentUser.role === 'admin' && (
+        <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div>
+              <h3 className="font-bold text-lg text-slate-900">Worker Portal PIN</h3>
+              <p className="text-sm text-slate-600 mt-1">Issue a private PIN for {portalPinEmployee.fullName} ({portalPinEmployee.id}). The worker can use it to view only their own approved salary slips and meal bill.</p>
+            </div>
+            {portalPinIssued ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-sm font-semibold text-emerald-900">PIN created successfully</p>
+                  <p className="text-xs text-emerald-800 mt-1">This is the only time the PIN is shown. Share it privately with the worker. If you close this window, it cannot be retrieved.</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <code className="flex-1 rounded-lg bg-white border border-emerald-200 p-3 text-xl font-black tracking-[0.25em]">{portalPin}</code>
+                    <button type="button" onClick={() => navigator.clipboard?.writeText(portalPin)} className="px-3 py-2 bg-white border border-emerald-300 rounded-lg font-semibold text-sm">Copy</button>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button type="button" onClick={() => { setPortalPinEmployee(null); setPortalPin(''); setPortalPinError(''); setPortalPinIssued(false); }} className="px-4 py-2 bg-emerald-700 text-white rounded-lg font-bold">Done</button>
+                </div>
+              </div>
+            ) : (
+            <form onSubmit={handleSetPortalPin} className="space-y-3">
+              <label className="block text-sm font-semibold text-slate-700">6-digit temporary PIN</label>
+              <input
+                type="password"
+                inputMode="numeric"
+                autoComplete="new-password"
+                pattern="[0-9]{6,10}"
+                minLength={6}
+                maxLength={10}
+                required
+                value={portalPin}
+                onChange={(e) => setPortalPin(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-lg tracking-[0.25em]"
+              />
+              <p className="text-xs text-slate-500">A random 6-digit PIN is generated. You may change it before saving. The PIN is stored as a salted hash and cannot be recovered later.</p>
+              {portalPinError && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">{portalPinError}</div>}
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => { setPortalPinEmployee(null); setPortalPin(''); setPortalPinError(''); }} className="px-4 py-2 border border-slate-300 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" disabled={portalPinSaving} className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50">{portalPinSaving ? 'Saving…' : 'Set PIN'}</button>
+              </div>
+            </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Helper Registration / Edit Modal */}
       {isModalOpen && (
@@ -415,7 +551,7 @@ export const EmployeesView: React.FC = () => {
                     required
                     value={id}
                     onChange={(e) => setId(e.target.value)}
-                    placeholder="e.g. EMP-101"
+                    placeholder="e.g. RHTD200"
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold uppercase"
                   />
                 </div>
@@ -437,7 +573,7 @@ export const EmployeesView: React.FC = () => {
                   type="text"
                   required
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => { setFullName(e.target.value); if (!editingEmployee) setId(generateMemberId(e.target.value, employees)); }}
                   placeholder="e.g. Kasun Bandara"
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
                 />
@@ -459,7 +595,7 @@ export const EmployeesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Gender *</label>
                   <select
                     value={gender}
-                    onChange={(e) => setGender(e.target.value as any)}
+                    onChange={(e) => { const nextGender = e.target.value as 'male' | 'female'; setGender(nextGender); if (!editingEmployee) setWageRate(getFactoryWage(currentFactoryId, nextGender)); }}
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
                   >
                     <option value="male">Male Helper</option>
@@ -510,7 +646,7 @@ export const EmployeesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Assigned Factory *</label>
                   <select
                     value={currentFactoryId}
-                    onChange={(e) => setCurrentFactoryId(e.target.value)}
+                    onChange={(e) => { const nextFactoryId = e.target.value; setCurrentFactoryId(nextFactoryId); if (!editingEmployee) setWageRate(getFactoryWage(nextFactoryId, gender)); }}
                     className="w-full bg-white border border-slate-300 rounded-lg p-2"
                   >
                     {factories.map((f) => (
@@ -536,7 +672,7 @@ export const EmployeesView: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Agreed Rate in LKR *
+                      Auto-filled Worker Wage (LKR) *
                     </label>
                     <input
                       type="number"

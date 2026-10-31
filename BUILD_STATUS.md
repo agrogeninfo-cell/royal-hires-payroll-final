@@ -1,46 +1,60 @@
-# Royal Pay — Build and Audit Status
+# Royal Hires Payroll — Release Status
 
-Last updated: 2026-10-14
+Last updated: 2026-10-31
 
-## Current working state
+## Release candidate
 
 - Repository: `agrogeninfo-cell/royal-hires-payroll-final`
-- Working branch: `fix/invoice-csv-export`
-- Production branch: `main` (not edited directly)
-- Pull request: https://github.com/agrogeninfo-cell/royal-hires-payroll-final/pull/1
-- Current branch head at last check: `0cf3a740ce6b613e603c416738148687cc7df736`
-- The pull request remains open and unmerged.
+- Release branch: `release/royal-hires-appmint-final`
+- Pull request: https://github.com/agrogeninfo-cell/royal-hires-payroll-final/pull/43
+- Production Supabase project: `jwghmsflabvzzhucuwsn`
+- Corporate website deployment is a separate next phase. The payroll app is not automatically published to a public website.
 
-## Implemented on the working branch
+## Modules retained
 
-- Invoice CSV cells are escaped consistently, CSV uses CRLF and UTF-8 BOM, and native Android export writes to app cache and opens the system share sheet.
-- Header and splash components now reference the current wordmark/emblem under `brand-kit-export/company-logo/`.
-- Android launcher script now copies pre-rendered icon resources from `brand-kit-export/android-assets/` and preserves unrelated existing Android color definitions.
-- Native startup configures the status bar not to overlay the WebView, sets the brand background and light status-bar content; PWA service-worker registration remains browser-only.
-- Responsive CSS includes dynamic viewport sizing and safe-area padding.
-- Payroll formulas, employee records, attendance, invoices, factory rates, database schema and historical data were not intentionally changed.
+Employee management, attendance, shift selection including D+N, overtime entry/approval, payroll, meal tracking and meal bills, boarding, advances, settlements, salary slips, factory billing/invoices, receipts, reports, backups and audit records remain in the app.
 
-## Verified build results
+## Confirmed business rules
 
-- **PASS — GitHub Actions run #46**, commit `1dc18620763b0203da347c539352b0b409c8a6a4`: dependency install, TypeScript validation, payroll/billing/invoicing unit checks, Vite production build, Capacitor sync, previous launcher-generation step, Gradle debug APK build and artifact upload succeeded.
-- **PASS — artifact integrity** for run #46: downloaded ZIP passed `unzip -t`; contained `app-debug.apk` (7,316,050 bytes), SHA-256 `248dac2c57868ba15591c049e58a108a67046a02cbce21ccb64b102eba67f378`.
-- **IMPORTANT:** that APK predates the latest brand asset and status-bar commits. Do not install it as verification of those changes.
-- **IN PROGRESS at last check — GitHub Actions run #48** builds the earlier brand-script change. A fresh run for the latest branch head must be checked before distributing a current APK.
+### Empire Teas
 
-## Audit findings / release blockers
+- Worker wages: LKR 2,000 weekday/Saturday; LKR 2,300 Sunday/Poya.
+- D+N is paid and billed as two shifts, but counts as one calendar date for the factory invoice attendance bonus.
+- Factory invoice attendance bonus: LKR 5,500 after 21 attendance days. This is invoice-only and is not included in worker gross pay or salary slips.
+- Female night allowance: LKR 100 per night shift, invoice-only. It is not included in worker salary.
+- Factory invoice OT: 3 mandatory hours per weekday/Saturday shift at LKR 225/hour; 12 mandatory hours per Sunday/Poya shift at LKR 300/hour.
+- Employee OT pay rate has not been confirmed. The payroll calculation blocks settlement if approved employee OT exists while the employee OT pay rate is unset; this prevents paying approved OT at zero.
 
-1. **Authentication:** the React app uses client-side role state and a demo role switcher. No verified server-side identity/authorization service was found in inspected application source. Do not treat UI role checks as a security boundary.
-2. **Synchronization:** `src/services/syncService.ts` processes the local IndexedDB queue only; no remote API call was found. This is not cloud or multi-device synchronization.
-3. **Persistence:** IndexedDB and LocalStorage mirror are local-device persistence, not a guaranteed backup. Keep regular exports and test restores.
-4. **Dependency reproducibility:** no npm lockfile was found at repository root; the workflow uses `npm install`, not `npm ci`.
-5. **Full-screen behavior:** status-bar overlay handling is now configured in source, but the exact target Android device must still be tested for header clipping, system bars, back navigation, and bottom inset behavior.
-6. **Exports:** the invoice export inspected here is CSV, not a genuine XLSX workbook. PDF/letterhead and report reconciliation need their own targeted verification.
-7. **Payroll integrity:** existing rules include current six-day weekly and 26-day monthly divisors; do not change without approved business requirements and reconciliation tests.
+### Millennium Teas
 
-## Still required before release
+- Worker wages: male LKR 2,500; female LKR 2,100.
+- Employee OT pay: LKR 180/hour; factory OT billing: LKR 225/hour.
+- Late deduction default: LKR 150/hour.
+- Meal rates loaded: breakfast LKR 130, lunch LKR 250, dinner LKR 250.
 
-- Fresh GitHub Actions PASS for the current head, including status-bar plugin installation and launcher resources.
-- Install the new artifact on the target Android device; verify icon, header logo, splash, status/navigation bars, back behavior, and CSV share/save flow.
-- Run backup/restore drills with non-production data.
-- Resolve production authentication and remote-sync architecture before relying on multi-user or multi-device security/synchronization.
-- Review the pull request; do not merge, deploy, or publish a release without explicit authorization.
+## Production database and security
+
+- Added production app tables, company/profile/factory mappings, app-record storage, worker portal credentials and sessions, and RLS policies.
+- Existing legacy tables and employee/payroll records were not deleted.
+- Current production data check: 1 mapped admin profile, 2 factory records, 2 factory configuration app-records, 0 worker PIN accounts and 0 legacy employee rows.
+- Worker PIN hashes and worker sessions are handled by server-side Edge Functions; the worker portal function and admin access function are deployed.
+- Factory configurations are stored in the shared Supabase project for the app and future Royal Workforce portal.
+- Production employee and worker PIN login still require a controlled end-to-end smoke test after the app package is installed.
+
+## Build and packaging
+
+- **PASS — GitHub Actions Build Android APK run #356** (commit `a26ae79edc92a3ea5af5995b3bfdc389274a8792`): dependency installation, production Supabase configuration check, TypeScript validation, payroll/billing/invoicing unit tests, Vite build, AppMint ZIP packaging, Capacitor sync, Android branding and debug APK build all succeeded.
+- **PASS — Worker Portal Validation run #71**: TypeScript validation, payroll/billing tests and worker portal production build succeeded.
+- AppMint artifact: `royal-hires-appmint-web`, artifact ID `13047215788`; the downloaded inner ZIP was integrity-checked and contains `index.html` at the archive root. SHA-256: `4fb21eb4dc66b3613ea58ab2e26127504db6943fb4b83b7d1a8da0af7fbcacc2`.
+- Debug APK artifact: `royal-hires-payroll-production-debug-apk`, artifact ID `13047106294`.
+- GitHub Pages deployment is manual-only. A normal source push or PR merge does not publish the payroll app.
+
+## Release checks still required
+
+1. Import the verified AppMint ZIP into AppMint and generate the Android APK.
+2. Install the APK and sign in with the production admin account.
+3. Verify cloud sync, employee creation, attendance, D+N, payroll, meal/boarding deductions, invoice OT and invoice-only attendance bonus using controlled test records.
+4. Verify worker PIN login, salary visibility and salary-slip download after a test employee is created.
+5. After the payroll app is accepted, complete the separate corporate website and Royal Workforce landing-page integration.
+
+No live employee records have been added for testing, and no public website deployment has been triggered by this release branch.

@@ -29,10 +29,9 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const adminUsername = Deno.env.get('ROYAL_PAY_ADMIN_USERNAME')?.trim().toLowerCase();
   const adminEmail = Deno.env.get('ROYAL_PAY_ADMIN_EMAIL')?.trim().toLowerCase();
-  if (!supabaseUrl || !anonKey || !serviceRoleKey || !adminUsername || !adminEmail) {
+  if (!supabaseUrl || !anonKey || !adminUsername || !adminEmail) {
     return reply({ error: 'Server authentication configuration is incomplete.' }, 503, origin);
   }
 
@@ -75,17 +74,10 @@ Deno.serve(async (req: Request) => {
     return reply({ error: 'Invalid username or password.' }, 401, origin);
   }
 
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data: profile, error: profileError } = await adminClient
-    .from('profiles')
-    .select('user_id, role, is_active, approval_status')
-    .eq('user_id', authData.user.id)
-    .maybeSingle();
-
-  if (profileError || !profile || profile.role !== 'admin' ||
-      profile.is_active !== true || profile.approval_status !== 'approved') {
+  // The configured email secret is the explicit admin allowlist for this legacy project.
+  // Require Supabase Auth to confirm the same email and password; do not depend on a
+  // public.profiles table that is not present in this production database.
+  if (authData.user.email?.trim().toLowerCase() !== adminEmail) {
     await publicClient.auth.signOut().catch(() => undefined);
     return reply({ error: 'This account is not enabled for the Royal Pay Admin role. Contact the administrator.' }, 403, origin);
   }

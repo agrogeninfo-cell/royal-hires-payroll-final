@@ -48,10 +48,11 @@ export class BillingService {
       const isConfiguredPoya = Boolean(attendanceDate && factory.specialBillingDates?.includes(attendanceDate));
       const isNight = /night/i.test(shift || '');
       const baseRate = factory.sameRate && factory.sameRate > 0 ? factory.sameRate : 1525;
-      let rate = baseRate;
-      if (isSunday || isConfiguredPoya) rate = 3600 + (gender === 'female' ? 100 : 0);
-      else if (isSaturday && !isNight) rate = 1875;
-      else if (isNight && gender === 'female') rate = baseRate + 100;
+      const dayRate = (isSunday || isConfiguredPoya) ? 3600 : isSaturday ? 1875 : baseRate;
+      const femaleNightAllowance = isNight && gender === 'female'
+        ? Number(factory.femaleNightAllowance ?? 100)
+        : 0;
+      const rate = dayRate + femaleNightAllowance;
       return { rate, method: 'SAME_RATE_FOR_ALL', factoryId: factory.id, factoryName: factory.name };
     }
 
@@ -147,18 +148,23 @@ export class BillingService {
    */
   public static calculateOvertimeBillingCharge(
     factory: Factory,
-    approvedOtHours: number
+    approvedOtHours: number,
+    attendanceDate?: string
   ): { otBillingRateHourly: number; amount: number } {
     if (!factory.overtimeEnabled || approvedOtHours <= 0) {
-      return { otBillingRateHourly: factory.factoryOvertimeRateHourly || 0, amount: 0 };
+      return { otBillingRateHourly: 0, amount: 0 };
     }
 
-    const rate = factory.factoryOvertimeRateHourly;
-    if (rate === undefined || rate === null || isNaN(rate) || rate < 0) {
-      throw new Error(`Validation Error: Factory OT billing rate is missing or invalid for "${factory.name}".`);
+    const date = attendanceDate ? new Date(`${attendanceDate}T12:00:00`) : null;
+    const isSunday = date?.getDay() === 0;
+    const isPoya = Boolean(attendanceDate && factory.specialBillingDates?.includes(attendanceDate));
+    const rate = (isSunday || isPoya)
+      ? (factory.sundayPoyaOvertimeRateHourly ?? factory.factoryOvertimeRateHourly)
+      : factory.factoryOvertimeRateHourly;
+
+    if (rate === undefined || rate === null || isNaN(rate) || rate <= 0) {
+      throw new Error(`Validation Error: Factory OT billing rate is missing or invalid for "${factory.name}" on ${attendanceDate || 'the selected date'}.`);
     }
 
-    const amount = Math.round(rate * approvedOtHours);
-    return { otBillingRateHourly: rate, amount };
-  }
-}
+    return { otBillingRateHourly: rate, amount: Math.round(rate * approvedOtHours) };
+  }}

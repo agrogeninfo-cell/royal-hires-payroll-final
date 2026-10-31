@@ -36,6 +36,25 @@ export interface Factory {
   employeeOvertimeRateHourly: number; // in LKR paid to worker
   factoryOvertimeRateHourly: number; // in LKR billed to factory
   billingMethod: BillingRateMethod;
+  /** Employee wage rates are separate from factory billing rates. */
+  wageSameRate?: number;
+  wageMaleRate?: number;
+  wageFemaleRate?: number;
+  /** Daily employee wage schedule for factories with different weekday/Saturday/Sunday-Poya pay. */
+  weekdayWage?: number;
+  saturdayWage?: number;
+  sundayPoyaWage?: number;
+  /** Factory invoice-only attendance bonus; never included in worker salary. */
+  attendanceBonus?: number;
+  attendanceBonusDays?: number;
+  /** Sunday/Poya factory OT billing rate; employee OT pay remains separate. */
+  sundayPoyaOvertimeRateHourly?: number;
+  /** Mandatory factory-billed OT per shift; separate from employee-approved OT pay. */
+  mandatoryOtHoursPerShift?: number;
+  sundayPoyaOtHoursPerShift?: number;
+  /** Invoice-only allowance added for each female night shift. */
+  femaleNightAllowance?: number;
+  lateDeductionPerHour?: number;
   sameRate?: number; // Standard daily billing rate for all Helpers in LKR
   maleRate?: number; // Male Helper daily rate in LKR
   femaleRate?: number; // Female Helper daily rate in LKR
@@ -211,6 +230,8 @@ export interface PayrollItem {
   dinnerCount: number;
   dinnerCost: number;
   totalMealDeductions: number;
+  lateDeduction: number;
+  lateHours: number;
   boardingDays: number;
   boardingCost: number;
   totalBoardingDeductions: number;
@@ -278,6 +299,7 @@ export interface InvoiceLineItem {
   billableDays: number; // 1.0 or 0.5
   dayBillingTotal: number;
   approvedOtHours: number;
+  billableOtHours?: number;
   snapshotOtBillingRateHourly: number;
   otBillingTotal: number;
   lineTotal: number;
@@ -294,6 +316,9 @@ export interface FactoryInvoice {
   periodEnd: string;
   lineItems: InvoiceLineItem[];
   subtotal: number;
+  /** Factory invoice-only attendance bonus; excluded from worker payroll and payslips. */
+  attendanceBonusEligibleEmployees?: number;
+  attendanceBonusTotal?: number;
   adjustments: number;
   totalAmount: number;
   amountReceived: number;

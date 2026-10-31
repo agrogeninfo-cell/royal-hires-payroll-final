@@ -35,23 +35,51 @@ export class InvoicingService {
     });
 
     for (const att of validAttendance) {
-      // Get the applicable billing rate snapshot for this factory and employee gender
-      const rateResult = BillingService.getApplicableDailyBillingRate(
-        factory,
-        att.employeeGender,
-        att.date,
-        att.shift
-      );
+      const normalizedShift = String(att.shift || '').toLowerCase().replace(/\s+/g, '');
+      const isDoubleShift = normalizedShift.includes('d+n')
+        || normalizedShift.includes('day+night')
+        || normalizedShift.includes('dayandnight')
+        || normalizedShift.includes('double');
+      const isFullDay = att.status === 'present';
+      const billableDays = isDoubleShift
+        ? (isFullDay ? Math.max(2, Number(att.payableUnits ?? 1)) : Math.max(1, Number(att.payableUnits ?? 0.5)))
+        : Math.max(0, Number(att.payableUnits ?? (att.status === 'half_day' ? 0.5 : 1)));
 
-      const billableDays = att.payableUnits;
-      const dayBillingTotal = Math.round(billableDays * rateResult.rate);
+      // A single D+N record represents two billed shifts: one day shift and one night shift.
+      // The female night allowance is therefore applied once, not twice.
+      let rateResult: ReturnType<typeof BillingService.getApplicableDailyBillingRate>;
+      let dayBillingTotal: number;
+      if (isDoubleShift && isFullDay) {
+        const dayRate = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, 'Day Shift');
+        const nightRate = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, 'Night Shift');
+        dayBillingTotal = Math.round(dayRate.rate + nightRate.rate + Math.max(0, billableDays - 2) * nightRate.rate);
+        rateResult = { ...dayRate, rate: dayBillingTotal / billableDays };
+      } else if (isDoubleShift) {
+        const dayRate = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, 'Day Shift');
+        const nightRate = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, 'Night Shift');
+        dayBillingTotal = Math.round((dayRate.rate + nightRate.rate) / 2);
+        rateResult = { ...dayRate, rate: dayBillingTotal };
+      } else {
+        rateResult = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, att.shift);
+        dayBillingTotal = Math.round(billableDays * rateResult.rate);
+      }
 
-      // Overtime charge using factory overtime billing rate
+      // Overtime charge uses mandatory factory-billed hours per shift when configured.
       const approvedOtHours = att.totalOtHours || 0;
-      const snapshotOtBillingRateHourly = factory.overtimeEnabled
-        ? factory.factoryOvertimeRateHourly || 0
-        : 0;
-      const otBillingTotal = Math.round(approvedOtHours * snapshotOtBillingRateHourly);
+      const shiftCount = isDoubleShift
+        ? (isFullDay ? Math.max(2, billableDays) : Math.max(1, billableDays))
+        : billableDays;
+      const dateValue = new Date(`${att.date}T12:00:00`);
+      const isSundayOrPoya = dateValue.getDay() === 0
+        || Boolean(factory.specialBillingDates?.includes(att.date));
+      const mandatoryOtHoursPerShift = isSundayOrPoya
+        ? Number(factory.sundayPoyaOtHoursPerShift ?? factory.mandatoryOtHoursPerShift ?? 0)
+        : Number(factory.mandatoryOtHoursPerShift ?? 0);
+      const mandatoryBillableOtHours = mandatoryOtHoursPerShift * shiftCount;
+      const billableOtHours = Math.max(approvedOtHours, mandatoryBillableOtHours);
+      const overtimeCharge = BillingService.calculateOvertimeBillingCharge(factory, billableOtHours, att.date);
+      const snapshotOtBillingRateHourly = overtimeCharge.otBillingRateHourly;
+      const otBillingTotal = overtimeCharge.amount;
 
       const lineTotal = dayBillingTotal + otBillingTotal;
 
@@ -68,6 +96,7 @@ export class InvoicingService {
         billableDays,
         dayBillingTotal,
         approvedOtHours,
+        billableOtHours,
         snapshotOtBillingRateHourly,
         otBillingTotal,
         lineTotal,
@@ -75,8 +104,28 @@ export class InvoicingService {
     }
 
     const subtotal = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
+
+    // Attendance bonus is a factory invoice charge only. Count unique calendar dates
+    // per employee so a D+N double shift on one date still counts as one attendance day.
+    const bonusThreshold = Math.max(1, Number(factory.attendanceBonusDays ?? 21));
+    const bonusPerEmployee = Math.max(0, Number(factory.attendanceBonus ?? 0));
+    const dateCreditsByEmployee = new Map<string, Map<string, number>>();
+    validAttendance.forEach((att) => {
+      const units = att.status === 'half_day' ? 0.5 : att.status === 'present' ? 1 : 0;
+      if (units <= 0) return;
+      const dateCredits = dateCreditsByEmployee.get(att.employeeId) || new Map<string, number>();
+      // Multiple shifts on one calendar date (D+N) are capped at one bonus day.
+      dateCredits.set(att.date, Math.max(dateCredits.get(att.date) || 0, Math.min(1, units)));
+      dateCreditsByEmployee.set(att.employeeId, dateCredits);
+    });
+    const attendanceBonusEligibleEmployees = bonusPerEmployee > 0
+      ? Array.from(dateCreditsByEmployee.values()).filter((dates) =>
+          Array.from(dates.values()).reduce((sum, units) => sum + units, 0) >= bonusThreshold
+        ).length
+      : 0;
+    const attendanceBonusTotal = attendanceBonusEligibleEmployees * bonusPerEmployee;
     const adjustments = 0;
-    const totalAmount = subtotal + adjustments;
+    const totalAmount = subtotal + attendanceBonusTotal + adjustments;
 
     // Due date standard 14 days after period end
     const dueDateObj = new Date(periodEnd);
@@ -94,6 +143,8 @@ export class InvoicingService {
       periodEnd,
       lineItems,
       subtotal,
+      attendanceBonusEligibleEmployees,
+      attendanceBonusTotal,
       adjustments,
       totalAmount,
       amountReceived: 0,

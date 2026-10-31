@@ -74,7 +74,8 @@ export const PayrollView: React.FC = () => {
         <table><thead><tr><th>Earnings</th><th>Amount</th><th>Deductions</th><th>Amount</th></tr></thead><tbody>
           <tr><td>Normal Wages</td><td>${money(item.normalWage)}</td><td>Meals</td><td>${money(item.totalMealDeductions)}</td></tr>
           <tr><td>Approved Overtime (${escapeHtml(item.approvedOtHours)} hrs)</td><td>${money(item.otWage)}</td><td>Boarding</td><td>${money(item.totalBoardingDeductions)}</td></tr>
-          <tr><td>Other Earnings</td><td>${money(0)}</td><td>Salary Advances</td><td>${money(item.advancesDeducted)}</td></tr>
+          <tr><td></td><td></td><td>Late Deduction (${escapeHtml(item.lateHours || 0)} hrs)</td><td>${money(item.lateDeduction || 0)}</td></tr>
+          <tr><td></td><td></td><td>Salary Advances</td><td>${money(item.advancesDeducted)}</td></tr>
           <tr class="total"><td>Gross Earnings</td><td>${money(item.grossEarnings)}</td><td>Total Deductions</td><td>${money(item.totalDeductions)}</td></tr>
         </tbody></table>
         <div class="net"><span>NET PAYABLE</span><strong>${money(item.netPayable)}</strong></div>
