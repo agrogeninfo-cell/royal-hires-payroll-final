@@ -159,6 +159,10 @@ export const FactoriesView: React.FC = () => {
       setErrorMsg('Enter the approved male and female worker wage rates for this factory.');
       return;
     }
+    if (!Number.isInteger(attendanceBonusDays) || attendanceBonusDays < 1 || attendanceBonus < 0 || lateDeductionPerHour < 0) {
+      setErrorMsg('Attendance bonus days must be at least 1; bonus and late deduction rates cannot be negative.');
+      return;
+    }
     const hasDailyWageSchedule = weekdayWage > 0 || saturdayWage > 0 || sundayPoyaWage > 0;
     if (hasDailyWageSchedule && (weekdayWage <= 0 || saturdayWage <= 0 || sundayPoyaWage <= 0)) {
       setErrorMsg('If special daily wages are used, enter weekday, Saturday and Sunday/Poya rates.');
