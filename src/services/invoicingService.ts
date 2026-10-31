@@ -35,7 +35,7 @@ export class InvoicingService {
     });
 
     for (const att of validAttendance) {
-      const normalizedShift = String(att.shift || '').toLowerCase().replace(/\\s+/g, '');
+      const normalizedShift = String(att.shift || '').toLowerCase().replace(/\s+/g, '');
       const isDoubleShift = normalizedShift.includes('d+n')
         || normalizedShift.includes('day+night')
         || normalizedShift.includes('dayandnight')
