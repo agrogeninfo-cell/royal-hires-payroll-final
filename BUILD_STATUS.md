@@ -43,18 +43,18 @@ Employee management, attendance, shift selection including D+N, overtime entry/a
 
 ## Build and packaging
 
-- GitHub Actions run #356: dependency installation, Supabase configuration check, TypeScript validation, payroll/billing/invoicing unit tests and Vite production build passed.
-- AppMint ZIP packaging step is running; Android project and APK build are pending in the same workflow.
-- The build workflow uploads `royal-hires-appmint-web.zip` as the `royal-hires-appmint-web` artifact.
-- GitHub Pages deployment is manual-only. A normal source push does not publish the payroll app.
+- **PASS — GitHub Actions Build Android APK run #356** (commit `a26ae79edc92a3ea5af5995b3bfdc389274a8792`): dependency installation, production Supabase configuration check, TypeScript validation, payroll/billing/invoicing unit tests, Vite build, AppMint ZIP packaging, Capacitor sync, Android branding and debug APK build all succeeded.
+- **PASS — Worker Portal Validation run #71**: TypeScript validation, payroll/billing tests and worker portal production build succeeded.
+- AppMint artifact: `royal-hires-appmint-web`, artifact ID `13047215788`; the downloaded inner ZIP was integrity-checked and contains `index.html` at the archive root. SHA-256: `4fb21eb4dc66b3613ea58ab2e26127504db6943fb4b83b7d1a8da0af7fbcacc2`.
+- Debug APK artifact: `royal-hires-payroll-production-debug-apk`, artifact ID `13047106294`.
+- GitHub Pages deployment is manual-only. A normal source push or PR merge does not publish the payroll app.
 
 ## Release checks still required
 
-1. Complete the current GitHub Actions run and confirm AppMint ZIP and APK artifacts are uploaded.
-2. Complete the worker portal validation workflow.
-3. Install the AppMint ZIP in AppMint and sign in with the production admin account.
-4. Verify cloud sync, employee creation, attendance, D+N, payroll, meal/boarding deductions, invoice OT and invoice-only attendance bonus using controlled test records.
-5. Verify worker PIN login, salary visibility and salary-slip download after a test employee is created.
-6. After the payroll app is accepted, complete the separate corporate website and Royal Workforce landing-page integration.
+1. Import the verified AppMint ZIP into AppMint and generate the Android APK.
+2. Install the APK and sign in with the production admin account.
+3. Verify cloud sync, employee creation, attendance, D+N, payroll, meal/boarding deductions, invoice OT and invoice-only attendance bonus using controlled test records.
+4. Verify worker PIN login, salary visibility and salary-slip download after a test employee is created.
+5. After the payroll app is accepted, complete the separate corporate website and Royal Workforce landing-page integration.
 
 No live employee records have been added for testing, and no public website deployment has been triggered by this release branch.
