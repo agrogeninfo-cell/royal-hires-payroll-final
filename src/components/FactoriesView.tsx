@@ -35,6 +35,12 @@ export const FactoriesView: React.FC = () => {
   const [wageSameRate, setWageSameRate] = useState<number>(0);
   const [wageMaleRate, setWageMaleRate] = useState<number>(0);
   const [wageFemaleRate, setWageFemaleRate] = useState<number>(0);
+  const [weekdayWage, setWeekdayWage] = useState<number>(0);
+  const [saturdayWage, setSaturdayWage] = useState<number>(0);
+  const [sundayPoyaWage, setSundayPoyaWage] = useState<number>(0);
+  const [attendanceBonus, setAttendanceBonus] = useState<number>(5500);
+  const [attendanceBonusDays, setAttendanceBonusDays] = useState<number>(21);
+  const [lateDeductionPerHour, setLateDeductionPerHour] = useState<number>(150);
 
   // Billing Rate Form State (CRITICAL)
   const [billingMethod, setBillingMethod] = useState<BillingRateMethod>('SAME_RATE_FOR_ALL');
@@ -68,24 +74,30 @@ export const FactoriesView: React.FC = () => {
     setContactPhone('+94 11 ');
     setActive(true);
     setInvoicePeriod('weekly');
-    setOvertimeEnabled(true);
-    setEmployeeOvertimeRateHourly(350);
-    setFactoryOvertimeRateHourly(500);
+    setOvertimeEnabled(false);
+    setEmployeeOvertimeRateHourly(0);
+    setFactoryOvertimeRateHourly(0);
     setWageSameRate(0);
     setWageMaleRate(0);
     setWageFemaleRate(0);
+    setWeekdayWage(0);
+    setSaturdayWage(0);
+    setSundayPoyaWage(0);
+    setAttendanceBonus(5500);
+    setAttendanceBonusDays(21);
+    setLateDeductionPerHour(150);
     setBillingMethod('SAME_RATE_FOR_ALL');
-    setSameRate(3000);
-    setMaleRate(3200);
-    setFemaleRate(2900);
+    setSameRate(0);
+    setMaleRate(0);
+    setFemaleRate(0);
     setNightMaleRateText('');
     setNightFemaleRateText('');
     setBillingEffectiveFrom(new Date().toISOString().split('T')[0]);
     setBillingEffectiveTo('');
     setSpecialBillingDatesText('');
-    setBreakfastRate(150);
+    setBreakfastRate(130);
     setLunchRate(250);
-    setDinnerRate(200);
+    setDinnerRate(250);
     setSelectedSupervisors([]);
     setErrorMsg('');
     setIsModalOpen(true);
@@ -107,10 +119,16 @@ export const FactoriesView: React.FC = () => {
     setWageSameRate(fac.wageSameRate ?? 0);
     setWageMaleRate(fac.wageMaleRate ?? 0);
     setWageFemaleRate(fac.wageFemaleRate ?? 0);
+    setWeekdayWage(fac.weekdayWage ?? 0);
+    setSaturdayWage(fac.saturdayWage ?? 0);
+    setSundayPoyaWage(fac.sundayPoyaWage ?? 0);
+    setAttendanceBonus(fac.attendanceBonus ?? 5500);
+    setAttendanceBonusDays(fac.attendanceBonusDays ?? 21);
+    setLateDeductionPerHour(fac.lateDeductionPerHour ?? 150);
     setBillingMethod(fac.billingMethod);
-    setSameRate(fac.sameRate ?? 3000);
-    setMaleRate(fac.maleRate ?? 3200);
-    setFemaleRate(fac.femaleRate ?? 2900);
+    setSameRate(fac.sameRate ?? 0);
+    setMaleRate(fac.maleRate ?? 0);
+    setFemaleRate(fac.femaleRate ?? 0);
     setNightMaleRateText(fac.nightMaleRate == null ? '' : String(fac.nightMaleRate));
     setNightFemaleRateText(fac.nightFemaleRate == null ? '' : String(fac.nightFemaleRate));
     setBillingEffectiveFrom(fac.billingEffectiveFrom || '2026-01-01');
@@ -137,8 +155,13 @@ export const FactoriesView: React.FC = () => {
       return;
     }
 
-    if (wageSameRate <= 0 || wageMaleRate <= 0 || wageFemaleRate <= 0) {
-      setErrorMsg('Enter the approved worker wage rate(s) for this factory. Do not save placeholder wage rates.');
+    if (wageMaleRate <= 0 || wageFemaleRate <= 0) {
+      setErrorMsg('Enter the approved male and female worker wage rates for this factory.');
+      return;
+    }
+    const hasDailyWageSchedule = weekdayWage > 0 || saturdayWage > 0 || sundayPoyaWage > 0;
+    if (hasDailyWageSchedule && (weekdayWage <= 0 || saturdayWage <= 0 || sundayPoyaWage <= 0)) {
+      setErrorMsg('If special daily wages are used, enter weekday, Saturday and Sunday/Poya rates.');
       return;
     }
 
@@ -159,8 +182,8 @@ export const FactoriesView: React.FC = () => {
       }
     }
 
-    if (employeeOvertimeRateHourly <= 0 || factoryOvertimeRateHourly <= 0) {
-      setErrorMsg('Validation Error: Both employee OT pay rate and factory OT billing rate must be configured.');
+    if (overtimeEnabled && (employeeOvertimeRateHourly <= 0 || factoryOvertimeRateHourly <= 0)) {
+      setErrorMsg('Enable OT only after both employee OT pay and factory OT billing rates are configured.');
       return;
     }
 
@@ -184,6 +207,12 @@ export const FactoriesView: React.FC = () => {
         wageSameRate: Number(wageSameRate),
         wageMaleRate: Number(wageMaleRate),
         wageFemaleRate: Number(wageFemaleRate),
+        weekdayWage: weekdayWage > 0 ? Number(weekdayWage) : undefined,
+        saturdayWage: saturdayWage > 0 ? Number(saturdayWage) : undefined,
+        sundayPoyaWage: sundayPoyaWage > 0 ? Number(sundayPoyaWage) : undefined,
+        attendanceBonus: Number(attendanceBonus),
+        attendanceBonusDays: Number(attendanceBonusDays),
+        lateDeductionPerHour: Number(lateDeductionPerHour),
         billingMethod,
         sameRate: billingMethod === 'SAME_RATE_FOR_ALL' ? Number(sameRate) : undefined,
         maleRate: billingMethod === 'SEPARATE_MALE_FEMALE_RATES' ? Number(maleRate) : undefined,
@@ -426,10 +455,21 @@ export const FactoriesView: React.FC = () => {
                 <h4 className="font-bold text-sm text-slate-900">Worker Wage Rates (Paid to Labour)</h4>
                 <p className="text-[11px] text-slate-600">Separate from factory invoice rates. These rates auto-fill when registering a worker.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div><label className="block font-semibold text-slate-700 mb-1">Same wage (LKR/day)</label><input type="number" min="1" required value={wageSameRate} onChange={(e) => setWageSameRate(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Same wage (LKR/day, optional)</label><input type="number" min="0" value={wageSameRate} onChange={(e) => setWageSameRate(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                   <div><label className="block font-semibold text-slate-700 mb-1">Male wage (LKR/day)</label><input type="number" min="1" required value={wageMaleRate} onChange={(e) => setWageMaleRate(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                   <div><label className="block font-semibold text-slate-700 mb-1">Female wage (LKR/day)</label><input type="number" min="1" required value={wageFemaleRate} onChange={(e) => setWageFemaleRate(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div><label className="block font-semibold text-slate-700 mb-1">Weekday wage (LKR/day)</label><input type="number" min="0" value={weekdayWage} onChange={(e) => setWeekdayWage(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Saturday wage (LKR/day)</label><input type="number" min="0" value={saturdayWage} onChange={(e) => setSaturdayWage(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Sunday / Poya wage (LKR/day)</label><input type="number" min="0" value={sundayPoyaWage} onChange={(e) => setSundayPoyaWage(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div><label className="block font-semibold text-slate-700 mb-1">Attendance bonus (LKR)</label><input type="number" min="0" value={attendanceBonus} onChange={(e) => setAttendanceBonus(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Bonus minimum days</label><input type="number" min="1" value={attendanceBonusDays} onChange={(e) => setAttendanceBonusDays(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Late deduction (LKR/hour)</label><input type="number" min="0" value={lateDeductionPerHour} onChange={(e) => setLateDeductionPerHour(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                </div>
+                <p className="text-[11px] text-slate-500">If weekday/Saturday/Sunday-Poya wages are entered, payroll uses the attendance date to select the applicable daily wage. Poya dates are maintained in the special billing dates list.</p>
               </div>
 
               {/* CRITICAL BILLING METHOD SELECTION */}
