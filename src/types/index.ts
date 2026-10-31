@@ -44,8 +44,11 @@ export interface Factory {
   weekdayWage?: number;
   saturdayWage?: number;
   sundayPoyaWage?: number;
+  /** Factory invoice-only attendance bonus; never included in worker salary. */
   attendanceBonus?: number;
   attendanceBonusDays?: number;
+  /** Sunday/Poya factory OT billing rate; employee OT pay remains separate. */
+  sundayPoyaOvertimeRateHourly?: number;
   lateDeductionPerHour?: number;
   sameRate?: number; // Standard daily billing rate for all Helpers in LKR
   maleRate?: number; // Male Helper daily rate in LKR
@@ -211,7 +214,6 @@ export interface PayrollItem {
   snapshotWageRate: number; // rate used at approval time
   daysWorked: number;
   normalWage: number;
-  attendanceBonus: number;
   approvedOtHours: number;
   snapshotOtRateHourly: number;
   otWage: number;
@@ -308,6 +310,9 @@ export interface FactoryInvoice {
   periodEnd: string;
   lineItems: InvoiceLineItem[];
   subtotal: number;
+  /** Factory invoice-only attendance bonus; excluded from worker payroll and payslips. */
+  attendanceBonusEligibleEmployees?: number;
+  attendanceBonusTotal?: number;
   adjustments: number;
   totalAmount: number;
   amountReceived: number;
