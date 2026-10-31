@@ -24,7 +24,7 @@ export class PayrollService {
     payrollRunId: string
   ): PayrollItem {
     const payableUnitsFor = (att: AttendanceRecord): number => {
-      const normalizedShift = String(att.shift || '').toLowerCase().replace(/\\s+/g, '');
+      const normalizedShift = String(att.shift || '').toLowerCase().replace(/\s+/g, '');
       const isDoubleShift = normalizedShift.includes('d+n')
         || normalizedShift.includes('day+night')
         || normalizedShift.includes('dayandnight')
