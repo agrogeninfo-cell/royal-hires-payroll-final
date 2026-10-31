@@ -74,7 +74,7 @@ export const PayrollView: React.FC = () => {
         <table><thead><tr><th>Earnings</th><th>Amount</th><th>Deductions</th><th>Amount</th></tr></thead><tbody>
           <tr><td>Normal Wages</td><td>${money(item.normalWage)}</td><td>Meals</td><td>${money(item.totalMealDeductions)}</td></tr>
           <tr><td>Approved Overtime (${escapeHtml(item.approvedOtHours)} hrs)</td><td>${money(item.otWage)}</td><td>Boarding</td><td>${money(item.totalBoardingDeductions)}</td></tr>
-          <tr><td>Other Earnings</td><td>${money(0)}</td><td>Late Deduction (${escapeHtml(item.lateHours || 0)} hrs)</td><td>${money(item.lateDeduction || 0)}</td></tr>
+          <tr><td>Attendance Bonus</td><td>${money(item.attendanceBonus || 0)}</td><td>Late Deduction (${escapeHtml(item.lateHours || 0)} hrs)</td><td>${money(item.lateDeduction || 0)}</td></tr>
           <tr><td></td><td></td><td>Salary Advances</td><td>${money(item.advancesDeducted)}</td></tr>
           <tr class="total"><td>Gross Earnings</td><td>${money(item.grossEarnings)}</td><td>Total Deductions</td><td>${money(item.totalDeductions)}</td></tr>
         </tbody></table>
@@ -300,6 +300,7 @@ export const PayrollView: React.FC = () => {
       'Wage Rate (LKR)',
       'Days Worked',
       'Normal Wages',
+      'Attendance Bonus',
       'Approved OT Hours',
       'OT Wages',
       'Gross Earnings',
@@ -320,6 +321,7 @@ export const PayrollView: React.FC = () => {
       it.snapshotWageRate,
       it.daysWorked,
       it.normalWage,
+      it.attendanceBonus || 0,
       it.approvedOtHours,
       it.otWage,
       it.grossEarnings,
@@ -470,6 +472,7 @@ export const PayrollView: React.FC = () => {
                     <th className="p-3">Factory</th>
                     <th className="p-3">Days</th>
                     <th className="p-3">Normal Wage</th>
+                    <th className="p-3">Attendance Bonus</th>
                     <th className="p-3">Approved OT</th>
                     <th className="p-3">Gross</th>
                     <th className="p-3">Meals</th>
@@ -493,6 +496,7 @@ export const PayrollView: React.FC = () => {
                       <td className="p-3 text-slate-500">{item.factoryName}</td>
                       <td className="p-3 font-semibold">{item.daysWorked}</td>
                       <td className="p-3">LKR {item.normalWage.toLocaleString()}</td>
+                      <td className="p-3 font-semibold text-emerald-700">{item.attendanceBonus > 0 ? `+LKR ${item.attendanceBonus.toLocaleString()}` : '-'}</td>
                       <td className="p-3">
                         {item.approvedOtHours > 0 ? (
                           <div>
