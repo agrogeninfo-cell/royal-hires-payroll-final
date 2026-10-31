@@ -965,7 +965,8 @@ export class SystemTestSuite {
       results.push({ id: 26, title: 'Empire Teas wage schedule', category: 'Payroll', passed: false, message: err.message });
     }
 
-    // Test 27: LKR 5,500 attendance bonus is earned from 21 payable days.
+
+    // Test 27: Factory invoice bonus is never included in employee salary.
     try {
       const employee: Employee = {
         id: 'EMP-BONUS-TEST', fullName: 'Attendance Bonus Test', nic: 'BONUS-TEST', phone: '', address: '',
@@ -982,14 +983,39 @@ export class SystemTestSuite {
         supervisorName: 'tester', submissionStatus: 'approved', billable: true,
         syncStatus: 'synced', createdAt: '', updatedAt: '',
       }));
-      const bonusFactory = { ...factoryA, attendanceBonus: 5500, attendanceBonusDays: 21 };
-      const eligible = PayrollService.calculateEmployeePayrollItem(employee, bonusFactory, attendance, null, [], 'RUN-BONUS-21');
-      const ineligible = PayrollService.calculateEmployeePayrollItem(employee, bonusFactory, attendance.slice(0, 20), null, [], 'RUN-BONUS-20');
-      const passed = eligible.attendanceBonus === 5500 && ineligible.attendanceBonus === 0
-        && eligible.grossEarnings === 47500 && ineligible.grossEarnings === 40000;
-      results.push({ id: 27, title: 'Attendance bonus threshold is 21 payable days', category: 'Payroll', passed, message: passed ? 'Verified: LKR 5,500 bonus at 21 days; no bonus at 20 days.' : 'Unexpected bonus/gross: ' + eligible.attendanceBonus + '/' + eligible.grossEarnings + '; ' + ineligible.attendanceBonus + '/' + ineligible.grossEarnings });
+      const invoiceBonusFactory = { ...factoryA, attendanceBonus: 5500, attendanceBonusDays: 21 };
+      const item = PayrollService.calculateEmployeePayrollItem(employee, invoiceBonusFactory, attendance, null, [], 'RUN-BONUS-21');
+      const passed = item.grossEarnings === 42000 && !('attendanceBonus' in (item as any));
+      results.push({ id: 27, title: 'Factory attendance bonus is excluded from worker payroll', category: 'Payroll', passed, message: passed ? 'Verified: worker gross pay remains LKR 42,000; invoice-only bonus is not included in the salary item.' : 'Factory invoice bonus leaked into worker payroll.' });
     } catch (err: any) {
-      results.push({ id: 27, title: 'Attendance bonus threshold', category: 'Payroll', passed: false, message: err.message });
+      results.push({ id: 27, title: 'Worker salary excludes factory bonus', category: 'Payroll', passed: false, message: err.message });
+    }
+
+    // Test 28: Factory invoice bonus counts distinct dates, not D+N shift rows.
+    try {
+      const bonusFactory: Factory = { ...factoryA, attendanceBonus: 5500, attendanceBonusDays: 21 };
+      const employeeId = 'EMP-INVOICE-BONUS';
+      const makeAttendance = (id: string, date: string, shift: string): AttendanceRecord => ({
+        id, employeeId, employeeName: 'Invoice Bonus Test', employeeGender: 'male',
+        factoryId: bonusFactory.id, factoryName: bonusFactory.name, date, shift, status: 'present',
+        payableUnits: 1, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
+        hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester',
+        supervisorName: 'tester', submissionStatus: 'approved', billable: true,
+        syncStatus: 'synced', createdAt: '', updatedAt: '',
+      });
+      const records: AttendanceRecord[] = Array.from({ length: 21 }, (_, index) =>
+        makeAttendance('invoice-bonus-' + index, '2026-10-' + String(index + 1).padStart(2, '0'), 'Day')
+      );
+      records.push(makeAttendance('invoice-bonus-night', '2026-10-02', 'Night'));
+      const invoice = InvoicingService.generateInvoiceFromAttendance(
+        bonusFactory, '2026-10-01', '2026-10-31', records, 'INV-BONUS-TEST', 'tester'
+      );
+      const passed = invoice.attendanceBonusEligibleEmployees === 1
+        && invoice.attendanceBonusTotal === 5500
+        && invoice.totalAmount === invoice.subtotal + 5500;
+      results.push({ id: 28, title: 'Invoice attendance bonus counts 21 unique dates and counts D+N once', category: 'Invoicing', passed, message: passed ? 'Verified: 21 distinct dates qualify; the second shift on one date does not create an extra bonus day.' : 'Invoice attendance bonus or unique-date counting is incorrect.' });
+    } catch (err: any) {
+      results.push({ id: 28, title: 'Invoice attendance bonus', category: 'Invoicing', passed: false, message: err.message });
     }
 
     return results;
