@@ -48,10 +48,11 @@ export class BillingService {
       const isConfiguredPoya = Boolean(attendanceDate && factory.specialBillingDates?.includes(attendanceDate));
       const isNight = /night/i.test(shift || '');
       const baseRate = factory.sameRate && factory.sameRate > 0 ? factory.sameRate : 1525;
-      let rate = baseRate;
-      if (isSunday || isConfiguredPoya) rate = 3600 + (gender === 'female' ? 100 : 0);
-      else if (isSaturday && !isNight) rate = 1875;
-      else if (isNight && gender === 'female') rate = baseRate + 100;
+      const dayRate = (isSunday || isConfiguredPoya) ? 3600 : isSaturday ? 1875 : baseRate;
+      const femaleNightAllowance = isNight && gender === 'female'
+        ? Number(factory.femaleNightAllowance ?? 100)
+        : 0;
+      const rate = dayRate + femaleNightAllowance;
       return { rate, method: 'SAME_RATE_FOR_ALL', factoryId: factory.id, factoryName: factory.name };
     }
 
