@@ -977,7 +977,7 @@ export class SystemTestSuite {
       const attendance: AttendanceRecord[] = Array.from({ length: 21 }, (_, index) => ({
         id: 'bonus-' + (index + 1), employeeId: employee.id, employeeName: employee.fullName,
         employeeGender: 'female', factoryId: factoryA.id, factoryName: factoryA.name,
-        date: '2026-10-' + String(index + 1).padStart(2, '0'), shift: 'Day', status: 'present',
+        date: '2026-10-' + String(index + 1).padStart(2, '0'), shift: index === 0 ? 'Night Shift' : 'Day', status: 'present',
         payableUnits: 1, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
         hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester',
         supervisorName: 'tester', submissionStatus: 'approved', billable: true,
