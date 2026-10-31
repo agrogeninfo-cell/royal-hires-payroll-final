@@ -97,11 +97,12 @@ export class SystemTestSuite {
       const weekday = BillingService.getApplicableDailyBillingRate(empire, 'male', '2026-10-19', 'Day Shift').rate;
       const saturday = BillingService.getApplicableDailyBillingRate(empire, 'male', '2026-10-17', 'Day Shift').rate;
       const sundayFemale = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-18', 'Day Shift').rate;
+      const sundayFemaleNight = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-18', 'Night Shift').rate;
       const poyaFemale = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-21', 'Night Shift').rate;
       const femaleNight = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-19', 'Night Shift').rate;
       const saturdayFemaleNight = BillingService.getApplicableDailyBillingRate(empire, 'female', '2026-10-17', 'Night Shift').rate;
-      const passed = weekday === 1525 && saturday === 1875 && sundayFemale === 3700 && poyaFemale === 3700 && femaleNight === 1625 && saturdayFemaleNight === 1975;
-      results.push({ id: 21, title: 'Empire Teas shift and special-day billing rules', category: 'Billing', passed, message: passed ? 'Verified weekday 1525, Saturday 1875, female night +100 on weekday/Saturday/Sunday/Poya.' : `Unexpected rates: ${[weekday, saturday, sundayFemale, poyaFemale, femaleNight, saturdayFemaleNight].join(', ')}` });
+      const passed = weekday === 1525 && saturday === 1875 && sundayFemale === 3600 && sundayFemaleNight === 3700 && poyaFemale === 3700 && femaleNight === 1625 && saturdayFemaleNight === 1975;
+      results.push({ id: 21, title: 'Empire Teas shift and special-day billing rules', category: 'Billing', passed, message: passed ? 'Verified weekday 1525, Saturday 1875, Sunday/Poya day 3600, and female night allowance +100 per night.' : `Unexpected rates: ${[weekday, saturday, sundayFemale, sundayFemaleNight, poyaFemale, femaleNight, saturdayFemaleNight].join(', ')}` });
     } catch (err: any) { results.push({ id: 21, title: 'Empire Teas billing rules', category: 'Billing', passed: false, message: err.message }); }
 
     // Test 22: Millennium Teas reference rates.
