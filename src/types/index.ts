@@ -52,6 +52,8 @@ export interface Factory {
   /** Mandatory factory-billed OT per shift; separate from employee-approved OT pay. */
   mandatoryOtHoursPerShift?: number;
   sundayPoyaOtHoursPerShift?: number;
+  /** Invoice-only allowance added for each female night shift. */
+  femaleNightAllowance?: number;
   lateDeductionPerHour?: number;
   sameRate?: number; // Standard daily billing rate for all Helpers in LKR
   maleRate?: number; // Male Helper daily rate in LKR
