@@ -5,8 +5,9 @@ Last updated: 2026-10-31
 ## Release candidate
 
 - Repository: `agrogeninfo-cell/royal-hires-payroll-final`
-- Release branch: `release/royal-hires-appmint-final`
-- Pull request: https://github.com/agrogeninfo-cell/royal-hires-payroll-final/pull/43
+- Release branch: `release/royal-hires-appmint-final` (merged)
+- Pull request: https://github.com/agrogeninfo-cell/royal-hires-payroll-final/pull/43 (**merged**)
+- Main release commit: `5a4e63ad23e3a0728e16ef55c9416196e30375d2`
 - Production Supabase project: `jwghmsflabvzzhucuwsn`
 - Corporate website deployment is a separate next phase. The payroll app is not automatically published to a public website.
 
@@ -57,4 +58,4 @@ Employee management, attendance, shift selection including D+N, overtime entry/a
 4. Verify worker PIN login, salary visibility and salary-slip download after a test employee is created.
 5. After the payroll app is accepted, complete the separate corporate website and Royal Workforce landing-page integration.
 
-No live employee records have been added for testing, and no public website deployment has been triggered by this release branch.
+No live employee records have been added for testing. The release is now on `main`; no public website deployment was triggered by the merge.
