@@ -31,6 +31,8 @@ export const FactoriesView: React.FC = () => {
   const [employeeOvertimeRateHourly, setEmployeeOvertimeRateHourly] = useState<number>(350);
   const [factoryOvertimeRateHourly, setFactoryOvertimeRateHourly] = useState<number>(500);
   const [sundayPoyaOvertimeRateHourly, setSundayPoyaOvertimeRateHourly] = useState<number>(0);
+  const [mandatoryOtHoursPerShift, setMandatoryOtHoursPerShift] = useState<number>(0);
+  const [sundayPoyaOtHoursPerShift, setSundayPoyaOtHoursPerShift] = useState<number>(0);
 
   // Employee wage rates paid to workers; separate from customer billing rates.
   const [wageSameRate, setWageSameRate] = useState<number>(0);
@@ -79,6 +81,8 @@ export const FactoriesView: React.FC = () => {
     setEmployeeOvertimeRateHourly(0);
     setFactoryOvertimeRateHourly(0);
     setSundayPoyaOvertimeRateHourly(0);
+    setMandatoryOtHoursPerShift(0);
+    setSundayPoyaOtHoursPerShift(0);
     setWageSameRate(0);
     setWageMaleRate(0);
     setWageFemaleRate(0);
@@ -119,6 +123,8 @@ export const FactoriesView: React.FC = () => {
     setEmployeeOvertimeRateHourly(fac.employeeOvertimeRateHourly);
     setFactoryOvertimeRateHourly(fac.factoryOvertimeRateHourly);
     setSundayPoyaOvertimeRateHourly(fac.sundayPoyaOvertimeRateHourly ?? fac.factoryOvertimeRateHourly ?? 0);
+    setMandatoryOtHoursPerShift(fac.mandatoryOtHoursPerShift ?? 0);
+    setSundayPoyaOtHoursPerShift(fac.sundayPoyaOtHoursPerShift ?? fac.mandatoryOtHoursPerShift ?? 0);
     setWageSameRate(fac.wageSameRate ?? 0);
     setWageMaleRate(fac.wageMaleRate ?? 0);
     setWageFemaleRate(fac.wageFemaleRate ?? 0);
@@ -162,7 +168,7 @@ export const FactoriesView: React.FC = () => {
       setErrorMsg('Enter the approved male and female worker wage rates for this factory.');
       return;
     }
-    if (!Number.isInteger(attendanceBonusDays) || attendanceBonusDays < 1 || attendanceBonus < 0 || lateDeductionPerHour < 0) {
+    if (!Number.isInteger(attendanceBonusDays) || attendanceBonusDays < 1 || attendanceBonus < 0 || lateDeductionPerHour < 0 || mandatoryOtHoursPerShift < 0 || sundayPoyaOtHoursPerShift < 0) {
       setErrorMsg('Attendance bonus days must be at least 1; bonus and late deduction rates cannot be negative.');
       return;
     }
@@ -212,6 +218,8 @@ export const FactoriesView: React.FC = () => {
         employeeOvertimeRateHourly: Number(employeeOvertimeRateHourly),
         factoryOvertimeRateHourly: Number(factoryOvertimeRateHourly),
         sundayPoyaOvertimeRateHourly: sundayPoyaOvertimeRateHourly > 0 ? Number(sundayPoyaOvertimeRateHourly) : undefined,
+        mandatoryOtHoursPerShift: Number(mandatoryOtHoursPerShift),
+        sundayPoyaOtHoursPerShift: Number(sundayPoyaOtHoursPerShift),
         wageSameRate: Number(wageSameRate),
         wageMaleRate: Number(wageMaleRate),
         wageFemaleRate: Number(wageFemaleRate),
@@ -685,6 +693,10 @@ export const FactoriesView: React.FC = () => {
                     <label className="block font-semibold text-slate-700 mb-1">Factory OT Billing Rate (Sunday/Poya, LKR / hr)</label>
                     <input type="number" min="0" value={sundayPoyaOvertimeRateHourly} onChange={(e) => setSundayPoyaOvertimeRateHourly(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold text-emerald-700" />
                   </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div><label className="block font-semibold text-slate-700 mb-1">Mandatory invoice OT hours per weekday/Saturday shift</label><input type="number" min="0" value={mandatoryOtHoursPerShift} onChange={(e) => setMandatoryOtHoursPerShift(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
+                  <div><label className="block font-semibold text-slate-700 mb-1">Mandatory invoice OT hours per Sunday/Poya shift</label><input type="number" min="0" value={sundayPoyaOtHoursPerShift} onChange={(e) => setSundayPoyaOtHoursPerShift(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold" /></div>
                 </div>
                 {overtimeEnabled && employeeOvertimeRateHourly <= 0 && <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">Worker OT pay rate is not confirmed. The system will block payroll settlement if approved OT hours exist until this rate is entered.</p>}
               </div>
