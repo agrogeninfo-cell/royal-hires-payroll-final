@@ -49,6 +49,9 @@ export interface Factory {
   attendanceBonusDays?: number;
   /** Sunday/Poya factory OT billing rate; employee OT pay remains separate. */
   sundayPoyaOvertimeRateHourly?: number;
+  /** Mandatory factory-billed OT per shift; separate from employee-approved OT pay. */
+  mandatoryOtHoursPerShift?: number;
+  sundayPoyaOtHoursPerShift?: number;
   lateDeductionPerHour?: number;
   sameRate?: number; // Standard daily billing rate for all Helpers in LKR
   maleRate?: number; // Male Helper daily rate in LKR
@@ -294,6 +297,7 @@ export interface InvoiceLineItem {
   billableDays: number; // 1.0 or 0.5
   dayBillingTotal: number;
   approvedOtHours: number;
+  billableOtHours?: number;
   snapshotOtBillingRateHourly: number;
   otBillingTotal: number;
   lineTotal: number;
