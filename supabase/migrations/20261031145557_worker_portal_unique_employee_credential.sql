@@ -1,0 +1,1 @@
+create unique index if not exists worker_portal_credentials_company_employee_uidx on public.worker_portal_credentials(company_id, employee_record_id);
