@@ -24,8 +24,16 @@ export class PayrollService {
     payrollRunId: string
   ): PayrollItem {
     const payableUnitsFor = (att: AttendanceRecord): number => {
-      if (att.status === 'present') return Math.max(0, Number(att.payableUnits ?? 1));
-      if (att.status === 'half_day') return 0.5;
+      const normalizedShift = String(att.shift || '').toLowerCase().replace(/\\s+/g, '');
+      const isDoubleShift = normalizedShift.includes('d+n')
+        || normalizedShift.includes('day+night')
+        || normalizedShift.includes('dayandnight')
+        || normalizedShift.includes('double');
+      if (att.status === 'present') {
+        const units = Math.max(0, Number(att.payableUnits ?? 1));
+        return isDoubleShift ? Math.max(2, units) : units;
+      }
+      if (att.status === 'half_day') return isDoubleShift ? 1 : 0.5;
       return 0;
     };
 
