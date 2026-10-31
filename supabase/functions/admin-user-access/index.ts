@@ -22,8 +22,9 @@ Deno.serve(async (request: Request) => {
   if (!authorization?.startsWith('Bearer ')) return json({ error: 'Authentication required.' }, 401);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const parseDefaultKey = (raw: string | undefined) => { try { return raw ? (JSON.parse(raw).default || '') : ''; } catch { return ''; } };
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || parseDefaultKey(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS'));
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || parseDefaultKey(Deno.env.get('SUPABASE_SECRET_KEYS'));
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return json({ error: 'Server authentication configuration is incomplete.' }, 500);
   }
