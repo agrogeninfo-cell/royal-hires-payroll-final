@@ -1,7 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const allowedOrigins = new Set([
-  'https://agrogeninfo-cell.github.io',
+  'https://pay-royal-system.netlify.app',
+  'https://royal-hires-corporate.netlify.app',
   'https://payroyalsri.netlify.app',
   'capacitor://localhost',
   'http://localhost:3000',
@@ -9,7 +10,7 @@ const allowedOrigins = new Set([
   'https://localhost',
 ]);
 const jsonHeaders = (origin: string | null) => ({
-  'Access-Control-Allow-Origin': origin && allowedOrigins.has(origin) ? origin : 'https://agrogeninfo-cell.github.io',
+  ...(origin && allowedOrigins.has(origin) ? { 'Access-Control-Allow-Origin': origin } : {}),
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Vary': 'Origin',
@@ -34,14 +35,16 @@ async function pinHash(pin: string, salt: string): Promise<string> {
 const validPin = (pin: string) => /^\d{6,10}$/.test(pin);
 const validMemberId = (id: string) => /^[A-Z0-9-]{3,40}$/.test(id);
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const parseDefaultKey = (raw: string | undefined) => { try { return raw ? (JSON.parse(raw).default || '') : ''; } catch { return ''; } };
+const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || parseDefaultKey(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS'));
+const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || parseDefaultKey(Deno.env.get('SUPABASE_SECRET_KEYS'));
 const adminClient = () => createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 const publicClient = () => createClient(supabaseUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get('Origin');
   if (req.method === 'OPTIONS') return new Response('ok', { headers: jsonHeaders(origin) });
+  if (origin && !allowedOrigins.has(origin)) return reply({ error: 'Origin not allowed.' }, 403, origin);
   if (req.method !== 'POST') return reply({ error: 'Method not allowed.' }, 405, origin);
   if (!supabaseUrl || !anonKey || !serviceKey) return reply({ error: 'Portal service is not configured.' }, 503, origin);
   let body: Record<string, unknown>;
