@@ -42,7 +42,7 @@ export const FactoriesView: React.FC = () => {
   const [weekdayWage, setWeekdayWage] = useState<number>(0);
   const [saturdayWage, setSaturdayWage] = useState<number>(0);
   const [sundayPoyaWage, setSundayPoyaWage] = useState<number>(0);
-  const [attendanceBonus, setAttendanceBonus] = useState<number>(5500);
+  const [attendanceBonus, setAttendanceBonus] = useState<number>(0);
   const [attendanceBonusDays, setAttendanceBonusDays] = useState<number>(21);
   const [lateDeductionPerHour, setLateDeductionPerHour] = useState<number>(150);
 
@@ -91,7 +91,7 @@ export const FactoriesView: React.FC = () => {
     setWeekdayWage(0);
     setSaturdayWage(0);
     setSundayPoyaWage(0);
-    setAttendanceBonus(5500);
+    setAttendanceBonus(0);
     setAttendanceBonusDays(21);
     setLateDeductionPerHour(150);
     setBillingMethod('SAME_RATE_FOR_ALL');
@@ -134,7 +134,7 @@ export const FactoriesView: React.FC = () => {
     setWeekdayWage(fac.weekdayWage ?? 0);
     setSaturdayWage(fac.saturdayWage ?? 0);
     setSundayPoyaWage(fac.sundayPoyaWage ?? 0);
-    setAttendanceBonus(fac.attendanceBonus ?? 5500);
+    setAttendanceBonus(fac.attendanceBonus ?? 0);
     setAttendanceBonusDays(fac.attendanceBonusDays ?? 21);
     setLateDeductionPerHour(fac.lateDeductionPerHour ?? 150);
     setBillingMethod(fac.billingMethod);
