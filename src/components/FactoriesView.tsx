@@ -30,6 +30,7 @@ export const FactoriesView: React.FC = () => {
   const [overtimeEnabled, setOvertimeEnabled] = useState(true);
   const [employeeOvertimeRateHourly, setEmployeeOvertimeRateHourly] = useState<number>(350);
   const [factoryOvertimeRateHourly, setFactoryOvertimeRateHourly] = useState<number>(500);
+  const [sundayPoyaOvertimeRateHourly, setSundayPoyaOvertimeRateHourly] = useState<number>(0);
 
   // Employee wage rates paid to workers; separate from customer billing rates.
   const [wageSameRate, setWageSameRate] = useState<number>(0);
@@ -77,6 +78,7 @@ export const FactoriesView: React.FC = () => {
     setOvertimeEnabled(false);
     setEmployeeOvertimeRateHourly(0);
     setFactoryOvertimeRateHourly(0);
+    setSundayPoyaOvertimeRateHourly(0);
     setWageSameRate(0);
     setWageMaleRate(0);
     setWageFemaleRate(0);
@@ -116,6 +118,7 @@ export const FactoriesView: React.FC = () => {
     setOvertimeEnabled(fac.overtimeEnabled);
     setEmployeeOvertimeRateHourly(fac.employeeOvertimeRateHourly);
     setFactoryOvertimeRateHourly(fac.factoryOvertimeRateHourly);
+    setSundayPoyaOvertimeRateHourly(fac.sundayPoyaOvertimeRateHourly ?? fac.factoryOvertimeRateHourly ?? 0);
     setWageSameRate(fac.wageSameRate ?? 0);
     setWageMaleRate(fac.wageMaleRate ?? 0);
     setWageFemaleRate(fac.wageFemaleRate ?? 0);
@@ -186,8 +189,8 @@ export const FactoriesView: React.FC = () => {
       }
     }
 
-    if (overtimeEnabled && (employeeOvertimeRateHourly <= 0 || factoryOvertimeRateHourly <= 0)) {
-      setErrorMsg('Enable OT only after both employee OT pay and factory OT billing rates are configured.');
+    if (overtimeEnabled && factoryOvertimeRateHourly <= 0) {
+      setErrorMsg('Enable OT only after the factory OT billing rate is configured. The worker OT pay rate can remain zero until the approved employee rate is confirmed; payroll will be blocked if OT is payable without that rate.');
       return;
     }
 
@@ -208,6 +211,7 @@ export const FactoriesView: React.FC = () => {
         overtimeEnabled,
         employeeOvertimeRateHourly: Number(employeeOvertimeRateHourly),
         factoryOvertimeRateHourly: Number(factoryOvertimeRateHourly),
+        sundayPoyaOvertimeRateHourly: sundayPoyaOvertimeRateHourly > 0 ? Number(sundayPoyaOvertimeRateHourly) : undefined,
         wageSameRate: Number(wageSameRate),
         wageMaleRate: Number(wageMaleRate),
         wageFemaleRate: Number(wageFemaleRate),
@@ -648,10 +652,10 @@ export const FactoriesView: React.FC = () => {
                   </label>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Factory OT Billing Rate (LKR / hr) *
+                      Factory OT Billing Rate (Weekday/Saturday, LKR / hr) *
                     </label>
                     <input
                       type="number"
@@ -665,7 +669,7 @@ export const FactoriesView: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Employee OT Pay Rate (LKR / hr) *
+                      Employee OT Pay Rate (LKR / hr)
                     </label>
                     <input
                       type="number"
@@ -677,7 +681,12 @@ export const FactoriesView: React.FC = () => {
                       className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold text-blue-700"
                     />
                   </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Factory OT Billing Rate (Sunday/Poya, LKR / hr)</label>
+                    <input type="number" min="0" value={sundayPoyaOvertimeRateHourly} onChange={(e) => setSundayPoyaOvertimeRateHourly(Number(e.target.value))} className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold text-emerald-700" />
+                  </div>
                 </div>
+                {overtimeEnabled && employeeOvertimeRateHourly <= 0 && <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">Worker OT pay rate is not confirmed. The system will block payroll settlement if approved OT hours exist until this rate is entered.</p>}
               </div>
 
               {/* Meals Configuration */}
