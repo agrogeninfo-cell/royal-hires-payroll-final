@@ -48,10 +48,9 @@ export class InvoicingService {
 
       // Overtime charge using factory overtime billing rate
       const approvedOtHours = att.totalOtHours || 0;
-      const snapshotOtBillingRateHourly = factory.overtimeEnabled
-        ? factory.factoryOvertimeRateHourly || 0
-        : 0;
-      const otBillingTotal = Math.round(approvedOtHours * snapshotOtBillingRateHourly);
+      const overtimeCharge = BillingService.calculateOvertimeBillingCharge(factory, approvedOtHours, att.date);
+      const snapshotOtBillingRateHourly = overtimeCharge.otBillingRateHourly;
+      const otBillingTotal = overtimeCharge.amount;
 
       const lineTotal = dayBillingTotal + otBillingTotal;
 
@@ -75,8 +74,24 @@ export class InvoicingService {
     }
 
     const subtotal = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
+
+    // Attendance bonus is a factory invoice charge only. Count unique calendar dates
+    // per employee so a D+N double shift on one date still counts as one attendance day.
+    const bonusThreshold = Math.max(1, Number(factory.attendanceBonusDays ?? 21));
+    const bonusPerEmployee = Math.max(0, Number(factory.attendanceBonus ?? 0));
+    const datesByEmployee = new Map<string, Set<string>>();
+    validAttendance.forEach((att) => {
+      if (att.payableUnits <= 0) return;
+      const dates = datesByEmployee.get(att.employeeId) || new Set<string>();
+      dates.add(att.date);
+      datesByEmployee.set(att.employeeId, dates);
+    });
+    const attendanceBonusEligibleEmployees = bonusPerEmployee > 0
+      ? Array.from(datesByEmployee.values()).filter((dates) => dates.size >= bonusThreshold).length
+      : 0;
+    const attendanceBonusTotal = attendanceBonusEligibleEmployees * bonusPerEmployee;
     const adjustments = 0;
-    const totalAmount = subtotal + adjustments;
+    const totalAmount = subtotal + attendanceBonusTotal + adjustments;
 
     // Due date standard 14 days after period end
     const dueDateObj = new Date(periodEnd);
@@ -94,6 +109,8 @@ export class InvoicingService {
       periodEnd,
       lineItems,
       subtotal,
+      attendanceBonusEligibleEmployees,
+      attendanceBonusTotal,
       adjustments,
       totalAmount,
       amountReceived: 0,
