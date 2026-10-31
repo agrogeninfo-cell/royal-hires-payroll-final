@@ -35,27 +35,40 @@ export class InvoicingService {
     });
 
     for (const att of validAttendance) {
-      // Get the applicable billing rate snapshot for this factory and employee gender
-      const rateResult = BillingService.getApplicableDailyBillingRate(
-        factory,
-        att.employeeGender,
-        att.date,
-        att.shift
-      );
-
-      const billableDays = att.payableUnits;
-      const dayBillingTotal = Math.round(billableDays * rateResult.rate);
-
-      // Overtime charge using factory overtime billing rate
-      const approvedOtHours = att.totalOtHours || 0;
       const normalizedShift = String(att.shift || '').toLowerCase().replace(/\\s+/g, '');
       const isDoubleShift = normalizedShift.includes('d+n')
         || normalizedShift.includes('day+night')
         || normalizedShift.includes('dayandnight')
         || normalizedShift.includes('double');
+      const isFullDay = att.status === 'present';
+      const billableDays = isDoubleShift
+        ? (isFullDay ? Math.max(2, Number(att.payableUnits ?? 1)) : Math.max(1, Number(att.payableUnits ?? 0.5)))
+        : Math.max(0, Number(att.payableUnits ?? (att.status === 'half_day' ? 0.5 : 1)));
+
+      // A single D+N record represents two billed shifts: one day shift and one night shift.
+      // The female night allowance is therefore applied once, not twice.
+      let rateResult: ReturnType<typeof BillingService.getApplicableDailyBillingRate>;
+      let dayBillingTotal: number;
+      if (isDoubleShift && isFullDay) {
+        const dayRate = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, 'Day Shift');
+        const nightRate = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, 'Night Shift');
+        dayBillingTotal = Math.round(dayRate.rate + nightRate.rate + Math.max(0, billableDays - 2) * nightRate.rate);
+        rateResult = { ...dayRate, rate: dayBillingTotal / billableDays };
+      } else if (isDoubleShift) {
+        const dayRate = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, 'Day Shift');
+        const nightRate = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, 'Night Shift');
+        dayBillingTotal = Math.round((dayRate.rate + nightRate.rate) / 2);
+        rateResult = { ...dayRate, rate: dayBillingTotal };
+      } else {
+        rateResult = BillingService.getApplicableDailyBillingRate(factory, att.employeeGender, att.date, att.shift);
+        dayBillingTotal = Math.round(billableDays * rateResult.rate);
+      }
+
+      // Overtime charge uses mandatory factory-billed hours per shift when configured.
+      const approvedOtHours = att.totalOtHours || 0;
       const shiftCount = isDoubleShift
-        ? Math.max(2, Number(att.payableUnits ?? 1))
-        : Math.max(0, Number(att.payableUnits ?? 1));
+        ? (isFullDay ? Math.max(2, billableDays) : Math.max(1, billableDays))
+        : billableDays;
       const dateValue = new Date(`${att.date}T12:00:00`);
       const isSundayOrPoya = dateValue.getDay() === 0
         || Boolean(factory.specialBillingDates?.includes(att.date));
