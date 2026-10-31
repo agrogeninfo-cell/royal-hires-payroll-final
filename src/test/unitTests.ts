@@ -1074,12 +1074,12 @@ export class SystemTestSuite {
         ...factoryA, id: 'fac-empire-teas', name: 'Empire Teas',
         sameRate: 1525, overtimeEnabled: true, factoryOvertimeRateHourly: 225,
         sundayPoyaOvertimeRateHourly: 300, mandatoryOtHoursPerShift: 3,
-        sundayPoyaOtHoursPerShift: 12, specialBillingDates: ['2026-10-21'],
+        sundayPoyaOtHoursPerShift: 12, femaleNightAllowance: 100, specialBillingDates: ['2026-10-21'],
         attendanceBonus: 0,
       };
       const employeeId = 'EMP-MANDATORY-OT';
-      const makeAttendance = (id: string, date: string, shift: string, payableUnits: number): AttendanceRecord => ({
-        id, employeeId, employeeName: 'Mandatory OT Test', employeeGender: 'male',
+      const makeAttendance = (id: string, date: string, shift: string, payableUnits: number, gender = 'male'): AttendanceRecord => ({
+        id, employeeId, employeeName: 'Mandatory OT Test', employeeGender: gender,
         factoryId: empire.id, factoryName: empire.name, date, shift, status: 'present',
         payableUnits, otHours: 0, otMinutes: 0, totalOtHours: 0, hadBreakfast: false,
         hadLunch: false, hadDinner: false, hadBoarding: false, recordedBy: 'tester',
@@ -1088,15 +1088,16 @@ export class SystemTestSuite {
       });
       const invoice = InvoicingService.generateInvoiceFromAttendance(
         empire, '2026-10-01', '2026-10-31', [
-          makeAttendance('ot-weekday-dn', '2026-10-19', 'D+N', 2),
+          makeAttendance('ot-weekday-dn', '2026-10-19', 'D+N', 2, 'female'),
           makeAttendance('ot-sunday-dn', '2026-10-18', 'D+N', 2),
           makeAttendance('ot-poya-day', '2026-10-21', 'Day Shift', 1),
         ], 'INV-MANDATORY-OT', 'tester'
       );
       const otHours = invoice.lineItems.map((line) => line.billableOtHours);
       const otTotal = invoice.lineItems.reduce((sum, line) => sum + line.otBillingTotal, 0);
-      const passed = otHours[0] === 6 && otHours[1] === 24 && otHours[2] === 12 && otTotal === 12150;
-      results.push({ id: 31, title: 'Empire mandatory OT billing: 3 hours weekday/Saturday, 12 hours Sunday/Poya', category: 'Invoicing', passed, message: passed ? 'Verified D+N bills two shifts; weekday/Saturday OT 3 hours per shift and Sunday/Poya 12 hours per shift.' : 'Mandatory invoice OT calculation is incorrect: ' + otHours.join(', ') + ' / ' + otTotal });
+      const passed = otHours[0] === 6 && otHours[1] === 24 && otHours[2] === 12 && otTotal === 12150
+        && invoice.lineItems[0].dayBillingTotal === 3150;
+      results.push({ id: 31, title: 'Empire mandatory OT billing: 3 hours weekday/Saturday, 12 hours Sunday/Poya', category: 'Invoicing', passed, message: passed ? 'Verified D+N bills two shifts; female night allowance is applied once; weekday/Saturday OT 3 hours per shift and Sunday/Poya 12 hours per shift.' : 'Mandatory invoice OT calculation is incorrect: ' + otHours.join(', ') + ' / ' + otTotal });
     } catch (err: any) {
       results.push({ id: 31, title: 'Empire mandatory OT invoice rules', category: 'Invoicing', passed: false, message: err.message });
     }
