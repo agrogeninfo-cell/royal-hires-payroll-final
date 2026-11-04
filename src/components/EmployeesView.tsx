@@ -265,8 +265,12 @@ export const EmployeesView: React.FC = () => {
     }
   };
 
-  const filteredEmployees = employees.filter((emp) => {
-    if (filterFactory !== 'all' && emp.currentFactoryId !== filterFactory) return false;
+  const safeEmployees = Array.isArray(employees) ? employees.filter((emp): emp is Employee => Boolean(emp && typeof emp === 'object')) : [];
+  const safeFactories = Array.isArray(factories) ? factories : [];
+  const safePayments = Array.isArray(payments) ? payments : [];
+
+  const filteredEmployees = safeEmployees.filter((emp) => {
+    if (filterFactory !== 'all' && String(emp.currentFactoryId ?? '') !== filterFactory) return false;
     if (filterGender !== 'all' && emp.gender !== filterGender) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -336,7 +340,7 @@ export const EmployeesView: React.FC = () => {
             className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none"
           >
             <option value="all">All Assigned Factories</option>
-            {factories.map((f) => (
+            {safeFactories.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name}
               </option>
@@ -360,8 +364,8 @@ export const EmployeesView: React.FC = () => {
       {/* Employee Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredEmployees.map((emp) => {
-          const fac = factories.find((f) => f.id === emp.currentFactoryId);
-          const empAdvances = payments.filter(
+          const fac = safeFactories.find((f) => f.id === emp.currentFactoryId);
+          const empAdvances = safePayments.filter(
             (p) => p.employeeId === emp.id && p.paymentType === 'advance'
           );
           const totalAdvances = empAdvances.reduce((sum, p) => sum + p.amount, 0);
@@ -392,9 +396,9 @@ export const EmployeesView: React.FC = () => {
                   </div>
                 </div>
 
-                <h3 className="font-bold text-slate-900 text-base mt-2">{emp.fullName}</h3>
-                <p className="text-xs text-slate-500">NIC: <strong className="text-slate-700">{emp.nic}</strong></p>
-                <p className="text-xs text-slate-500 mt-0.5">Phone: {emp.phone || '-'}</p>
+                <h3 className="font-bold text-slate-900 text-base mt-2">{String(emp.fullName ?? 'Unnamed Helper')}</h3>
+                <p className="text-xs text-slate-500">NIC: <strong className="text-slate-700">{String(emp.nic ?? '-')}</strong></p>
+                <p className="text-xs text-slate-500 mt-0.5">Phone: {String(emp.phone || '-')}</p>
 
                 {/* Factory Assignment Banner */}
                 <div className="mt-3 p-2 bg-slate-50 rounded-lg border border-slate-200 text-xs">
@@ -407,7 +411,7 @@ export const EmployeesView: React.FC = () => {
                   <div className="flex justify-between items-center text-emerald-950 font-bold">
                     <span>Worker Wage:</span>
                     <span>
-                      LKR {emp.wageRate.toLocaleString()} /{' '}
+                      LKR {Number(emp.wageRate ?? 0).toLocaleString()} /{' '}
                       <span className="capitalize font-normal text-slate-600">{emp.wageArrangement}</span>
                     </span>
                   </div>
