@@ -197,6 +197,11 @@ export const EmployeesView: React.FC = () => {
       await saveEmployee(employeeToSave);
       setIsModalOpen(false);
       setSuccessMsg(`Saved worker ${employeeToSave.fullName} successfully.`);
+      // New helper registration also opens the ID card for immediate print/save.
+      if (!editingEmployee) {
+        const assignedFactory = safeFactories.find((factory) => factory.id === employeeToSave.currentFactoryId);
+        printIdCard(employeeToSave, assignedFactory?.name || 'Royal Hires');
+      }
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
       setErrorMsg(err.message);
