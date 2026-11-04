@@ -11,6 +11,7 @@ import { FactoriesView } from './components/FactoriesView';
 import { EmployeesView } from './components/EmployeesView';
 import { BoardingView } from './components/BoardingView';
 import { PayrollView } from './components/PayrollView';
+import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
 import { InvoicesView } from './components/InvoicesView';
 import { ReceiptsView } from './components/ReceiptsView';
 import { ReportsView } from './components/ReportsView';
@@ -166,7 +167,7 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
           {activeTab === 'factories' && <FactoriesView />}
           {activeTab === 'employees' && <EmployeesView />}
           {activeTab === 'boarding' && <BoardingView />}
-          {activeTab === 'payroll' && <PayrollView />}
+          {activeTab === 'payroll' && <ScreenErrorBoundary title="Payroll"><PayrollView /></ScreenErrorBoundary>}
           {activeTab === 'invoices' && <InvoicesView />}
           {activeTab === 'receipts' && <ReceiptsView />}
           {activeTab === 'reports' && <ReportsView />}
