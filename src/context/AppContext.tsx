@@ -297,7 +297,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Saved helper "${employee.fullName}" (NIC: ${employee.nic}) assigned to factory ${employee.currentFactoryId}`
     );
     await reloadData();
-    if (isOnline) await syncOfflineQueue();
+    // Local IndexedDB save is authoritative for offline use. A cloud failure must
+    // not make the registration form report that the worker was not saved.
+    if (isOnline) {
+      try { await syncOfflineQueue(); }
+      catch (error) { console.warn('Worker saved locally; cloud sync remains pending:', error); }
+    }
   };
 
   // Attendance Operations (Supports Offline Queueing!)
