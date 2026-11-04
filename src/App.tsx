@@ -165,7 +165,7 @@ const MainLayout: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
           {activeTab === 'attendance' && <AttendanceView />}
           {activeTab === 'overtime' && <OvertimeApprovalView />}
           {activeTab === 'factories' && <FactoriesView />}
-          {activeTab === 'employees' && <EmployeesView />}
+          {activeTab === 'employees' && <ScreenErrorBoundary title="Helper & Wages"><EmployeesView /></ScreenErrorBoundary>}
           {activeTab === 'boarding' && <BoardingView />}
           {activeTab === 'payroll' && <ScreenErrorBoundary title="Payroll"><PayrollView /></ScreenErrorBoundary>}
           {activeTab === 'invoices' && <InvoicesView />}
