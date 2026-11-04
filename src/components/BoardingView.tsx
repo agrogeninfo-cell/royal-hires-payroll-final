@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { BoardingLocation } from '../types';
-import { Home, Plus, Users, MapPin, Phone } from 'lucide-react';
+import { Home, Plus, Users, MapPin, Phone, Trash2 } from 'lucide-react';
 
 export const BoardingView: React.FC = () => {
-  const { boardingLocations, employees, currentUser, saveBoardingLocation } = useApp();
+  const { boardingLocations, employees, currentUser, saveBoardingLocation, deleteBoardingLocation } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -74,9 +74,7 @@ export const BoardingView: React.FC = () => {
                   <Home className="w-4 h-4 text-blue-500" />
                   <span>{loc.name}</span>
                 </h3>
-                <span className="text-xs font-bold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200">
-                  LKR {loc.dailyRate} / day
-                </span>
+                <div className="flex items-center gap-2"><span className="text-xs font-bold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200">LKR {loc.dailyRate} / day</span>{currentUser.role === 'admin' && <button type="button" title="Delete boarding location" onClick={async () => { if (window.confirm(`Delete ${loc.name}?`)) { try { await deleteBoardingLocation(loc.id); } catch (err: any) { alert(err.message); } } }} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>}</div>
               </div>
 
               <div className="text-xs text-slate-500 space-y-1">
