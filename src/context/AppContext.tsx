@@ -58,6 +58,7 @@ interface AppContextType {
   saveInvoice: (invoice: FactoryInvoice) => Promise<void>;
   saveReceipt: (receipt: FactoryReceipt) => Promise<void>;
   saveBoardingLocation: (location: BoardingLocation) => Promise<void>;
+  deleteBoardingLocation: (locationId: string) => Promise<void>;
   resetDatabase: () => Promise<void>;
   exportBackupJson: () => Promise<string>;
   importBackupJson: (jsonData: string) => Promise<void>;
@@ -159,8 +160,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       setReceipts(isSupervisor ? [] : recData.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 
       const allBoarding = await dbService.getAll<BoardingLocation>('boarding_locations');
+      // Keep every registered boarding location visible to administrators, even before a helper is assigned.
       const targetBoardingIds = new Set(eData.map((employee) => employee.boardingLocationId).filter(Boolean));
-      const bData = allBoarding.filter((location) => targetBoardingIds.has(location.id));
+      const bData = isSupervisor ? allBoarding.filter((location) => targetBoardingIds.has(location.id)) : allBoarding;
       setBoardingLocations(isSupervisor ? [] : bData);
 
       const allAuditLogs = await dbService.getAll<AuditLog>('audit_logs');
@@ -295,7 +297,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
       `Saved helper "${employee.fullName}" (NIC: ${employee.nic}) assigned to factory ${employee.currentFactoryId}`
     );
     await reloadData();
-    if (isOnline) await syncOfflineQueue();
+    // Local IndexedDB save is authoritative for offline use. A cloud failure must
+    // not make the registration form report that the worker was not saved.
+    if (isOnline) {
+      try { await syncOfflineQueue(); }
+      catch (error) { console.warn('Worker saved locally; cloud sync remains pending:', error); }
+    }
   };
 
   // Attendance Operations (Supports Offline Queueing!)
@@ -502,6 +509,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     setLastBackupTime(new Date().toLocaleTimeString());
   };
 
+  const deleteBoardingLocation = async (locationId: string) => {
+    if (currentUser.role !== 'admin') throw new Error('Unauthorized: Only Administrators can delete boarding locations.');
+    const assigned = employees.some((employee) => employee.eligibleForBoarding && employee.boardingLocationId === locationId);
+    if (assigned) throw new Error('This boarding location is assigned to helpers. Reassign them before deleting.');
+    await dbService.delete('boarding_locations', locationId);
+    await dbService.logAudit(currentUser.name, currentUser.role, 'DELETE_BOARDING_LOCATION', 'BoardingLocation', locationId, 'Deleted boarding location');
+    await reloadData();
+    if (isOnline) await syncOfflineQueue();
+    await dbService.triggerMirrorBackup();
+  };
+
   const resetDatabase = async () => {
     const stores = [
       'users',
@@ -614,6 +632,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
         saveInvoice,
         saveReceipt,
         saveBoardingLocation,
+        deleteBoardingLocation,
         resetDatabase,
         exportBackupJson,
         importBackupJson,
