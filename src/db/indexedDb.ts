@@ -52,6 +52,8 @@ export class DatabaseService {
         console.warn('IndexedDB unavailable. Using persistent localStorage fallback.');
         this.useLocalStorageFallback = true;
         this.isInitialized = true;
+        await this.seedInitialDataIfNeeded();
+        await this.ensureRequiredFactoryRecords();
         resolve();
         return;
       }
@@ -93,17 +95,21 @@ export class DatabaseService {
         resolve();
       };
 
-      request.onerror = (event) => {
+      request.onerror = async (event) => {
         const error = (event.target as IDBOpenDBRequest).error;
         console.error('IndexedDB open failed; switching to localStorage fallback:', error);
         this.useLocalStorageFallback = true;
         this.isInitialized = true;
+        await this.seedInitialDataIfNeeded();
+        await this.ensureRequiredFactoryRecords();
         resolve();
       };
-      request.onblocked = () => {
+      request.onblocked = async () => {
         console.warn('IndexedDB open blocked; switching to localStorage fallback.');
         this.useLocalStorageFallback = true;
         this.isInitialized = true;
+        await this.seedInitialDataIfNeeded();
+        await this.ensureRequiredFactoryRecords();
         resolve();
       };
     });
