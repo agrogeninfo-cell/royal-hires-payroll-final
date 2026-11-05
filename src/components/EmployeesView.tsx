@@ -165,8 +165,14 @@ export const EmployeesView: React.FC = () => {
       return;
     }
 
-    if (wageRate <= 0) {
-      setErrorMsg('Wage rate must be greater than zero.');
+    const assignedFactoryId = currentFactoryId || factories.find((factory) => factory.active)?.id || factories[0]?.id || '';
+    if (!assignedFactoryId) {
+      setErrorMsg('No factory is configured. Add Empire Teas or Millennium Teas in Factory Settings before registering a worker.');
+      return;
+    }
+    const effectiveWageRate = Number(wageRate) > 0 ? Number(wageRate) : getFactoryWage(assignedFactoryId, gender);
+    if (effectiveWageRate <= 0) {
+      setErrorMsg('Please set a valid wage rate for this factory before saving the helper.');
       return;
     }
 
@@ -185,9 +191,9 @@ export const EmployeesView: React.FC = () => {
         startDate,
         status,
         designation: 'Helper', // MANDATORY BUSINESS RULE
-        currentFactoryId,
+        currentFactoryId: assignedFactoryId,
         wageArrangement,
-        wageRate: Number(wageRate),
+        wageRate: effectiveWageRate,
         eligibleForMeals,
         eligibleForBoarding,
         boardingLocationId: eligibleForBoarding ? boardingLocationId : undefined,
@@ -207,7 +213,8 @@ export const EmployeesView: React.FC = () => {
       }
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
-      setErrorMsg(err.message);
+      if (idCardPopup && !idCardPopup.closed) idCardPopup.close();
+      setErrorMsg(err?.message || 'Worker registration failed. Please check the required fields and try again.');
     }
   };
 
