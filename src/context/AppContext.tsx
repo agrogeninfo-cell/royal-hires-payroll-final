@@ -288,6 +288,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode; initialUser: Use
     employee.cloudSyncReady = true;
 
     await dbService.put('employees', employee);
+    // Read-after-write verification: never report success unless the worker
+    // record can immediately be retrieved from the active persistent store.
+    const persistedEmployee = await dbService.getById<Employee>('employees', employee.id);
+    if (!persistedEmployee || persistedEmployee.id !== employee.id ||
+        persistedEmployee.currentFactoryId !== employee.currentFactoryId) {
+      throw new Error('Worker save verification failed. The record was not persisted; please retry after checking device storage.');
+    }
     await dbService.logAudit(
       currentUser.name,
       currentUser.role,
