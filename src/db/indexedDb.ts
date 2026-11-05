@@ -52,9 +52,15 @@ export class DatabaseService {
         console.warn('IndexedDB unavailable. Using persistent localStorage fallback.');
         this.useLocalStorageFallback = true;
         this.isInitialized = true;
-        await this.seedInitialDataIfNeeded();
-        await this.ensureRequiredFactoryRecords();
-        resolve();
+        void (async () => {
+          try {
+            await this.seedInitialDataIfNeeded();
+            await this.ensureRequiredFactoryRecords();
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        })();
         return;
       }
 
