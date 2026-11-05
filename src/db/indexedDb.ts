@@ -33,13 +33,24 @@ export function getMissingRequiredFactories(existing: Factory[], defaults: Facto
 export class DatabaseService {
   private db: IDBDatabase | null = null;
   private isInitialized = false;
+  private useLocalStorageFallback = false;
+  private readonly fallbackPrefix = `${DB_NAME}_fallback_`;
+
+  private fallbackRead<T>(storeName: string): T[] {
+    try { return JSON.parse(localStorage.getItem(this.fallbackPrefix + storeName) || '[]') as T[]; }
+    catch { return []; }
+  }
+  private fallbackWrite<T>(storeName: string, records: T[]): void {
+    localStorage.setItem(this.fallbackPrefix + storeName, JSON.stringify(records));
+  }
 
   public async init(): Promise<void> {
-    if (this.isInitialized && this.db) return;
+    if (this.isInitialized) return;
 
     return new Promise((resolve, reject) => {
       if (typeof window === 'undefined' || !window.indexedDB) {
-        console.warn('IndexedDB not supported in current environment. Using memory fallback.');
+        console.warn('IndexedDB unavailable. Using persistent localStorage fallback.');
+        this.useLocalStorageFallback = true;
         this.isInitialized = true;
         resolve();
         return;
@@ -83,8 +94,17 @@ export class DatabaseService {
       };
 
       request.onerror = (event) => {
-        console.error('IndexedDB error:', (event.target as IDBOpenDBRequest).error);
-        reject((event.target as IDBOpenDBRequest).error);
+        const error = (event.target as IDBOpenDBRequest).error;
+        console.error('IndexedDB open failed; switching to localStorage fallback:', error);
+        this.useLocalStorageFallback = true;
+        this.isInitialized = true;
+        resolve();
+      };
+      request.onblocked = () => {
+        console.warn('IndexedDB open blocked; switching to localStorage fallback.');
+        this.useLocalStorageFallback = true;
+        this.isInitialized = true;
+        resolve();
       };
     });
   }
@@ -92,7 +112,7 @@ export class DatabaseService {
   // Generic helpers
   public async getAll<T>(storeName: string): Promise<T[]> {
     await this.init();
-    if (!this.db) return [];
+    if (this.useLocalStorageFallback || !this.db) return this.fallbackRead<T>(storeName);
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, 'readonly');
@@ -106,7 +126,7 @@ export class DatabaseService {
 
   public async getById<T>(storeName: string, id: string): Promise<T | null> {
     await this.init();
-    if (!this.db) return null;
+    if (this.useLocalStorageFallback || !this.db) return this.fallbackRead<T>(storeName).find((item: any) => item?.id === id) || null;
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, 'readonly');
@@ -120,7 +140,13 @@ export class DatabaseService {
 
   public async put<T extends { id: string }>(storeName: string, item: T): Promise<void> {
     await this.init();
-    if (!this.db) return;
+    if (this.useLocalStorageFallback || !this.db) {
+      const records = this.fallbackRead<T>(storeName);
+      const index = records.findIndex((record) => record.id === item.id);
+      if (index >= 0) records[index] = item; else records.push(item);
+      this.fallbackWrite(storeName, records);
+      return;
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, 'readwrite');
@@ -134,7 +160,10 @@ export class DatabaseService {
 
   public async delete(storeName: string, id: string): Promise<void> {
     await this.init();
-    if (!this.db) return;
+    if (this.useLocalStorageFallback || !this.db) {
+      this.fallbackWrite(storeName, this.fallbackRead<any>(storeName).filter((record) => record?.id !== id));
+      return;
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, 'readwrite');
@@ -148,7 +177,7 @@ export class DatabaseService {
 
   public async clear(storeName: string): Promise<void> {
     await this.init();
-    if (!this.db) return;
+    if (this.useLocalStorageFallback || !this.db) { this.fallbackWrite(storeName, []); return; }
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(storeName, 'readwrite');
