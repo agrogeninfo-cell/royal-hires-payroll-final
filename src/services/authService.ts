@@ -181,8 +181,15 @@ export async function handleNativeAuthCallback(url: string): Promise<'recovery' 
 }
 
 export async function signOut(): Promise<void> {
-  const { error } = await getSupabaseClient().auth.signOut();
-  if (error) throw error;
+  const auth = getSupabaseClient().auth;
+  // Clear the local persisted session first so the UI exits even if the network
+  // or server-side sign-out endpoint is temporarily unavailable.
+  const { error: localError } = await auth.signOut({ scope: 'local' });
+  if (localError) throw localError;
+  // Best-effort global revocation; local logout has already completed safely.
+  void auth.signOut({ scope: 'global' }).catch((error) => {
+    console.warn('Royal Pay local sign-out completed; global session revocation failed:', error);
+  });
 }
 
 export function subscribeToAuthChanges(callback: (session: Session | null) => void) {
