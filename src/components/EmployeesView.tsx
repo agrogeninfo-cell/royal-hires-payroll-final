@@ -87,8 +87,8 @@ export const EmployeesView: React.FC = () => {
     return candidate;
   };
 
-  const printIdCard = (employee: Employee, factoryName: string) => {
-    const popup = window.open('', '_blank', 'width=900,height=600');
+  const printIdCard = (employee: Employee, factoryName: string, popupWindow?: Window | null) => {
+    const popup = popupWindow || window.open('', '_blank', 'width=900,height=600');
     if (!popup) { setErrorMsg('Please allow pop-ups to preview/print the ID card.'); return; }
     const escapeHtml = (value: string) => value.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch] || ch));
     popup.document.write('<!doctype html><html><head><title>Royal Hires ID Card</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#f1f5f9;font-family:Arial,sans-serif}.card{width:856px;height:540px;max-width:100%;margin:auto;border-radius:24px;overflow:hidden;background:#062d27;color:#fff;border:5px solid #d7ad63}.head{padding:28px 34px;background:#0a3d34;border-bottom:3px solid #d7ad63}.brand{font-size:30px;font-weight:800;letter-spacing:1px}.sub{color:#e8d4a6;font-size:13px;letter-spacing:2px;margin-top:5px}.body{padding:30px 36px}.id{font-size:34px;font-weight:900;color:#d7ad63;letter-spacing:2px}.name{font-size:32px;font-weight:800;margin:16px 0 8px}.role{font-size:17px;color:#e8d4a6}.details{font-size:16px;line-height:1.8;margin-top:20px}.factory{padding:16px 36px;background:#d7ad63;color:#062d27;font-weight:700}@media print{body{padding:0;background:white}.card{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><div class="card"><div class="head"><div class="brand">ROYAL HIRES PRIVATE LIMITED</div><div class="sub">EMPLOYEE IDENTIFICATION CARD</div></div><div class="body"><div class="id">' + escapeHtml(employee.id) + '</div><div class="name">' + escapeHtml(employee.fullName) + '</div><div class="role">FACTORY WORKER</div><div class="details">Phone: ' + escapeHtml(employee.phone || '-') + '<br>NIC: ' + escapeHtml(employee.nic || '-') + '<br>Valid while employment is active</div></div><div class="factory">' + escapeHtml(factoryName) + ' · MALABE, SRI LANKA</div></div><script>window.onload=function(){window.print()}</script></body></html>');
@@ -170,6 +170,8 @@ export const EmployeesView: React.FC = () => {
       return;
     }
 
+    // Open the card window synchronously from the Save click so mobile browsers do not block it.
+    const idCardPopup = !editingEmployee ? window.open('', '_blank', 'width=900,height=600') : null;
     try {
       const now = new Date().toISOString();
       const employeeToSave: Employee = {
@@ -177,9 +179,9 @@ export const EmployeesView: React.FC = () => {
         fullName: fullName.trim(),
         nic: nic.trim().toUpperCase(),
         phone: phone.trim(),
-        address: address.trim(),
+        address: '',
         gender,
-        emergencyContact: emergencyContact.trim(),
+        emergencyContact: '',
         startDate,
         status,
         designation: 'Helper', // MANDATORY BUSINESS RULE
@@ -200,7 +202,8 @@ export const EmployeesView: React.FC = () => {
       // New helper registration also opens the ID card for immediate print/save.
       if (!editingEmployee) {
         const assignedFactory = safeFactories.find((factory) => factory.id === employeeToSave.currentFactoryId);
-        printIdCard(employeeToSave, assignedFactory?.name || 'Royal Hires');
+        if (idCardPopup) printIdCard(employeeToSave, assignedFactory?.name || 'Royal Hires', idCardPopup);
+        else setErrorMsg('Worker saved successfully, but the ID Card popup was blocked. Allow pop-ups and click ID Card on the worker profile.');
       }
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
@@ -613,36 +616,13 @@ export const EmployeesView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Telephone Number</label>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+94 77 123 4567"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Emergency Contact</label>
-                  <input
-                    type="text"
-                    value={emergencyContact}
-                    onChange={(e) => setEmergencyContact(e.target.value)}
-                    placeholder="e.g. Spouse (+94 77 999 8881)"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
-                  />
-                </div>
-              </div>
-
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Residential Address</label>
+                <label className="block font-semibold text-slate-700 mb-1">Telephone Number</label>
                 <input
                   type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="e.g. No. 12, Temple Rd, Gampaha"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+94 77 123 4567"
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
                 />
               </div>
